@@ -74,6 +74,8 @@ def import_object(pattern):
 	obj.setTransform(*T)	#trasformazione
 	obj.appearance().setColor(0.2,0.5,0.7,1.0)	#colore
 	obj.setName('BANANA')	#do nome
+	print("****dove e' l'oggetto"), obj.getTransform()
+	print("****dove e' l'oggetto"), T[1][0]
 	return obj
 
 def import_reflex():
@@ -97,7 +99,41 @@ def move_reflex(robot):
 	q[4] = 0#pitch
 	q[5] = math.radians(180) #roll
 	robot.setConfig(q)
+	print("******* Robot dove sono **********"), robot.getConfig()
 
+
+def RelativePosition(robot,object):
+	robot_transform = robot.getConfig()
+	Robot_position = [robot_transform[0], robot_transform[1],robot_transform[2]]
+	object_transform = object.getTransform()
+	Pos = vectorops.distance(Robot_position,object_transform[1])
+	# print("Pos"), Pos
+	return Pos
+
+
+
+
+
+def Differential(robot, object, Pos_prev, time):
+	Pos_actual =  RelativePosition(robot,object)
+	Diff = (Pos_actual - Pos_prev) / time
+	# print("Derivate"), Diff
+	return Diff
+
+
+def GraspValuate(diff):
+	if diff > 0:
+		print("No good grasp")
+	else:
+		print("good grasp")
+		objfile = 'primo/poisson_mesh.stl'
+		f = open('grasp_valuation_template.rob','r')
+		pattern_2 = ''.join(f.readlines())
+		f.close()
+		f2 = open("grasp_valuation.txt",'w')
+		pos = robot.getConfig()
+		f2.write(pattern_2 % (objfile,pos))
+		f2.close()
 
 
 
@@ -105,7 +141,7 @@ def move_reflex(robot):
 robot = import_reflex()
 move_reflex(robot)
 # for pattern in objects_set[dataset]:
-import_object(objects_set[dataset])
+object = import_object(objects_set[dataset])
 
 #Simulation 
 
@@ -126,6 +162,9 @@ sim.setController(robot,simple_controller.make(sim,hand,program.dt))
 vis.add("world",world)
 vis.show()
 t0 = time.time()
+Pos_ = RelativePosition(robot,object) 
+# Pos_ = vectorops.distance(robot.getConfig(),object.getTransform())
+ 
 while vis.shown():
 	vis.lock()
 	sim.simulate(0.01)
@@ -133,5 +172,10 @@ while vis.shown():
 	vis.unlock()
 	t1 = time.time()
 	time.sleep(max(0.01-(t1-t0),0.001))
-	t0 = t1
+	t0 = t1	
+	diff = Differential(robot, object,Pos_,t0)
+	print("getTime"), sim.getTime()
+	if sim.getTime() > 5:
+	 	print("diff"),diff
+		GraspValuate(diff)
 
