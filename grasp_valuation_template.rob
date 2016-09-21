@@ -1,3 +1,4 @@
 #A template for grasp valuation
 mesh %s
 handPos %s
+goodness %f

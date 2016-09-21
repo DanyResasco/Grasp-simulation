@@ -121,7 +121,8 @@ def Differential(robot, object, Pos_prev, time):
 	return Diff
 
 
-def GraspValuate(diff):
+
+def GraspValuate(diff,kindness):
 	if diff > 0:
 		print("No good grasp")
 	else:
@@ -132,7 +133,7 @@ def GraspValuate(diff):
 		f.close()
 		f2 = open("grasp_valuation.txt",'w')
 		pos = robot.getConfig()
-		f2.write(pattern_2 % (objfile,pos))
+		f2.write(pattern_2 % (objfile,pos,kindness))
 		f2.close()
 
 
@@ -163,8 +164,8 @@ vis.add("world",world)
 vis.show()
 t0 = time.time()
 Pos_ = RelativePosition(robot,object) 
-# Pos_ = vectorops.distance(robot.getConfig(),object.getTransform())
- 
+kindness = 0 
+Td_prev = 0
 while vis.shown():
 	vis.lock()
 	sim.simulate(0.01)
@@ -173,9 +174,12 @@ while vis.shown():
 	t1 = time.time()
 	time.sleep(max(0.01-(t1-t0),0.001))
 	t0 = t1	
-	diff = Differential(robot, object,Pos_,t0)
+	diff = Differential(robot, object,Pos_,sim.getTime())
 	print("getTime"), sim.getTime()
-	if sim.getTime() > 5:
+	kindness += abs(diff*(sim.getTime()-Td_prev))
+	Td_prev = sim.getTime()
+	print("kindness"),kindness
+	if sim.getTime() > 3:
 	 	print("diff"),diff
-		GraspValuate(diff)
+		GraspValuate(diff,kindness)
 
