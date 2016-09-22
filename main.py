@@ -22,6 +22,7 @@ import random
 # import grasp_chose
 #import an object dataset
 from klampt.math import so3
+import string
 
 #Declare all variables
 world = WorldModel()
@@ -105,8 +106,8 @@ def import_object():
 		obj.setTransform(*T)	#trasformazione
 		obj.appearance().setColor(0.2,0.5,0.7,1.0)	#colore
 		obj.setName(objectName)	#do nome
-		print("****dove e' l'oggetto"), obj.getTransform()
-		print("****dove e' l'oggetto"), T[1][0]
+		# print("****dove e' l'oggetto"), obj.getTransform()
+		# print("****dove e' l'oggetto"), T[1][0]
 	return obj
 
 #import gripper
@@ -159,16 +160,15 @@ def GraspValuate(diff,kindness):
 		print("No good grasp")
 	else:
 		print("good grasp")
-		objfile = 'primo/poisson_mesh.stl'
+		# objfile = objectName
 		f = open('grasp_valuation_template.rob','r')
 		pattern_2 = ''.join(f.readlines())
 		f.close()
-		f2 = open("grasp_valuation.txt",'w')
+		nameFile = 'grasp_valuation_' + objectName + '.txt'
+		f2 = open(nameFile ,'w')
 		pos = robot.getConfig()
-		f2.write(pattern_2 % (objfile,pos,kindness))
+		f2.write(pattern_2 % (objectName,pos,kindness))
 		f2.close()
-
-
 
 #Main
 robot = import_reflex()
