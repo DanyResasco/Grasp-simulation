@@ -23,6 +23,7 @@ import random
 #import an object dataset
 from klampt.math import so3
 import string
+import Exampletest_dany_bb	
 
 #Declare all variables
 world = WorldModel()
@@ -170,7 +171,12 @@ def GraspValuate(diff,kindness):
 		f2.write(pattern_2 % (objectName,pos,kindness))
 		f2.close()
 
-#Main
+#************************************************Main******************************************
+
+
+box = Exampletest_dany_bb.Box(10)
+
+
 robot = import_reflex()
 move_reflex(robot)
 
