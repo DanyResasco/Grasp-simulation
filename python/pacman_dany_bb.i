@@ -28,6 +28,7 @@
 %eigen_typemaps(Eigen::MatrixXd)
 %eigen_typemaps(Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>)
 %eigen_typemaps(Eigen::Matrix<double, 4, 4>)
+%eigen_typemaps(Eigen::Matrix<double, 2, 3>)
 
 
 /* Wrap a function taking a pointer to a function */

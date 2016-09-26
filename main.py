@@ -27,6 +27,7 @@ from klampt.math import so3
 import string
 import pydany_bb
 import numpy as np
+import math
 from IPython import embed
 from graspvariation import PoseVariation
 
@@ -188,15 +189,25 @@ print "doing PCA"
 box.doPCA(I)
 print "computing Bounding Box"
 bbox = pydany_bb.ComputeBoundingBox(box)
+p_0 = bbox.Isobox[0,:]
+p_1 = bbox.Isobox[1,:]
+long_side = np.max(np.abs(p_0 - p_1))
 
 param_area = 0.98
 param_volume = 9E-6
+
+
+embed()
 
 print "extracting Boxes"
 boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
 print "getting transforms"
 poses = pydany_bb.getTrasformsforHand(boxes, bbox)
-embed()
+
+poses_variations = []
+for pose in poses:
+	poses_variations += PoseVariation(pose, long_side)
+
 
 #Simulation 
 
