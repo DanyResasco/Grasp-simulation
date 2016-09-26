@@ -6,8 +6,8 @@
 
 
 
- namespace pacman
- {
+namespace pacman
+{
 
     /** class: Box
         *Description:This class is used to create a structure for bounding box
@@ -66,10 +66,14 @@
         void box_distance ( Box bigestbox, Box actual);
 
 
-        //~CObject();
+     
+     //~CObject();
+    
+       
 
     };
 
 
- }
+}
+
 #endif

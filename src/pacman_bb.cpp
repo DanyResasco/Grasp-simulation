@@ -1,10 +1,9 @@
-#include <pacman_bb.h>
-
+#include <pacman_bb.hpp>
 #include <pcl/common/centroid.h>
 #include <pcl/point_traits.h>
 #include <pcl/PointIndices.h>
 #include <pcl/cloud_iterator.h>
-
+#include <pacman_bb_utils.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/common.h>
@@ -14,11 +13,11 @@
 #include <pcl/console/print.h>
 #include <pcl/io/pcd_io.h>
 #include <algorithm>
-#include <eigen3/Eigen/Dense>
-#include <list>
 
- namespace pacman
- {	
+//#include <boost/system.hpp>
+
+namespace pacman
+{	
 
         Box::Box ( int num_points )
         {
@@ -28,19 +27,20 @@
 
         }
 
-         void Box::SetPoints ( const Eigen::MatrixXd& EigenPoints )
-         {
+        void Box::SetPoints ( const Eigen::MatrixXd& EigenPoints )
+        //const Eigen::MatrixXd& object_eigen
+        {
 
-             Points = EigenPoints;
-             T = Eigen::Matrix<double, 4, 4>::Identity();
+            Points = EigenPoints;
+            T = Eigen::Matrix<double, 4, 4>::Identity();
 
-         }
+        }
 
-         void Box::SetT ( Eigen::Matrix<double , 4, 4>& Tnew )
-         {
-             Eigen::Matrix<double, 4, 4> Tprev = T;
-             T = T*Tnew;
-         }
+        void Box::SetT ( Eigen::Matrix<double , 4, 4>& Tnew )
+        {
+            Eigen::Matrix<double, 4, 4> Tprev = T;
+            T = T*Tnew;
+        }
 
         void Box::SetPoint ( int i, double x, double y, double z )
         {
@@ -52,58 +52,58 @@
         }
 
 
-         void Box::doPCA ( const Eigen::Matrix<double, 4, 4>& Told )
-         {
-             Eigen::MatrixXd object_pca_eigen ( Points.rows(),3 );
-             Eigen::JacobiSVD<Eigen::MatrixXd> SVD_eigen;
+        void Box::doPCA ( const Eigen::Matrix<double, 4, 4>& Told )
+        {
+            Eigen::MatrixXd object_pca_eigen ( Points.rows(),3 );
+            Eigen::JacobiSVD<Eigen::MatrixXd> SVD_eigen;
 
-             Eigen::MatrixXd data_m ( Points.rows(),3 );
-             Eigen::MatrixXd mean_data;
+            Eigen::MatrixXd data_m ( Points.rows(),3 );
+            Eigen::MatrixXd mean_data;
 
-             mean_data = Points.colwise().mean();
+            mean_data = Points.colwise().mean();
 
-             for ( int i = 0; i < Points.rows(); i++ )
-             {
-                 data_m.block<1,3> ( i,0 ) = Points.block<1,3> ( i,0 ) - mean_data;
-             }
+            for ( int i = 0; i < Points.rows(); i++ )
+            {
+                data_m.block<1,3> ( i,0 ) = Points.block<1,3> ( i,0 ) - mean_data;
+            }
 
 
-             Eigen::MatrixXd tempM2 = ( data_m.transpose() *data_m ) / ( double ) data_m.rows();
+            Eigen::MatrixXd tempM2 = ( data_m.transpose() *data_m ) / ( double ) data_m.rows();
 
-             SVD_eigen.compute ( tempM2, Eigen::ComputeFullU | Eigen::ComputeFullV );
+            SVD_eigen.compute ( tempM2, Eigen::ComputeFullU | Eigen::ComputeFullV );
 
-             Eigen::MatrixXd U = SVD_eigen.matrixU();
+            Eigen::MatrixXd U = SVD_eigen.matrixU();
 
-             object_pca_eigen= data_m*U;
+            object_pca_eigen= data_m*U;
 
-             SetPoints ( object_pca_eigen );
+            SetPoints ( object_pca_eigen );
 
-             T.block<3,3> ( 0,0 ) = U;
-             T ( 0,3 ) = mean_data ( 0,0 );
-             T ( 1,3 ) = mean_data ( 0,1 );
-             T ( 2,3 ) = mean_data ( 0,2 );
+            T.block<3,3> ( 0,0 ) = U;
+            T ( 0,3 ) = mean_data ( 0,0 );
+            T ( 1,3 ) = mean_data ( 0,1 );
+            T ( 2,3 ) = mean_data ( 0,2 );
 
-             T = Told*T;
+            T = Told*T;
 
-             pcl::PointCloud< pcl::PointXYZ > cloud_xyz;
-             Eigen::Vector4f centroid_local;
+            pcl::PointCloud< pcl::PointXYZ > cloud_xyz;
+            Eigen::Vector4f centroid_local;
                            
-             for ( unsigned int i = 0; i < object_pca_eigen.rows(); i++)
-             {
-                cloud_xyz.push_back( pcl::PointXYZ(object_pca_eigen(i,0), object_pca_eigen(i,1), object_pca_eigen(i,2)));
-             }
+            for ( unsigned int i = 0; i < object_pca_eigen.rows(); i++)
+            {
+               cloud_xyz.push_back( pcl::PointXYZ(object_pca_eigen(i,0), object_pca_eigen(i,1), object_pca_eigen(i,2)));
+            }
 
-             pcl::compute3DCentroid ( cloud_xyz, centroid_local);
+            pcl::compute3DCentroid ( cloud_xyz, centroid_local);
             
-             centroid(0,0) = centroid_local(0);
-             centroid(1,0) = centroid_local(1);
-             centroid(2,0) = centroid_local(2);
-             centroid(3,0) = 1;
+            centroid(0,0) = centroid_local(0);
+            centroid(1,0) = centroid_local(1);
+            centroid(2,0) = centroid_local(2);
+            centroid(3,0) = 1;
 
-             centroid = T*centroid;
+            centroid = T*centroid;
         
           
-         }
+        }
       
     void  Box::box_distance ( Box bigestbox, Box actual)
     { 
@@ -112,9 +112,4 @@
                                                 std::pow( bigestbox.centroid(2,0) - actual.centroid(2,0) , 2) );   
     }
 
-
- 
- }
-
-
-
+}

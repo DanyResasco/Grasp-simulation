@@ -18,6 +18,9 @@ include(ExternalProject)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/swigmake/cmake)
 
+find_package(Eigen3 REQUIRED COMPONENTS Dense Geometry)
+find_package(CGAL REQUIRED COMPONENTS Core)
+
 if ( EIGEN3_FOUND )
   INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 else()
@@ -39,7 +42,9 @@ add_definitions(${PCL_DEFINITIONS})
 INCLUDE_DIRECTORIES(src)
 
 ADD_LIBRARY(test_dany_bb  SHARED src/pacman_bb.cpp
-                                 src/pacman_bb.h )
+                                 src/pacman_bb_utils.cpp
+                                 src/pacman_bb.hpp
+                                 src/pacman_bb_utils.hpp )
 
 TARGET_LINK_LIBRARIES(test_dany_bb PUBLIC ${PCL_LIBRARIES} ${CGAL_LIBRARIES} ${EIGEN_LIBRARIES})
 

@@ -23,7 +23,9 @@ import random
 #import an object dataset
 from klampt.math import so3
 import string
-import Exampletest_dany_bb	
+import pydany_bb
+import numpy as np
+from IPython import embed
 
 #Declare all variables
 world = WorldModel()
@@ -173,15 +175,24 @@ def GraspValuate(diff,kindness):
 
 #************************************************Main******************************************
 
-
-box = Exampletest_dany_bb.Box(10)
-
-
 robot = import_reflex()
 move_reflex(robot)
 
-object = import_object()
+obj = import_object()
+tm = obj.geometry().getTriangleMesh()
+n_vertices = tm.vertices.size() / 3
+box = pydany_bb.Box(n_vertices)
 
+for i in range(n_vertices):
+	box.SetPoint(i, tm.vertices[3*i], tm.vertices[3*i+1], tm.vertices[3*i+2])
+
+I = np.ones((4,4))
+box.doPCA(I)
+
+
+param_area = 0.95
+param_volume = 9E-6
+embed()
 #Simulation 
 
 #now the simulation is launched
@@ -200,7 +211,7 @@ sim.setController(robot,simple_controller.make(sim,hand,program.dt))
 vis.add("world",world)
 vis.show()
 t0 = time.time()
-Pos_ = RelativePosition(robot,object) 
+Pos_ = RelativePosition(robot,obj) 
 kindness = 0 
 Td_prev = 0
 while vis.shown():
@@ -211,7 +222,7 @@ while vis.shown():
 	t1 = time.time()
 	time.sleep(max(0.01-(t1-t0),0.001))
 	t0 = t1	
-	diff = Differential(robot, object,Pos_,sim.getTime())
+	diff = Differential(robot, obj, Pos_,sim.getTime())
 	print("getTime"), sim.getTime()
 	kindness += abs(diff*(sim.getTime()-Td_prev))
 	Td_prev = sim.getTime()

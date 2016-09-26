@@ -18,6 +18,9 @@ include(ExternalProject)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/swigmake/cmake)
 
+find_package(Eigen3 REQUIRED COMPONENTS Dense Geometry)
+find_package(CGAL REQUIRED COMPONENTS Core)
+
 if ( EIGEN3_FOUND )
   INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 else()
@@ -58,7 +61,7 @@ if(SWIG_FOUND)
 
 
     include_directories(. ../src)
-    link_libraries(test_dany_bb)
+    link_libraries(test_dany_bb ${CGAL_LIBRARIES})
 
     set(CMAKE_SWIG_FLAGS "-Wall;-module;pydany_bb;-threads;-I${CMAKE_CURRENT_SOURCE_DIR}/../swigmake/swig/python;-I${CMAKE_CURRENT_SOURCE_DIR}/../swigmake/swig/common")
 
