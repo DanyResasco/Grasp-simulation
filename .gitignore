@@ -1,0 +1,84 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+#compiled libraries
+build
+
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+
+# temporary compilation files #
+######################
+deps
+objs
+lib
+*.pyc
+Documentation/build
+Documentation/html
+Documentation/latex
+Documentation/*.tags
+bin
+lib
+
+# Cygwin stack dump files
+*.stackdump
+
+# platform specific configuration
+######################
+Makefile.config
+
+# Qt meta objects
+######################
+*.pro.user
+moc_*.cpp
+ui_*.h
+*Qt/Makefile
+
+# Settings Files
+*.settings
+
+#CMake temporary files
+CMakeFiles
+CMakeCache.txt
+CMakeCache.txt.user
+CPack*
+CTest*
+cmake*.cmake
+Makefile
+_CPack*
+
+# Log files
+*.log
+*.csv

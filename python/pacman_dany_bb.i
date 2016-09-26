@@ -1,5 +1,5 @@
 /* File : example.i */
-%module Exampletest_dany_bb
+%module pydany_bb
 %{
 #include "pacman_bb_test.h"
 
