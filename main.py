@@ -23,13 +23,14 @@ import os
 import random
 # import grasp_chose
 #import an object dataset
-from klampt.math import so3
+from klampt.math import so3, se3
 import string
 import pydany_bb
 import numpy as np
 import math
 from IPython import embed
 from graspvariation import PoseVariation
+from draw_bbox import draw_GL_frame, draw_bbox
 
 #Declare all variables
 world = WorldModel()
@@ -234,6 +235,13 @@ while vis.shown():
 	vis.lock()
 	sim.simulate(0.01)
 	sim.updateWorld()
+	
+	for pose in poses_variations:
+		T = se3.from_homogeneous(pose)
+		draw_GL_frame(T)
+	for box in boxes:
+		draw_bbox(box.Isobox, box.T)
+
 	vis.unlock()
 	t1 = time.time()
 	time.sleep(max(0.01-(t1-t0),0.001))
