@@ -16,6 +16,8 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 include(ExternalProject)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/swigmake/cmake)
+
 if ( EIGEN3_FOUND )
   INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 else()
@@ -58,32 +60,32 @@ if(SWIG_FOUND)
     include_directories(. ../src)
     link_libraries(test_dany_bb)
 
-    set(CMAKE_SWIG_FLAGS "-Wall;-module;pydany_bb;-threads")
+    set(CMAKE_SWIG_FLAGS "-Wall;-module;pydany_bb;-threads;-I${CMAKE_CURRENT_SOURCE_DIR}/../swigmake/swig/python;-I${CMAKE_CURRENT_SOURCE_DIR}/../swigmake/swig/common")
 
-        set(OPENSOT_USES_PYTHON_VERSION "" CACHE STRING "Specify python version to use" )
+    set(BB_USES_PYTHON_VERSION "" CACHE STRING "Specify python version to use" )
 
-        find_package(PythonInterp ${OPENSOT_USES_PYTHON_VERSION} REQUIRED)
-        set(OPENSOT_USES_PYTHON_VERSION_ARGS)
-        if(NOT OPENSOT_USES_PYTHON_VERSION)
-          set (OPENSOT_USES_PYTHON_VERSION ${PYTHON_VERSION_STRING})
-        endif()
+    find_package(PythonInterp ${BB_USES_PYTHON_VERSION} REQUIRED)
+    set(BB_USES_PYTHON_VERSION_ARGS)
+    if(NOT BB_USES_PYTHON_VERSION)
+      set (BB_USES_PYTHON_VERSION ${PYTHON_VERSION_STRING})
+    endif()
 
-        find_package(PythonLibs EXACT)
-        include_directories(${PYTHON_INCLUDE_PATH})
-        link_libraries(${PYTHON_LIBRARY})
+    find_package(PythonLibs EXACT)
+    include_directories(${PYTHON_INCLUDE_PATH})
+    link_libraries(${PYTHON_LIBRARY})
 
-        set(target_name pydany_bb)
-        
+    set(target_name pydany_bb)
+    
 
-        swig_add_module(${target_name} python pacman_dany_bb.i)
-        set_target_properties(_${target_name} PROPERTIES OUTPUT_NAME "_pydany_bb")
-        set_target_properties(_${target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python)
+    swig_add_module(${target_name} python pacman_dany_bb.i)
+    set_target_properties(_${target_name} PROPERTIES OUTPUT_NAME "_pydany_bb")
+    set_target_properties(_${target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/python)
 
-        # installation path is determined reliably on most platforms using distutils
-        execute_process(COMMAND ${PYTHON_EXECUTABLE}
-            -c "from distutils import sysconfig; print(sysconfig.get_python_lib(1,0,prefix=''))"
-        OUTPUT_VARIABLE PYTHON_INSTDIR OUTPUT_STRIP_TRAILING_WHITESPACE )
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pydany_bb.py DESTINATION ${PYTHON_INSTDIR} )
-        install(TARGETS _${target_name} DESTINATION ${PYTHON_INSTDIR} )
+    # installation path is determined reliably on most platforms using distutils
+    execute_process(COMMAND ${PYTHON_EXECUTABLE}
+        -c "from distutils import sysconfig; print(sysconfig.get_python_lib(1,0,prefix=''))"
+    OUTPUT_VARIABLE PYTHON_INSTDIR OUTPUT_STRIP_TRAILING_WHITESPACE )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pydany_bb.py DESTINATION ${PYTHON_INSTDIR} )
+    install(TARGETS _${target_name} DESTINATION ${PYTHON_INSTDIR} )
 
 endif(SWIG_FOUND)

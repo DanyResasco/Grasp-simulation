@@ -16,6 +16,8 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 include(ExternalProject)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/swigmake/cmake)
+
 if ( EIGEN3_FOUND )
   INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 else()
