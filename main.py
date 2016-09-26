@@ -1,3 +1,5 @@
+#!/isr/bin/env python
+
 from klampt import *
 #Klampt v0.6.x
 #from klampt import visualization as vis
@@ -26,6 +28,7 @@ import string
 import pydany_bb
 import numpy as np
 from IPython import embed
+from graspvariation import PoseVariation
 
 #Declare all variables
 world = WorldModel()
@@ -135,8 +138,6 @@ def move_reflex(robot):
 	q[4] = 0#pitch
 	q[5] = math.radians(180) #roll
 	robot.setConfig(q)
-	print("******* Robot dove sono **********"), robot.getConfig()
-
 #distance between object and gripper
 def RelativePosition(robot,object):
 	robot_transform = robot.getConfig()
@@ -145,10 +146,6 @@ def RelativePosition(robot,object):
 	Pos = vectorops.distance(Robot_position,object_transform[1])
 	# print("Pos"), Pos
 	return Pos
-
-
-
-
 #make the differential 
 def Differential(robot, object, Pos_prev, time):
 	Pos_actual =  RelativePosition(robot,object)
@@ -187,12 +184,20 @@ for i in range(n_vertices):
 	box.SetPoint(i, tm.vertices[3*i], tm.vertices[3*i+1], tm.vertices[3*i+2])
 
 I = np.ones((4,4))
+print "doing PCA"
 box.doPCA(I)
+print "computing Bounding Box"
+bbox = pydany_bb.ComputeBoundingBox(box)
 
-
-param_area = 0.95
+param_area = 0.98
 param_volume = 9E-6
+
+print "extracting Boxes"
+boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
+print "getting transforms"
+poses = pydany_bb.getTrasformsforHand(boxes, bbox)
 embed()
+
 #Simulation 
 
 #now the simulation is launched
