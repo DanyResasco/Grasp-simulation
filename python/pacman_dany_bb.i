@@ -1,7 +1,7 @@
 /* File : example.i */
 %module pydany_bb
 %{
-#include "pacman_bb_test.h"
+#include "pacman_bb.h"
 
 %}
 
@@ -24,5 +24,5 @@
 %eigen_typemaps(Eigen::MatrixXd)
 
 /* Wrap a function taking a pointer to a function */
-%include "pacman_bb_test.h"
+%include "pacman_bb.h"
 

@@ -6,8 +6,8 @@
 
 
 
-// namespace pacman
-// {
+ namespace pacman
+ {
 
     /** class: Box
         *Description:This class is used to create a structure for bounding box
@@ -31,7 +31,7 @@
             * Input: constant, variable
             * Description: initializes the points and transformation           
         */
-        // void SetPoints ( const Eigen::MatrixXd& EigenPoints );
+        void SetPoints ( const Eigen::MatrixXd& EigenPoints );
         
 
 
@@ -45,7 +45,7 @@
             * Input: transform
             * Description: Calculates the new transformation          
         */
-        // void SetT ( Eigen::Matrix<double , 4, 4>& Tnew );
+        void SetT ( Eigen::Matrix<double , 4, 4>& Tnew );
        
 
         /** Function: doPCA
@@ -56,7 +56,7 @@
             *        3)Find the principal components "using Singular Value Decomposition (SVD)"
             *        4)Reduce the data using the selected principal components
         */
-        // void doPCA ( const Eigen::Matrix<double, 4, 4>& Told );
+        void doPCA ( const Eigen::Matrix<double, 4, 4>& Told );
 
         
         /**Function: box_distance
@@ -66,13 +66,10 @@
         void box_distance ( Box bigestbox, Box actual);
 
 
-     
-     //~CObject();
-    
-       
+        //~CObject();
 
     };
 
 
-// }
+ }
 #endif

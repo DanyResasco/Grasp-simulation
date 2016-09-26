@@ -38,14 +38,9 @@ add_definitions(${PCL_DEFINITIONS})
 
 INCLUDE_DIRECTORIES(src)
 
-ADD_LIBRARY(test_dany_bb  SHARED src/pacman_bb_test.cpp
-                                 src/pacman_bb_test.h )
-                            # pacman_bbox/src/BoundingBox.cpp
-                            # pacman_bbox/src/bounding.cpp
-                            # pacman_bbox/include/pacman_bb.hpp
-                            # pacman_bbox/include/pacman_bb_utils.hpp
-                            # pacman_bb_test.cpp )
-                            # pacman_bb_utils_test.cpp)
+ADD_LIBRARY(test_dany_bb  SHARED src/pacman_bb.cpp
+                                 src/pacman_bb.h )
+
 TARGET_LINK_LIBRARIES(test_dany_bb PUBLIC ${PCL_LIBRARIES} ${CGAL_LIBRARIES} ${EIGEN_LIBRARIES})
 
 install(TARGETS test_dany_bb DESTINATION lib)
