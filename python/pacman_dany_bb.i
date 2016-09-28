@@ -3,6 +3,7 @@
 %{
 #include "pacman_bb.hpp"
 #include "pacman_bb_utils.hpp"
+#include "mvbb_decimator.h"
 
 %}
 
@@ -10,6 +11,7 @@
 // types in our language of choice. We'll use it to map Eigen matrices to
 // Numpy arrays.
 %include <typemaps.i>
+%include <std_string.i>
 %include <std_vector.i>
 %include <std_list.i>
 
@@ -34,3 +36,4 @@
 /* Wrap a function taking a pointer to a function */
 %include "pacman_bb.hpp"
 %include "pacman_bb_utils.hpp"
+%include "mvbb_decimator.h"

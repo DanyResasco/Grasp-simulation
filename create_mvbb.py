@@ -25,6 +25,11 @@ objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 
+object_geom_file_patterns = {
+	'ycb':['data/objects/ycb/%s/meshes/tsdf_mesh.stl','data/objects/ycb/%s/meshes/poisson_mesh.stl'],
+	'apc2015':['data/objects/apc2015/%s/textured_meshes/optimized_tsdf_textured_mesh.ply']
+}
+
 class MVBBVisualizer(GLNavigationProgram):
     def __init__(self, poses_variations, boxes, object):
         GLNavigationProgram.__init__(self, 'MVBB Visualizer')
@@ -45,12 +50,19 @@ class MVBBVisualizer(GLNavigationProgram):
         pass
 
 def compute_poses(obj):
-    tm = obj.geometry().getTriangleMesh()
-    n_vertices = tm.vertices.size() / 3
-    box = pydany_bb.Box(n_vertices)
+    if isinstance(obj, np.ndarray):
+        vertices = obj
+        n_vertices = vertices.shape[0]
+        box = pydany_bb.Box(n_vertices)
 
-    for i in range(n_vertices):
-        box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
+        box.SetPoints(vertices)
+    else:
+        tm = obj.geometry().getTriangleMesh()
+        n_vertices = tm.vertices.size() / 3
+        box = pydany_bb.Box(n_vertices)
+
+        for i in range(n_vertices):
+            box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
 
     I = np.ones((4, 4))
     print "doing PCA"
@@ -73,7 +85,9 @@ def compute_poses(obj):
     for pose in poses:
         poses_variations += PoseVariation(pose, long_side)
 
-    print "done. Found", len(poses_variations), "poses"
+    print "done. Found", len(poses_variations), "poses,", len(boxes), "boxes"
+    for box in boxes:
+        print box.Isobox
     return poses, poses_variations, boxes
 
 def launch_mvbb(object_set, objectname):
@@ -88,8 +102,17 @@ def launch_mvbb(object_set, objectname):
     world = WorldModel()
     world.loadElement("data/terrains/plane.env")
     object = make_object(object_set, objectname, world)
-
-    poses, poses_variations, boxes = compute_poses(object)
+    pattern = object_geom_file_patterns[object_set][0]
+    tm = object.geometry().getTriangleMesh()
+    n_vertices = tm.vertices.size() / 3
+    if n_vertices > 1000:
+        print "Object has", n_vertices, "vertices - decimating"
+        meshfile = pattern%(objectname,)
+        vertices = pydany_bb.MVBBDecimator(meshfile)
+        print "Decimated to", vertices.shape[0], "vertices"
+        poses, poses_variations, boxes = compute_poses(vertices)
+    else:
+        poses, poses_variations, boxes = compute_poses(object)
     # now the simulation is launched
 
     if use_program:

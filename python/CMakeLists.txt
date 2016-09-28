@@ -60,7 +60,7 @@ if(SWIG_FOUND)
 
 
 
-    include_directories(. ../src)
+    include_directories(. ../src ../vcglib ../vcglib/apps/tridecimator)
     link_libraries(test_dany_bb ${CGAL_LIBRARIES})
 
     set(CMAKE_SWIG_FLAGS "-Wall;-module;pydany_bb;-threads;-I${CMAKE_CURRENT_SOURCE_DIR}/../swigmake/swig/python;-I${CMAKE_CURRENT_SOURCE_DIR}/../swigmake/swig/common")
