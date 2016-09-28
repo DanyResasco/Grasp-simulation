@@ -237,11 +237,11 @@ while vis.shown():
 	sim.simulate(0.01)
 	sim.updateWorld()
 	
-	# for pose in poses_variations:
-	# 	T = se3.from_homogeneous(pose)
-	# 	draw_GL_frame(T)
-	# for box in boxes:
-	# 	draw_bbox(box.Isobox, box.T)
+	for pose in poses_variations:
+		T = se3.from_homogeneous(pose)
+		draw_GL_frame(T)
+	for box in boxes:
+		draw_bbox(box.Isobox, box.T)
 
 	vis.unlock()
 	t1 = time.time()
