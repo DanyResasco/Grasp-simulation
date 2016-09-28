@@ -1,4 +1,4 @@
-#!/isr/bin/env python
+#!/usr/bin/env python
 
 from klampt import *
 #Klampt v0.6.x
