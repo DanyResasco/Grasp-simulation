@@ -29,9 +29,9 @@ import pydany_bb
 import numpy as np
 import math
 from IPython import embed
-from graspvariation import PoseVariation
-from TakePoses import SimulationPoses
-from draw_bbox import draw_GL_frame, draw_bbox
+from mvbb.graspvariation import PoseVariation
+from mvbb.TakePoses import SimulationPoses
+from mvbb.draw_bbox import draw_GL_frame, draw_bbox
 
 #Declare all variables
 world = WorldModel()

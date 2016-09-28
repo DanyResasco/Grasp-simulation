@@ -2,6 +2,7 @@
 
 import math
 from klampt.math import so3, se3, vectorops
+from klampt import vis
 from klampt.vis.glprogram import *
 import numpy as np
 
@@ -14,6 +15,28 @@ def draw_GL_frame(T, axis_length=0.1):
         print "Incorrect sizes",len(R),len(t)
         raise RuntimeError("")
     #draw transform widget
+    glDisable(GL_LIGHTING)
+    glDisable(GL_DEPTH_TEST)
+    glLineWidth(4.0)
+    glColor3f(1, 0, 0)
+    glBegin(GL_LINES)
+    glVertex3fv(t)
+    glVertex3fv(vectorops.madd(t, R[0:3], axis_length))
+    glEnd()
+    glColor3f(0, 1, 0)
+    glBegin(GL_LINES)
+    glVertex3fv(t)
+    glVertex3fv(vectorops.madd(t, R[3:6], axis_length))
+    glEnd()
+    glColor3f(0, 0, 1)
+    glBegin(GL_LINES)
+    glVertex3fv(t)
+    glVertex3fv(vectorops.madd(t, R[6:9], axis_length))
+    glEnd()
+    glEnable(GL_LIGHTING)
+    glEnable(GL_DEPTH_TEST)
+
+    """
     glBegin(GL_LINES)
     glColor3f(1,1,1)
     glVertex3fv(t)
@@ -27,8 +50,9 @@ def draw_GL_frame(T, axis_length=0.1):
     glVertex3fv(t)
     glColor3f(0,0,1)
     glVertex3fv(vectorops.madd(t,R[6:9],axis_length))
-    glEnd()
     glColor3f(0,0,0)
+    glEnd()
+    """
 
 def draw_bbox(isobox, T):
     x_0 = isobox[0,:]
