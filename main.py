@@ -30,6 +30,7 @@ import numpy as np
 import math
 from IPython import embed
 from graspvariation import PoseVariation
+from TakePoses import SimulationPoses
 from draw_bbox import draw_GL_frame, draw_bbox
 
 #Declare all variables
@@ -140,6 +141,7 @@ def move_reflex(robot):
 	q[4] = 0#pitch
 	q[5] = math.radians(180) #roll
 	robot.setConfig(q)
+
 #distance between object and gripper
 def RelativePosition(robot,object):
 	robot_transform = robot.getConfig()
@@ -157,19 +159,18 @@ def Differential(robot, object, Pos_prev, time):
 
 
 #check if grasp is good or not and write the object name, hand position and kindness in file.txt
-def GraspValuate(diff,kindness):
+def GraspValuate(diff,kindness,posedict, var):
 	if diff > 0:
 		print("No good grasp")
 	else:
 		print("good grasp")
-		# objfile = objectName
 		f = open('grasp_valuation_template.rob','r')
 		pattern_2 = ''.join(f.readlines())
 		f.close()
-		nameFile = 'grasp_valuation_' + objectName + '.txt'
+		nameFile = 'grasp_valuation_' + objectName + var + '.txt'
 		f2 = open(nameFile ,'w')
 		pos = robot.getConfig()
-		f2.write(pattern_2 % (objectName,pos,kindness))
+		f2.write(pattern_2 % (objectName,pos,kindness,posedict['desired'],posedict['actual']))
 		f2.close()
 
 #************************************************Main******************************************
@@ -236,11 +237,11 @@ while vis.shown():
 	sim.simulate(0.01)
 	sim.updateWorld()
 	
-	for pose in poses_variations:
-		T = se3.from_homogeneous(pose)
-		draw_GL_frame(T)
-	for box in boxes:
-		draw_bbox(box.Isobox, box.T)
+	# for pose in poses_variations:
+	# 	T = se3.from_homogeneous(pose)
+	# 	draw_GL_frame(T)
+	# for box in boxes:
+	# 	draw_bbox(box.Isobox, box.T)
 
 	vis.unlock()
 	t1 = time.time()
@@ -253,5 +254,7 @@ while vis.shown():
 	print("kindness"),kindness
 	if sim.getTime() > 3:
 	 	print("diff"),diff
-		GraspValuate(diff,kindness)
+	 	for i in len(poses_variations):
+	 		posedict = SimulationPoses(poses_variations[i],robot.getConfig(),obj.getTransform())
+		 	GraspValuate(diff,kindness,posedict,i)
 
