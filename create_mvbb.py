@@ -31,20 +31,24 @@ object_geom_file_patterns = {
 }
 
 class MVBBVisualizer(GLNavigationProgram):
-    def __init__(self, poses_variations, boxes, object):
+    def __init__(self, poses, poses_variations, boxes, object):
         GLNavigationProgram.__init__(self, 'MVBB Visualizer')
 
+        self.poses = poses
         self.poses_variations = poses_variations
         self.boxes = boxes
         self.obj = object
+        color = object.appearance().getColor()
+        color[3] = 0.5
+        object.appearance().setColor(*color)
 
     def display(self):
-        #self.obj.drawGL()
-        for pose in self.poses_variations:
+        self.obj.drawGL()
+        for pose in self.poses:
             T = se3.from_homogeneous(pose)
-            draw_GL_frame(T,10)
+            draw_GL_frame(T)
         for box in self.boxes:
-            pass #draw_bbox(box.Isobox, box.T)
+            draw_bbox(box.Isobox, box.T)
 
     def idle(self):
         pass
@@ -64,17 +68,20 @@ def compute_poses(obj):
         for i in range(n_vertices):
             box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
 
-    I = np.ones((4, 4))
+    I = np.eye(4)
     print "doing PCA"
     box.doPCA(I)
+    print box.T
     print "computing Bounding Box"
     bbox = pydany_bb.ComputeBoundingBox(box)
     p_0 = bbox.Isobox[0, :]
     p_1 = bbox.Isobox[1, :]
     long_side = np.max(np.abs(p_0 - p_1))
+    print "Found Bounding Box:"
+    print bbox.Isobox
 
-    param_area = 0.98
-    param_volume = 9E-6
+    param_area = 0.9
+    param_volume = 5E-7
 
     print "extracting Boxes"
     boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
@@ -86,8 +93,6 @@ def compute_poses(obj):
         poses_variations += PoseVariation(pose, long_side)
 
     print "done. Found", len(poses_variations), "poses,", len(boxes), "boxes"
-    for box in boxes:
-        print box.Isobox
     return poses, poses_variations, boxes
 
 def launch_mvbb(object_set, objectname):
@@ -97,7 +102,7 @@ def launch_mvbb(object_set, objectname):
     If use_box is True, then the test object is placed inside a box.
     """
 
-    use_program = False
+    use_program = True
 
     world = WorldModel()
     world.loadElement("data/terrains/plane.env")
@@ -105,7 +110,7 @@ def launch_mvbb(object_set, objectname):
     pattern = object_geom_file_patterns[object_set][0]
     tm = object.geometry().getTriangleMesh()
     n_vertices = tm.vertices.size() / 3
-    if n_vertices > 1000:
+    if n_vertices > 10000:
         print "Object has", n_vertices, "vertices - decimating"
         meshfile = pattern%(objectname,)
         vertices = pydany_bb.MVBBDecimator(meshfile)
@@ -116,7 +121,7 @@ def launch_mvbb(object_set, objectname):
     # now the simulation is launched
 
     if use_program:
-        program = MVBBVisualizer(poses_variations, boxes, object)
+        program = MVBBVisualizer(poses, poses_variations, boxes, object)
         vis.setPlugin(program)
         program.reshape(800, 600)
     else:
@@ -154,6 +159,7 @@ if __name__ == '__main__':
         objname = objects[dataset][index]
     except IndexError:
         index = random.randint(0,len(objects[dataset])-1)
+        print "loading object", index
         objname = objects[dataset][index]
     except ValueError:
         objname = sys.argv[2]

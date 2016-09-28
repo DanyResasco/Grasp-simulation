@@ -15,6 +15,7 @@ def draw_GL_frame(T, axis_length=0.1):
         print "Incorrect sizes",len(R),len(t)
         raise RuntimeError("")
     #draw transform widget
+
     glDisable(GL_LIGHTING)
     glDisable(GL_DEPTH_TEST)
     glLineWidth(4.0)
@@ -68,7 +69,8 @@ def draw_bbox(isobox, T):
     vertices[7,:] = np.array([x_1[0], x_0[1], x_1[2]])
 
     w_R_l = T[0:3, 0:3]
-    w_vertices = w_R_l.dot(vertices.T).T
+    w_t_l = T[0:3,3]
+    w_vertices = w_R_l.dot(vertices.T).T + w_t_l
 
 
     glBegin(GL_LINES)
