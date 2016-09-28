@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 import math
-from klampt import so3
-from klampt import se3
-from klampt import vectorops
-from klampt.glprogram import *
+from klampt.math import so3, se3, vectorops
+from klampt.vis.glprogram import *
+import numpy as np
 
 
 def draw_GL_frame(T, axis_length=0.1):
@@ -31,7 +30,7 @@ def draw_GL_frame(T, axis_length=0.1):
     glEnd()
     glColor3f(0,0,0)
 
-def draw_wire_box(isobox, T):
+def draw_bbox(isobox, T):
     x_0 = isobox[0,:]
     x_1 = isobox[1,:]
     vertices = np.zeros((8,3))
