@@ -57,11 +57,12 @@ class MeshReductor{
   MyMesh &mesh_;
 public:
   MeshReductor(MyMesh &mesh):mesh_(mesh){};
-  int reduceMesh(int FinalNoPoints);
-  Eigen::MatrixXd getEigenMesh();
+  int reduceMesh(int FinalNoFaces);
+  Eigen::MatrixXd getEigenVertices();
+  Eigen::MatrixXi getEigenFaces();
 };
 
-int MeshReductor::reduceMesh(int FinalNoPoints)
+int MeshReductor::reduceMesh(int FinalNoFaces)
 {
 
   TriEdgeCollapseQuadricParameter qparams;
@@ -82,11 +83,11 @@ int MeshReductor::reduceMesh(int FinalNoPoints)
   DeciSession.Init<MyTriEdgeCollapse>();
 
 
-  DeciSession.SetTargetSimplices(FinalNoPoints);
+  DeciSession.SetTargetSimplices(FinalNoFaces);
   DeciSession.SetTimeBudget(0.5f);
   if(TargetError< std::numeric_limits<float>::max() ) DeciSession.SetTargetMetric(TargetError);
 
-  while(DeciSession.DoOptimization() && mesh_.fn>FinalNoPoints && DeciSession.currMetric < TargetError)
+  while(DeciSession.DoOptimization() && mesh_.fn>FinalNoFaces && DeciSession.currMetric < TargetError)
   {
     continue;
   }
@@ -94,16 +95,43 @@ int MeshReductor::reduceMesh(int FinalNoPoints)
   return 1;
 }
 
-Eigen::MatrixXd MeshReductor::getEigenMesh()
+Eigen::MatrixXd MeshReductor::getEigenVertices()
 {
 
-  int n_vertex= mesh_.vn;
-  Eigen::MatrixXd eigen_points(n_vertex,3);
+  int n_vertex= mesh_.VN();
+  Eigen::MatrixXd eigen_vertices(n_vertex, 3);
   
    for (int i = 0; i <= n_vertex; i++)
    {
-     eigen_points.block<1,3>(i,0) << mesh_.vert[i].P()[0] , mesh_.vert[i].P()[1] , mesh_.vert[i].P()[2];
+     eigen_vertices.block<1,3>(i,0) << mesh_.vert[i].P()[0] , mesh_.vert[i].P()[1] , mesh_.vert[i].P()[2];
    }
   
-  return eigen_points;
+  return eigen_vertices;
+}
+
+Eigen::MatrixXi MeshReductor::getEigenFaces()
+{
+
+  int n_face= mesh_.FN();
+  Eigen::MatrixXi eigen_faces(n_face, 3);
+
+   for (int i = 0; i <= n_face; i++)
+   {
+       int p_i[3];
+       for(unsigned int i = 0; i < 3; ++i)
+       {
+           p_i[i]  = -1;
+           for(unsigned int j = 0; j < mesh_.VN(); ++j)
+               if(&mesh_.vert[j] == mesh_.face[i].cV(i))
+                   p_i[i] = j;
+           if(p_i[i] < 0)
+           {
+               std::cerr << "Error Finding Vertex!" << std::endl;
+               exit(-1);
+           }
+       }
+       eigen_faces.block<1,3>(i,0) << p_i[0] , p_i[1] , p_i[2];
+   }
+
+  return eigen_faces;
 }

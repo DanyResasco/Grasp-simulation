@@ -72,7 +72,7 @@ def draw_bbox(isobox, T):
     w_t_l = T[0:3,3]
     w_vertices = w_R_l.dot(vertices.T).T + w_t_l
 
-
+    glColor3f(1, 1, 1)
     glBegin(GL_LINES)
     glVertex3f(*w_vertices[0,:])
     glVertex3f(*w_vertices[1,:])

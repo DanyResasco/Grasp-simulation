@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from klampt import *
+import klampt.robotsim
 from klampt import vis
 from klampt.vis.glprogram import *
 from klampt.vis.glprogram import GLNavigationProgram	#Per il
@@ -31,16 +32,39 @@ object_geom_file_patterns = {
 }
 
 class MVBBVisualizer(GLNavigationProgram):
-    def __init__(self, poses, poses_variations, boxes, object):
+    def __init__(self, poses, poses_variations, boxes, object, alt_trimesh = None):
         GLNavigationProgram.__init__(self, 'MVBB Visualizer')
 
         self.poses = poses
         self.poses_variations = poses_variations
         self.boxes = boxes
         self.obj = object
+        self.old_tm = object.geometry().getTriangleMesh()
+        self.new_tm = alt_trimesh
+
+        """
+        self.new_tm = klampt.robotsim.TriangleMesh()
+        print "okk"
+        print len(self.old_tm.vertices)
+        for v in self.old_tm.vertices:
+            self.new_tm.vertices.append(v)
+        for i in self.old_tm.indices:
+            self.new_tm.indices.append(i)
+        """
+
+        self.using_decimated_tm = False
+
+        """
         color = object.appearance().getColor()
         color[3] = 0.5
         object.appearance().setColor(*color)
+        """
+
+    def invert_obj_color(self):
+        color = self.obj.appearance().getColor()
+        for i in range(3):
+            color[i] = 1 - color[i]
+        self.obj.appearance().setColor(*color)
 
     def display(self):
         self.obj.drawGL()
@@ -50,8 +74,48 @@ class MVBBVisualizer(GLNavigationProgram):
         for box in self.boxes:
             draw_bbox(box.Isobox, box.T)
 
+    def keyboardfunc(self, c, x, y):
+        # Put your keyboard handler here
+        # the current example toggles simulation / movie mode
+        print c, "pressed"
+
+        if c == 's' and self.new_tm is not None:
+            self.using_decimated_tm = not self.using_decimated_tm
+            print "Showing Decimated Trimesh", self.using_decimated_tm
+            if self.using_decimated_tm:
+                self.obj.geometry().setTriangleMesh(self.new_tm)
+                self.invert_obj_color()
+            else:
+                self.obj.geometry().setTriangleMesh(self.old_tm)
+                self.invert_obj_color()
+        self.refresh()
+
     def idle(self):
         pass
+def trimesh_to_numpy(klampt_TriangleMesh):
+    tm = klampt_TriangleMesh
+    n_vertices = tm.vertices.size() / 3
+    n_faces = tm.indices.size() / 3
+    vertices = np.zeros((n_vertices,3))
+    faces = np.ndarray((n_faces, 3), dtype=np.intc)
+    for i in range(n_vertices):
+        vertices[i, :] = np.array([tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2]])
+    for i in range(n_faces):
+        faces[i, :] = np.array([tm.indices[3 * i], tm.indices[3 * i + 1], tm.indices[3 * i + 2]], dtype=np.intc)
+
+    return vertices, faces
+
+def numpy_to_trimesh(vertices, faces):
+    tm = klampt.robotsim.TriangleMesh()
+    for i in range(vertices.shape[0]):
+        tm.vertices.append(vertices[i, 0])
+        tm.vertices.append(vertices[i, 1])
+        tm.vertices.append(vertices[i, 2])
+    for i in range(faces.shape[0]):
+        tm.indices.append(int(faces[i, 0]))
+        tm.indices.append(int(faces[i, 1]))
+        tm.indices.append(int(faces[i, 2]))
+    return tm
 
 def compute_poses(obj):
     if isinstance(obj, np.ndarray):
@@ -110,18 +174,27 @@ def launch_mvbb(object_set, objectname):
     pattern = object_geom_file_patterns[object_set][0]
     tm = object.geometry().getTriangleMesh()
     n_vertices = tm.vertices.size() / 3
+    decimator = pydany_bb.MVBBDecimator()
+    vertices_old, faces_old = trimesh_to_numpy(tm)
+    tm_decimated = None
     if n_vertices > 10000:
         print "Object has", n_vertices, "vertices - decimating"
         meshfile = pattern%(objectname,)
-        vertices = pydany_bb.MVBBDecimator(meshfile)
+        decimator.decimateTriMesh(meshfile)
+        #decimator.decimateTriMesh(vertices_old, faces_old)
+        vertices = decimator.getEigenVertices()
+        faces = decimator.getEigenFaces()
+        tm_decimated = numpy_to_trimesh(vertices, faces)
         print "Decimated to", vertices.shape[0], "vertices"
         poses, poses_variations, boxes = compute_poses(vertices)
     else:
         poses, poses_variations, boxes = compute_poses(object)
+
+    embed()
     # now the simulation is launched
 
     if use_program:
-        program = MVBBVisualizer(poses, poses_variations, boxes, object)
+        program = MVBBVisualizer(poses, poses_variations, boxes, object, tm_decimated)
         vis.setPlugin(program)
         program.reshape(800, 600)
     else:
@@ -159,9 +232,10 @@ if __name__ == '__main__':
         objname = objects[dataset][index]
     except IndexError:
         index = random.randint(0,len(objects[dataset])-1)
-        print "loading object", index
         objname = objects[dataset][index]
     except ValueError:
         objname = sys.argv[2]
+
+    print "loading object", index, " -", objname, "-from set", dataset
 
     launch_mvbb(dataset, objname)

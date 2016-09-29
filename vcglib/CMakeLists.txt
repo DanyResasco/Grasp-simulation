@@ -8,5 +8,8 @@ include_directories( ${PROJECT_SOURCE_DIR} )
 
 add_executable(mvbb_tridecimator  ${PROJECT_SOURCE_DIR}/apps/tridecimator/mvbb_tridecimator.cpp ${PROJECT_SOURCE_DIR}/wrap/ply/plylib.cpp)
 
-add_library(${PROJECT_NAME}  ${PROJECT_SOURCE_DIR}/apps/tridecimator/mvbb_decimator.cpp ${PROJECT_SOURCE_DIR}/wrap/ply/plylib.cpp)
+add_library(${PROJECT_NAME}  ${PROJECT_SOURCE_DIR}/apps/tridecimator/mvbb_decimator.cpp
+                             ${PROJECT_SOURCE_DIR}/apps/tridecimator/mvbb_decimator.h
+                             ${PROJECT_SOURCE_DIR}/apps/tridecimator/meshdecimator.h
+                             ${PROJECT_SOURCE_DIR}/wrap/ply/plylib.cpp)
 
