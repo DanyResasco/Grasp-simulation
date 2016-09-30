@@ -42,23 +42,7 @@ class MVBBVisualizer(GLNavigationProgram):
         self.old_tm = object.geometry().getTriangleMesh()
         self.new_tm = alt_trimesh
 
-        """
-        self.new_tm = klampt.robotsim.TriangleMesh()
-        print "okk"
-        print len(self.old_tm.vertices)
-        for v in self.old_tm.vertices:
-            self.new_tm.vertices.append(v)
-        for i in self.old_tm.indices:
-            self.new_tm.indices.append(i)
-        """
-
         self.using_decimated_tm = False
-
-        """
-        color = object.appearance().getColor()
-        color[3] = 0.5
-        object.appearance().setColor(*color)
-        """
 
     def invert_obj_color(self):
         color = self.obj.appearance().getColor()
@@ -177,7 +161,7 @@ def launch_mvbb(object_set, objectname):
     decimator = pydany_bb.MVBBDecimator()
     vertices_old, faces_old = trimesh_to_numpy(tm)
     tm_decimated = None
-    if n_vertices > 10000:
+    if n_vertices > 2000:
         print "Object has", n_vertices, "vertices - decimating"
         meshfile = pattern%(objectname,)
         decimator.decimateTriMesh(meshfile)

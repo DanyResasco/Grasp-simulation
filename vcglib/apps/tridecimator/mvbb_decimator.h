@@ -7,9 +7,11 @@ public:
     MVBBDecimator();
     ~MVBBDecimator();
 
-    void decimateTriMesh(std::string filename);
+    void decimateTriMesh(std::string filename, 
+                         int targetFacesNumber = 1000);
     void decimateTriMesh(const Eigen::MatrixXd& vertices,
-                         const Eigen::MatrixXi& faces);
+                         const Eigen::MatrixXi& faces,
+                         int targetFacesNumber = 1000);
 
     /**
      * @brief MeshReductor::getEigenVertices returns decimated vertices
@@ -24,7 +26,7 @@ public:
     Eigen::MatrixXi getEigenFaces();
 
 private:
-    void decimate();
+    void decimate(int FinalSize);
 
     MeshReductor* meshreductor;
     MyMesh mesh;

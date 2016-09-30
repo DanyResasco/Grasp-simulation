@@ -68,11 +68,9 @@ int MeshReductor::reduceMesh(int FinalNoFaces)
   TriEdgeCollapseQuadricParameter qparams;
   qparams.QualityThr  =.3;
   float TargetError=std::numeric_limits<float>::max();
-  bool CleaningFlag =true;
 
-      int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh_);
-      int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh_);
-
+  int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh_);
+  int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh_);
 
   vcg::tri::UpdateBounding<MyMesh>::Box(mesh_);
 
@@ -87,10 +85,14 @@ int MeshReductor::reduceMesh(int FinalNoFaces)
   DeciSession.SetTimeBudget(0.5f);
   if(TargetError< std::numeric_limits<float>::max() ) DeciSession.SetTargetMetric(TargetError);
 
-  while(DeciSession.DoOptimization() && mesh_.fn>FinalNoFaces && DeciSession.currMetric < TargetError)
+  while(DeciSession.DoOptimization() && mesh_.FN() > FinalNoFaces && DeciSession.currMetric < TargetError)
   {
     continue;
   }
+  
+  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh_);
+  vcg::tri::Allocator<MyMesh>::CompactFaceVector(mesh_);
+  vcg::tri::Allocator<MyMesh>::CompactVertexVector(mesh_);
   
   return 1;
 }
@@ -103,7 +105,7 @@ Eigen::MatrixXd MeshReductor::getEigenVertices()
   
    for (int i = 0; i < n_vertex; i++)
    {
-     eigen_vertices.block<1,3>(i,0) << mesh_.vert[i].P()[0] , mesh_.vert[i].P()[1] , mesh_.vert[i].P()[2];
+     eigen_vertices.block<1,3>(i,0) << mesh_.vert[i].cP()[0] , mesh_.vert[i].cP()[1] , mesh_.vert[i].cP()[2];
    }
   
   return eigen_vertices;
@@ -113,25 +115,56 @@ Eigen::MatrixXi MeshReductor::getEigenFaces()
 {
 
   int n_face= mesh_.FN();
+  int n_vertex= mesh_.VN();
+
   Eigen::MatrixXi eigen_faces(n_face, 3);
+  
+  unsigned int i_f = 0;
+  for(MyMesh::FaceIterator fi = mesh_.face.begin(); fi!=mesh_.face.end(); ++fi )
+  {
+    if(fi->IsD()) 
+    {
+        std::cout << "!" << std::endl;
+        continue;
+    }
+    
+    int p_i[3];
+    for(unsigned int i_v = 0; i_v < 3; ++i_v)
+    {
+        p_i[i_v]  = -1;
 
-   for (int i = 0; i <= n_face; i++)
-   {
-       int p_i[3];
-       for(unsigned int i = 0; i < 3; ++i)
-       {
-           p_i[i]  = -1;
-           for(unsigned int j = 0; j < mesh_.VN(); ++j)
-               if(&mesh_.vert[j] == mesh_.face[i].cV(i))
-                   p_i[i] = j;
-           if(p_i[i] < 0)
-           {
-               std::cerr << "Error Finding Vertex!" << std::endl;
-               exit(-1);
-           }
-       }
-       eigen_faces.block<1,3>(i,0) << p_i[0] , p_i[1] , p_i[2];
-   }
+        for(unsigned int j_v = 0; j_v < n_vertex; ++j_v)
+        {
+            if(&(mesh_.vert[j_v]) == fi->cV(i_v))
+            {
+                p_i[i_v] = j_v;
+            }
+        }
 
+        if(p_i[i_v] < 0) // brute force
+        {
+            for(unsigned int j_v = 0; j_v < n_vertex; ++j_v)
+            {
+                    if(mesh_.vert[j_v].P() == fi->cV(i_v)->P())
+                    {
+                        p_i[i_v] = j_v;
+                        std::cout << "!";
+                    }
+            }
+        }
+            
+        if(p_i[i_v] < 0)
+        {
+            std::cerr << "Error Finding Vertex " << i_v << " of face " << i_f << " with coords: " << fi->cV(i_v) << std::endl;
+            std::cerr << "coords:" << fi->cV(i_v)->P()[0] << " "
+                                   << fi->cV(i_v)->P()[1] << " "
+                                   << fi->cV(i_v)->P()[2] << std::endl;
+            exit(-1);
+        }
+    }
+    eigen_faces.block<1,3>(i_f,0) << p_i[0] , p_i[1] , p_i[2];
+        
+    ++i_f;
+  }
   return eigen_faces;
 }

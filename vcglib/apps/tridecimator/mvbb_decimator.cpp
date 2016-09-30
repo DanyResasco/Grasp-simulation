@@ -9,7 +9,8 @@ MVBBDecimator::~MVBBDecimator()
         delete meshreductor;
 }
 
-void MVBBDecimator::decimateTriMesh(string filename)
+void MVBBDecimator::decimateTriMesh(string filename,
+                                    int targetFacesNumber)
 {
     int err=vcg::tri::io::Importer<MyMesh>::Open(mesh, filename.c_str());
     if(err)
@@ -17,10 +18,12 @@ void MVBBDecimator::decimateTriMesh(string filename)
       exit(-1);
     }
 
-    this->decimate();
+    this->decimate(targetFacesNumber);
 }
 
-void MVBBDecimator::decimateTriMesh(const Eigen::MatrixXd &vertices, const Eigen::MatrixXi &faces)
+void MVBBDecimator::decimateTriMesh(const Eigen::MatrixXd &vertices,
+                                    const Eigen::MatrixXi &faces,
+                                    int targetFacesNumber)
 {
     MyMesh::VertexIterator vi = vcg::tri::Allocator<MyMesh>::AddVertices(mesh, vertices.rows());
     MyMesh::FaceIterator fi = vcg::tri::Allocator<MyMesh>::AddFaces(mesh, faces.rows());
@@ -42,7 +45,7 @@ void MVBBDecimator::decimateTriMesh(const Eigen::MatrixXd &vertices, const Eigen
         ++fi;
     }
 
-    this->decimate();
+    this->decimate(targetFacesNumber);
 }
 
 Eigen::MatrixXd MVBBDecimator::getEigenVertices()
@@ -55,10 +58,8 @@ Eigen::MatrixXi MVBBDecimator::getEigenFaces()
     return meshreductor->getEigenFaces();
 }
 
-void MVBBDecimator::decimate()
+void MVBBDecimator::decimate(int FinalSize)
 {
-    //int FinalSize = mesh.FN() / 4;
-    int FinalSize = 1000;
     meshreductor = new MeshReductor(mesh);
     meshreductor->reduceMesh(FinalSize);
 }
