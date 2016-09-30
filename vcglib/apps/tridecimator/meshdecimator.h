@@ -101,7 +101,7 @@ Eigen::MatrixXd MeshReductor::getEigenVertices()
   int n_vertex= mesh_.VN();
   Eigen::MatrixXd eigen_vertices(n_vertex, 3);
   
-   for (int i = 0; i <= n_vertex; i++)
+   for (int i = 0; i < n_vertex; i++)
    {
      eigen_vertices.block<1,3>(i,0) << mesh_.vert[i].P()[0] , mesh_.vert[i].P()[1] , mesh_.vert[i].P()[2];
    }
