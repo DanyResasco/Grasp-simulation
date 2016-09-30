@@ -155,6 +155,8 @@ def launch_mvbb(object_set, objectname):
     world = WorldModel()
     world.loadElement("data/terrains/plane.env")
     object = make_object(object_set, objectname, world)
+    R,t = object.getTransform()
+    object.setTransform(R, [0, 0, 0])
     pattern = object_geom_file_patterns[object_set][0]
     tm = object.geometry().getTriangleMesh()
     n_vertices = tm.vertices.size() / 3
@@ -164,8 +166,8 @@ def launch_mvbb(object_set, objectname):
     if n_vertices > 2000:
         print "Object has", n_vertices, "vertices - decimating"
         meshfile = pattern%(objectname,)
-        decimator.decimateTriMesh(meshfile)
-        #decimator.decimateTriMesh(vertices_old, faces_old)
+        #decimator.decimateTriMesh(meshfile)
+        decimator.decimateTriMesh(vertices_old, faces_old)
         vertices = decimator.getEigenVertices()
         faces = decimator.getEigenFaces()
         tm_decimated = numpy_to_trimesh(vertices, faces)
@@ -190,9 +192,7 @@ def launch_mvbb(object_set, objectname):
     while vis.shown():
         if not use_program:
             vis.lock()
-            pose = poses_variations[0]
-            T = se3.from_homogeneous(pose)
-            draw_GL_frame(T, 1)
+            # draw here
             time.sleep(0.01)
             vis.unlock()
         else:
