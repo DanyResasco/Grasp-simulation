@@ -508,6 +508,13 @@ Eigen::MatrixXd FInd_angle( Box first_boxes, std::vector<double> figure, double 
 
         /*length*/
         L1 = abs(sqrt(pow(first_boxes.T(0, i), 2) + pow(first_boxes.T(1, i), 2) + pow(first_boxes.T(2, i), 2)));
+        // std::cout << "L: " << L1 << std::endl;
+        if (L1 == 0)
+        {
+            angle.push_back( 1000 * 180.0 / PI);
+            // std::cout << "Angle : " << 1000 * 180.0 / PI <<  std::endl;    
+            continue;
+        }
 
         /*angle*/
         angle.push_back( acos (sum / L1) * 180.0 / PI);
@@ -518,9 +525,9 @@ Eigen::MatrixXd FInd_angle( Box first_boxes, std::vector<double> figure, double 
 
     /*problema quando asse lungo è allineato con z*/
 
-    min = angle[0]*1000; /*assign min a value to avoid garbage*/
+    min = angle[0] +1000; /*assign min a value to avoid garbage*/
     int p = 2;
-
+    ori = 1000;
 
     for (int k = 0; k < angle.size(); k++)
     {
