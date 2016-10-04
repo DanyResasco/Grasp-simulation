@@ -32,7 +32,7 @@ from IPython import embed
 from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
-from mvbb.CollisionCheck import CheckCollision
+from mvbb.CollisionCheck import CheckCollision,CollisionTest
 
 #Declare all variables
 world = WorldModel()
@@ -133,15 +133,16 @@ def import_reflex():
     return robot
 
 #function that moves the gripper. Devi cambiarla usando quella creata per le boundig box
-def move_reflex(robot):
+def move_reflex(robot,t):
     q = robot.getConfig()
-    q[0] = 0.05
+    q[0] = 0.05*t
     q[1] = 0.01
     q[2] = 0.18
     q[3] = 0 #yaw
     q[4] = 0#pitch
     q[5] = math.radians(180) #roll
-    robot.setConfig(q)
+    return q
+    # robot.setConfig(q)
     # cc = robotcollide.WorldCollider.robotObjectCollisions(robot, object)
     # print("collision"), cc
 
@@ -196,7 +197,8 @@ def GraspValuate(diff,kindness,posedict, var):
 #************************************************Main******************************************
 
 robot = import_reflex()
-move_reflex(robot)
+xa = move_reflex(robot,1)
+robot.setConfig(xa)
 
 obj = import_object()
 # tm = obj.geometry().getTriangleMesh()
@@ -254,6 +256,13 @@ t0 = time.time()
 Pos_ = RelativePosition(robot,obj) 
 kindness = 0 
 Td_prev = 0
+
+xd = move_reflex(robot,5)
+CollisionTest(world,robot,obj,xd)
+
+
+
+
 while vis.shown():
     vis.lock()
     sim.simulate(0.01)
