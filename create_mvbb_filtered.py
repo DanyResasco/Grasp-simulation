@@ -114,7 +114,7 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
 
     w_T_o = np.eye(4)
     h_T_h2 = np.eye(4)
-    if False:
+    if True:
         import PyKDL
         f = PyKDL.Frame()
         f.p[2] -= 0.15
@@ -164,4 +164,4 @@ if __name__ == '__main__':
 
     print "loading object", index, " -", objname, "-from set", dataset
 
-    launch_mvbb_filtered("reflex", dataset, objname)
+    launch_mvbb_filtered("soft_hand", dataset, objname)
