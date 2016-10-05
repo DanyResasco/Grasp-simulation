@@ -4,7 +4,6 @@ from klampt import *
 #Klampt v0.6.x
 #from klampt import visualization as vis
 # from klampt import resource
-#from klampt import robotcollide as collide
 #from klampt.simulation import *
 #from klampt.glrobotprogram import *
 #Klampt v0.7.x
@@ -14,6 +13,7 @@ from klampt.vis.glrobotprogram import *	#Per il simulatore
 from klampt.model import collide
 # from klampt.io import resource
 from klampt.sim import *
+# from klampt.collide import *
 # # from moving_base_control import *
 import importlib
 # import os
@@ -32,6 +32,7 @@ from IPython import embed
 from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
+from mvbb.CollisionCheck import CheckCollision
 
 #Declare all variables
 world = WorldModel()
@@ -141,6 +142,8 @@ def move_reflex(robot):
     q[4] = 0#pitch
     q[5] = math.radians(180) #roll
     robot.setConfig(q)
+    # cc = robotcollide.WorldCollider.robotObjectCollisions(robot, object)
+    # print("collision"), cc
 
 #distance between object and gripper
 def RelativePosition(robot,object):
@@ -173,42 +176,59 @@ def GraspValuate(diff,kindness,posedict, var):
         f2.write(pattern_2 % (objectName,pos,kindness,posedict['desired'],posedict['actual']))
         f2.close()
 
+
+# def CheckCollision():
+#     collision = collide.WorldCollider(world)
+#     R_O = collision.robotObjectCollisions(robot,obj)
+#     li = []
+#     for i in R_O:
+#         li.append(R_O)
+#     R_w = collision.robotTerrainCollisions(robot)
+#     li2 = []
+#     for j in R_w:
+#         li2.append(R_w)
+#     if(len(li)>0 or len(li2)>0):
+#         return True
+#     else:
+#         return False
+
+
 #************************************************Main******************************************
 
 robot = import_reflex()
 move_reflex(robot)
 
 obj = import_object()
-tm = obj.geometry().getTriangleMesh()
-n_vertices = tm.vertices.size() / 3
-box = pydany_bb.Box(n_vertices)
+# tm = obj.geometry().getTriangleMesh()
+# n_vertices = tm.vertices.size() / 3
+# box = pydany_bb.Box(n_vertices)
 
-for i in range(n_vertices):
-    box.SetPoint(i, tm.vertices[3*i], tm.vertices[3*i+1], tm.vertices[3*i+2])
+# for i in range(n_vertices):
+#     box.SetPoint(i, tm.vertices[3*i], tm.vertices[3*i+1], tm.vertices[3*i+2])
 
-I = np.ones((4,4))
-print "doing PCA"
-box.doPCA(I)
-print "computing Bounding Box"
-bbox = pydany_bb.ComputeBoundingBox(box)
-p_0 = bbox.Isobox[0,:]
-p_1 = bbox.Isobox[1,:]
-long_side = np.max(np.abs(p_0 - p_1))
+# I = np.ones((4,4))
+# print "doing PCA"
+# box.doPCA(I)
+# print "computing Bounding Box"
+# bbox = pydany_bb.ComputeBoundingBox(box)
+# p_0 = bbox.Isobox[0,:]
+# p_1 = bbox.Isobox[1,:]
+# long_side = np.max(np.abs(p_0 - p_1))
 
-param_area = 0.98
-param_volume = 9E-6
+# param_area = 0.98
+# param_volume = 9E-6
 
 
-embed()
+# embed()
 
-print "extracting Boxes"
-boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
-print "getting transforms"
-poses = pydany_bb.getTrasformsforHand(boxes, bbox)
+# print "extracting Boxes"
+# boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
+# print "getting transforms"
+# poses = pydany_bb.getTrasformsforHand(boxes, bbox)
 
-poses_variations = []
-for pose in poses:
-    poses_variations += PoseVariation(pose, long_side)
+# poses_variations = []
+# for pose in poses:
+#     poses_variations += PoseVariation(pose, long_side)
 
 
 #Simulation 
@@ -224,6 +244,8 @@ hand = module.HandEmulator(sim,0,6,6)
 sim.addEmulator(0,hand)
 import simple_controller
 sim.setController(robot,simple_controller.make(sim,hand,program.dt))
+collision = CheckCollision(world,robot,obj)
+print("collision"),collision
 
 #this code manually updates the visualization
 vis.add("world",world)
@@ -237,11 +259,11 @@ while vis.shown():
     sim.simulate(0.01)
     sim.updateWorld()
 
-    for pose in poses_variations:
-        T = se3.from_homogeneous(pose)
-        draw_GL_frame(T)
-    for box in boxes:
-        draw_bbox(box.Isobox, box.T)
+    # for pose in poses_variations:
+    #     T = se3.from_homogeneous(pose)
+    #     draw_GL_frame(T)
+    # for box in boxes:
+    #     draw_bbox(box.Isobox, box.T)
 
     vis.unlock()
     t1 = time.time()
