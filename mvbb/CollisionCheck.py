@@ -45,11 +45,11 @@ def CollisionTestInterpolate(world,robot,obj,T):
              robot.setConfig(xa) #set the previously configuration
 
 
-def  SetRobotConfig(robot,T):
+def  SetRobotConfig(robot,o_R_w):
     #****+ Simple function that takes robot and desired pose. From pose extract rpy
     # and make a robot configuration
-    if not isinstance(T, tuple):
-        o_T_w = se3.from_homogeneous(T) #T is end-effector in object frame
+    if not isinstance(o_R_w, tuple):
+        o_T_w = se3.from_homogeneous(o_R_w) #o_R_w is end-effector in object frame
     import PyKDL
     # print("o_T_w"),o_T_w[0]
     R_kdl = PyKDL.Rotation(o_T_w[0][0],o_T_w[0][1],o_T_w[0][2],o_T_w[0][3],o_T_w[0][4],o_T_w[0][5],o_T_w[0][6],o_T_w[0][7],o_T_w[0][8])
@@ -65,28 +65,24 @@ def  SetRobotConfig(robot,T):
 
 
 
-def CollisionTestPoseRobotObject(world,robot,obj,T):
+def CollisionTestPoseRobotObject(world,robot,obj,o_R_w):
     P_prev = robot.getConfig()
-    SetRobotConfig(robot,T)
+    SetRobotConfig(robot,o_R_w)
     collision = collide.WorldCollider(world) #init
     R_O = collision.robotObjectCollisions(robot,obj) #check collision robot-object. the output is generator
     li = [] # make a list to know how many collisions we have been
     for i in R_O:
         li.append(R_O)
-    R_w = collision.robotTerrainCollisions(robot) # check collision robot-plane
-    li2 = [] # same as above. The output is generator so we make a list to know how many collision we have been
-    for j in R_w:
-        li2.append(R_w)
-    if(len(li)>0 or len(li2)>0): #is the lenght is greater that zero, so we have collision
+    if(len(li)>0 ): #is the lenght is greater that zero, so we have collision
         robot.setConfig(P_prev)
         return True
     else:
         robot.setConfig(P_prev)
         return False
 
-def CollisionTestPoseRobotTerrain(world,robot,T):
+def CollisionTestPoseRobotTerrain(world,robot,o_R_w):
     P_prev = robot.getConfig()
-    SetRobotConfig(robot,T)
+    SetRobotConfig(robot,o_R_w)
     collision = collide.WorldCollider(world) #init
     R_w = collision.robotTerrainCollisions(robot) # check collision robot-plane
     li2 = [] # The output is generator so we make a list to know how many collision we have been
