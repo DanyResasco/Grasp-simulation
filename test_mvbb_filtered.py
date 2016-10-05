@@ -43,26 +43,28 @@ robot_files = {
     'reflex':'data/robots/reflex.rob'
 }
 
-class FilteredMVBBTesterVisualizer(GLSimulationProgram):
-    def __init__(self, poses, poses_variations, boxes, world, h_T_h2, R, hand):
-        GLSimulationProgram.__init__(self, "FilteredMVBBTestVisualizer")
-        self.boxes = boxes
+class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
+    def __init__(self, poses, poses_variations, world, h_T_h2, R, module):
+        GLRealtimeProgram.__init__(self, "FilteredMVBBTEsterVisualizer")
         self.world = world
         self.h_T_h2 = h_T_h2
         self.poses = poses
         self.poses_variations = poses_variations
         self.R = R
-        self.hand = hand
+        self.hand = None
         self.is_simulating = False
         self.pose_i = 0
         self.all_poses = self.poses + self.poses_variations
+        self.robot = self.world.robot(0)
+        self.obj = None
+        self.t_0 = None
+        self.object_com_z_0 = None
+        self.object_fell = None
+        self.sim = None
+        self.module = module
 
     def display(self):
-        if self.world.numRigidObjects() > 0:
-            self.obj = self.world.rigidObject(0)
-
         self.world.drawGL()
-        self.obj.drawGL()
 
         for pose in self.poses:
             T = se3.from_homogeneous(pose)
@@ -73,38 +75,60 @@ class FilteredMVBBTesterVisualizer(GLSimulationProgram):
         T_h = se3.from_homogeneous(h_T_g_np)
         draw_GL_frame(T_h)
 
-        for box in self.boxes:
-            draw_bbox(box.Isobox, box.T)
-
     def idle(self):
+        if self.world.numRigidObjects() > 0:
+            self.obj = self.world.rigidObject(0)
+        else:
+            return
+
         if not self.is_simulating:
             if len(self.all_poses) > 0:
+                print "Simulating Next Pose Grasp"
                 pose = self.all_poses.pop()
             else:
+                print "Done. Quitting"
                 vis.kill()
                 return
+
+            self.world.loadElement("data/terrains/plane.env")
             self.obj.setTransform(self.R, [0, 0, 0])
-            w_T_o = np.array(se3.homogeneous(self.obj.getTransform())
+            w_T_o = np.array(se3.homogeneous(self.obj.getTransform()))
             pose_se3 = se3.from_homogeneous( w_T_o.dot(pose).dot(self.h_T_h2) )
             set_moving_base_xform(self.robot, pose_se3[0], pose_se3[1])
-            object_com_z_0 = getObjectGlobalCom(object)[2]
-            self.world.loadElement("data/terrains/plane.env")
-            object_fell = False
-            t_0 = self.sim.getTime()
+
+            if self.sim is None:
+                self.sim = SimpleSimulator(self.world)
+                self.hand = self.module.HandEmulator(self.sim, 0, 6, 6)
+                self.sim.addEmulator(0, self.hand)
+                # the next line latches the current configuration in the PID controller...
+                self.sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
+
+            self.object_com_z_0 = getObjectGlobalCom(self.obj)[2]
+            self.object_fell = False
+            self.t_0 = self.sim.getTime()
             self.is_simulating = True
 
         if self.is_simulating:
+            print "t:", self.sim.getTime() - self.t_0
             object_com_z = getObjectGlobalCom(self.obj)[2]
-            if self.sim.getTime() - t_0 == 0:
-                self.hand.setCommand([0.7]) # TODO close hand
-            elif self.sim.getTime() - t_0 == 1.0:
-                self.world.remove(world.terrain(0))
+            if self.sim.getTime() - self.t_0 == 0:
+                print "Closing hand"
+                self.hand.setCommand([0.8]) # TODO close hand
+            elif (self.sim.getTime() - self.t_0) >= 1.0 and (self.sim.getTime() - self.t_0) < 1.01:
+                print "Lifting"
+                pose_se3 = get_moving_base_xform(self.robot)
+                send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.add(pose_se3[1], (0,0,0.2)))
 
-            if object_com_z < object_com_z_0 - 1.0:
-                object_fell = True # TODO use grasp quality evaluator from Daniela
 
-            if not vis.shown() or time >= 4.0 or object_fell:
+            if object_com_z < self.object_com_z_0 - 0.5:
+                self.object_fell = True # TODO use grasp quality evaluator from Daniela
+
+            self.sim.simulate(0.01)
+            self.sim.updateWorld()
+
+            if not vis.shown() or (self.sim.getTime() - self.t_0) >= 2.5 or self.object_fell:
                 self.is_simulating = False
+                self.sim = None
 
 def getObjectGlobalCom(obj):
     return se3.apply(obj.getTransform(), obj.getMass().getCom())
@@ -122,9 +146,11 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
                          default=se3.identity(), world=world, doedit=False)
 
     for object_name in object_list:
-        for object_set in objects:
-            if object_name in object_set:
+        for object_set, objects_in_set in objects.items():
+            if object_name in objects_in_set:
                 object = make_object(object_set, object_name, world)
+            else:
+                continue
 
 
         R,t = object.getTransform()
@@ -159,19 +185,15 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
             if not CollisionTestPose(world, robot, object, poses_variations_h[i]):
                 filtered_poses_variations.append(poses_variations[i])
 
-        embed()
 
-        program = FilteredMVBBTesterVisualizer(filtered_poses, filtered_poses_variations, world, h_T_h2, R)
-        sim = program.sim
 
         # create a hand emulator from the given robot name
         module = importlib.import_module('plugins.' + robotname)
         # emulator takes the robot index (0), start link index (6), and start driver index (6)
-        hand = module.HandEmulator(sim, 0, 6, 6)
-        sim.addEmulator(0, hand)
 
-        # the next line latches the current configuration in the PID controller...
-        sim.controller(0).setPIDCommand(robot.getConfig(), robot.getVelocity())
+        program = FilteredMVBBTesterVisualizer(filtered_poses, filtered_poses_variations, world, h_T_h2, R, module)
+
+        embed()
 
         vis.setPlugin(program)
         program.reshape(800, 600)
@@ -184,10 +206,10 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
 
 if __name__ == '__main__':
     all_objects = []
-    for dataset in objects:
+    for dataset in objects.values():
         all_objects += dataset
+    print "-------------"
     print all_objects
-
-    embed()
+    print "-------------"
 
     launch_test_mvbb_filtered("soft_hand", all_objects, 100)
