@@ -20,14 +20,14 @@ def CheckCollision(world,robot,obj):
     else:
         return False
 
-def CollisionTest(world,robot,obj,xd):
+def CollisionTestTraj(world,robot,obj,xd):
     # xd = move_reflex(robot, 5) #desired pose
     P_des = [xd[0],xd[1],xd[2]] #take only traslation
     arrived = False
     while arrived == False:
         xa = robot.getConfig() #robot pos actual
         P_actual = [xa[0],xa[1],xa[2]] #take only t
-        X = vectorops.interpolate(P_actual,P_des,0.001) #linear interpolation 
+        X = vectorops.interpolate(P_actual,P_des,0.01) #linear interpolation
         print("X"), X
         Xi = vectorops.add(P_actual ,vectorops.mul(X,vectorops.sub(P_des,P_actual))) #xa + interpolate*(xd-xa)
         robot.setConfig(Xi)
@@ -41,3 +41,14 @@ def CollisionTest(world,robot,obj,xd):
         if(c < Threshold):
              arrived = True
              robot.setConfig(xa) #set the previously configuration
+
+ def CollisionTestPose(world, robot, obj, obj_T_hand):
+     """
+
+     :param world:
+     :param robot:
+     :param obj:
+     :param obj_T_hand: desired transform from object to hand (klampt.se3)
+     :return: True if the desired pose is in collision with the object or the environment
+     """
+     pass
