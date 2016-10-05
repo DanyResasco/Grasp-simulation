@@ -32,7 +32,7 @@ from IPython import embed
 from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
-from mvbb.CollisionCheck import CheckCollision,CollisionTest
+from mvbb.CollisionCheck import CheckCollision,CollisionTestInterpolate,CollisionTestPoseRobotTerrain,CollisionTestPoseRobotObject
 
 #Declare all variables
 world = WorldModel()
@@ -71,8 +71,8 @@ objects_set = {
     # 'ycb':['data/objects/ycb/%s/meshes/tsdf_mesh.stl','data/objects/ycb/%s/meshes/poisson_mesh.stl'],
     # 'apc2015':['data/objects/apc2015/%s/textured_meshes/optimized_tsdf_textured_mesh.ply']
 
-print("objects_set2[dataset]"), objects_set2[dataset]
-print("objects_set2 "),objects_set2[dataset][index]
+# print("objects_set2[dataset]"), objects_set2[dataset]
+# print("objects_set2 "),objects_set2[dataset][index]
 
 world.loadElement("terrains/plane.env")	#file che richiama la mesh del piano
 
@@ -143,8 +143,6 @@ def move_reflex(robot,t):
     q[5] = math.radians(180) #roll
     return q
     # robot.setConfig(q)
-    # cc = robotcollide.WorldCollider.robotObjectCollisions(robot, object)
-    # print("collision"), cc
 
 #distance between object and gripper
 def RelativePosition(robot,object):
@@ -178,20 +176,6 @@ def GraspValuate(diff,kindness,posedict, var):
         f2.close()
 
 
-# def CheckCollision():
-#     collision = collide.WorldCollider(world)
-#     R_O = collision.robotObjectCollisions(robot,obj)
-#     li = []
-#     for i in R_O:
-#         li.append(R_O)
-#     R_w = collision.robotTerrainCollisions(robot)
-#     li2 = []
-#     for j in R_w:
-#         li2.append(R_w)
-#     if(len(li)>0 or len(li2)>0):
-#         return True
-#     else:
-#         return False
 
 
 #************************************************Main******************************************
@@ -249,16 +233,26 @@ sim.setController(robot,simple_controller.make(sim,hand,program.dt))
 collision = CheckCollision(world,robot,obj)
 print("collision"),collision
 
+Pose_test = [[0.99947965, 0.03162912, 0.00632645, -0.04016062],
+ [0.02898519, -0.79464251, -0.60638531, 0.06087496],
+ [-0.01415216, 0.60625315, -0.79514579, 0.0205424],
+ [0.0, 0.0, 0.0, 1.0]]
+
+r_t = CollisionTestPoseRobotTerrain(world,robot,Pose_test)
+print("robot-terrain"), r_t
+r_o = CollisionTestPoseRobotObject(world,robot,obj,Pose_test)
+print("robot-object"), r_o
+
 #this code manually updates the visualization
 vis.add("world",world)
 vis.show()
 t0 = time.time()
 Pos_ = RelativePosition(robot,obj) 
-kindness = 0 
-Td_prev = 0
+kindness = 0  #inizialized
+Td_prev = 0 #used for the differential function
 
-xd = move_reflex(robot,5)
-CollisionTest(world,robot,obj,xd)
+# xd = move_reflex2(robot)
+CollisionTestInterpolate(world,robot,obj,Pose_test)
 
 
 
@@ -285,7 +279,7 @@ while vis.shown():
     print("kindness"),kindness
     if sim.getTime() > 3:
         print("diff"),diff
-        for i in len(poses_variations):
-            posedict = SimulationPoses(poses_variations[i],robot.getConfig(),obj.getTransform())
-            GraspValuate(diff,kindness,posedict,i)
+        # for i in len(poses_variations):
+        #     posedict = SimulationPoses(poses_variations[i],robot.getConfig(),obj.getTransform())
+        #     GraspValuate(diff,kindness,posedict,i)
 
