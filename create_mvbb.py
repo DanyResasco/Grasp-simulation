@@ -76,6 +76,7 @@ class MVBBVisualizer(GLNavigationProgram):
 
     def idle(self):
         pass
+
 def trimesh_to_numpy(klampt_TriangleMesh):
     tm = klampt_TriangleMesh
     n_vertices = tm.vertices.size() / 3
