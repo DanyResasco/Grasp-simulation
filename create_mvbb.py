@@ -42,6 +42,7 @@ class MVBBVisualizer(GLNavigationProgram):
         self.old_tm = self.obj.geometry().getTriangleMesh()
         self.new_tm = alt_trimesh
         self.robot = None
+        self.world = world
         if world.numRobots > 0:
             self.robot = world.robot(0)
 

@@ -43,6 +43,41 @@ robot_files = {
     'reflex':'data/robots/reflex.rob'
 }
 
+class FilteredMVBBVisualizer(MVBBVisualizer):
+    def __init__(self, poses, poses_variations, boxes, world, alt_trimesh = None):
+        MVBBVisualizer.__init__(self, poses, poses_variations, boxes, world, alt_trimesh)
+
+    def display(self):
+        self.world.drawGL()
+        self.obj.drawGL()
+        T0 = get_moving_base_xform(self.robot)
+        for pose in self.poses:
+            T = se3.from_homogeneous(pose)
+            if not CollisionTestPose(self.world, self.robot, self.obj, T):
+                draw_GL_frame(T)
+                set_moving_base_xform(self.robot, T[0], T[1])
+                self.robot.drawGL()
+            else:
+                "robot collides with object at", T
+                draw_GL_frame(T, color=(0.5,0.5,0.5))
+        for box in self.boxes:
+            draw_bbox(box.Isobox, box.T)
+        set_moving_base_xform(self.robot, T0[0], T0[1])
+
+def kdltonumpy3(R):
+    npR = np.eye(3)
+    for i in range(3):
+        for j in range(3):
+            npR[i,j] = R[i,j]
+    return npR
+
+def kdltonumpy4(F):
+    npF = np.eye(4)
+    npF[0:3,0:3] = kdltonumpy3(F.M)
+    for i in range(3):
+        npF[i,3] = F.p[i]
+    return npF
+
 def launch_mvbb_filtered(robotname, object_set, objectname):
     """Launches a very simple program that spawns an object from one of the
     databases.
@@ -73,10 +108,25 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
     else:
         poses, poses_variations, boxes = compute_poses(object)
 
+    w_T_o = np.eye(4)
+    h_T_h2 = np.eye(4)
+    if True:
+        import PyKDL
+        f = PyKDL.Frame()
+        f.M.DoRotY(2*np.pi)
+        f.p[2] -= 0.15
+        h_T_h2 = kdltonumpy4(f)
+
+
+    for i in range(len(poses)):
+        poses[i] = w_T_o.dot(poses[i]).dot(h_T_h2)
+    for i in range(len(poses_variations)):
+        poses_variations[i] = w_T_o.dot(poses_variations[i]).dot(h_T_h2)
+
     embed()
     # now the simulation is launched
 
-    program = MVBBVisualizer(poses, poses_variations, boxes, world, tm_decimated)
+    program = FilteredMVBBVisualizer(poses, poses_variations, boxes, world, tm_decimated)
     vis.setPlugin(program)
     program.reshape(800, 600)
 

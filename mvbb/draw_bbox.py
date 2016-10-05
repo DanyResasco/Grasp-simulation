@@ -7,7 +7,7 @@ from klampt.vis.glprogram import *
 import numpy as np
 
 
-def draw_GL_frame(T, axis_length=0.1):
+def draw_GL_frame(T, axis_length=0.1, color = None):
     """Draws the rigid transform T as a set of axis-oriented lines
     of length axis_length."""
     R,t = T
@@ -19,17 +19,22 @@ def draw_GL_frame(T, axis_length=0.1):
     glDisable(GL_LIGHTING)
     glDisable(GL_DEPTH_TEST)
     glLineWidth(4.0)
-    glColor3f(1, 0, 0)
+    if color is None:
+        glColor3f(1, 0, 0)
+    else:
+        glColor3f(*color)
     glBegin(GL_LINES)
     glVertex3fv(t)
     glVertex3fv(vectorops.madd(t, R[0:3], axis_length))
     glEnd()
-    glColor3f(0, 1, 0)
+    if color is None:
+        glColor3f(0, 1, 0)
     glBegin(GL_LINES)
     glVertex3fv(t)
     glVertex3fv(vectorops.madd(t, R[3:6], axis_length))
     glEnd()
-    glColor3f(0, 0, 1)
+    if color is None:
+        glColor3f(0, 0, 1)
     glBegin(GL_LINES)
     glVertex3fv(t)
     glVertex3fv(vectorops.madd(t, R[6:9], axis_length))
