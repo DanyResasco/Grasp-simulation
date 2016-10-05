@@ -108,7 +108,7 @@ def numpy_to_trimesh(vertices, faces):
         tm.indices.append(int(faces[i, 2]))
     return tm
 
-def compute_poses(obj):
+def compute_poses(obj, new_method = False):
     if isinstance(obj, np.ndarray):
         vertices = obj
         n_vertices = vertices.shape[0]
@@ -141,11 +141,17 @@ def compute_poses(obj):
     print "extracting Boxes"
     boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
     print "getting transforms"
-    poses = pydany_bb.getTrasformsforHand(boxes, bbox)
+    if new_method:
+        poses = []
+        for box in boxes:
+            poses += pydany_bb.get_populated_TrasformsforHand(box, bbox)
+        poses_variations = []
+    else:
+        poses = pydany_bb.getTrasformsforHand(boxes, bbox)
 
-    poses_variations = []
-    for pose in poses:
-        poses_variations += PoseVariation(pose, long_side)
+        poses_variations = []
+        for pose in poses:
+            poses_variations += PoseVariation(pose, long_side)
 
     print "done. Found", len(poses_variations), "poses,", len(boxes), "boxes"
     return poses, poses_variations, boxes
