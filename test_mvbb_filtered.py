@@ -56,6 +56,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.pose_i = 0
         self.all_poses = self.poses + self.poses_variations
         self.robot = self.world.robot(0)
+        self.q_0 = self.robot.getConfig()
         self.obj = None
         self.t_0 = None
         self.object_com_z_0 = None
@@ -94,6 +95,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             self.obj.setTransform(self.R, [0, 0, 0])
             w_T_o = np.array(se3.homogeneous(self.obj.getTransform()))
             pose_se3 = se3.from_homogeneous( w_T_o.dot(pose).dot(self.h_T_h2) )
+            self.robot.setConfig(self.q_0)
             set_moving_base_xform(self.robot, pose_se3[0], pose_se3[1])
 
             if self.sim is None:
@@ -113,7 +115,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             object_com_z = getObjectGlobalCom(self.obj)[2]
             if self.sim.getTime() - self.t_0 == 0:
                 print "Closing hand"
-                self.hand.setCommand([0.8]) # TODO close hand
+                self.hand.setCommand([1.0]) # TODO close hand
             elif (self.sim.getTime() - self.t_0) >= 1.0 and (self.sim.getTime() - self.t_0) < 1.01:
                 print "Lifting"
                 pose_se3 = get_moving_base_xform(self.robot)
