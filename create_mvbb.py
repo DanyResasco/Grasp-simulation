@@ -43,7 +43,7 @@ class MVBBVisualizer(GLNavigationProgram):
         self.new_tm = alt_trimesh
         self.robot = None
         self.world = world
-        if world.numRobots > 0:
+        if world.numRobots() > 0:
             self.robot = world.robot(0)
 
         self.using_decimated_tm = False
