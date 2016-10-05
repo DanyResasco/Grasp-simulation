@@ -24,10 +24,10 @@ def make(sim,hand,dt):
 			f1_contact = [s.getMeasurements()[0] for s in f1_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f1_distal_takktile_sensors]
 			f2_contact = [s.getMeasurements()[0] for s in f2_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f2_distal_takktile_sensors]
 			f3_contact = [s.getMeasurements()[0] for s in f3_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f3_distal_takktile_sensors]
-			print "Contact sensors"
-			print "  finger 1:",[int(v) for v in f1_contact]
-			print "  finger 2:",[int(v) for v in f2_contact]
-			print "  finger 3:",[int(v) for v in f3_contact]
+			# print "Contact sensors"
+			# print "  finger 1:",[int(v) for v in f1_contact]
+			# print "  finger 2:",[int(v) for v in f2_contact]
+			# print "  finger 3:",[int(v) for v in f3_contact]
 		except:
 			pass
 		if sim.getTime() < 0.05:
