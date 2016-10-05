@@ -32,15 +32,18 @@ object_geom_file_patterns = {
 }
 
 class MVBBVisualizer(GLNavigationProgram):
-    def __init__(self, poses, poses_variations, boxes, object, alt_trimesh = None):
+    def __init__(self, poses, poses_variations, boxes, world, alt_trimesh = None):
         GLNavigationProgram.__init__(self, 'MVBB Visualizer')
 
         self.poses = poses
         self.poses_variations = poses_variations
         self.boxes = boxes
-        self.obj = object
-        self.old_tm = object.geometry().getTriangleMesh()
+        self.obj = world.rigidObject(0)
+        self.old_tm = self.obj.geometry().getTriangleMesh()
         self.new_tm = alt_trimesh
+        self.robot = None
+        if world.numRobots > 0:
+            self.robot = world.robot(0)
 
         self.using_decimated_tm = False
 
@@ -51,6 +54,8 @@ class MVBBVisualizer(GLNavigationProgram):
         self.obj.appearance().setColor(*color)
 
     def display(self):
+        if self.robot is not None:
+            self.robot.drawGL()
         self.obj.drawGL()
         for pose in self.poses:
             T = se3.from_homogeneous(pose)
@@ -181,7 +186,7 @@ def launch_mvbb(object_set, objectname):
     # now the simulation is launched
 
     if use_program:
-        program = MVBBVisualizer(poses, poses_variations, boxes, object, tm_decimated)
+        program = MVBBVisualizer(poses, poses_variations, boxes, world, tm_decimated)
         vis.setPlugin(program)
         program.reshape(800, 600)
     else:
