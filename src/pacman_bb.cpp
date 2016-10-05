@@ -79,7 +79,7 @@ namespace pacman
 
             SVD_eigen.compute ( tempM2, Eigen::ComputeFullU | Eigen::ComputeFullV );
 
-            std::cout << "Data: " << std::endl << "det: " << tempM2.determinant() << std::endl;
+            // std::cout << "Data: " << std::endl << "det: " << tempM2.determinant() << std::endl;
 
             Eigen::MatrixXd U = SVD_eigen.matrixU();
             if (U.determinant() < 0.0)
@@ -90,7 +90,7 @@ namespace pacman
             object_pca_eigen= data_m*U;
 
             SetPoints ( object_pca_eigen );
-            std::cout << "U:" << std::endl << U << std::endl << "det: " << U.determinant() << std::endl;
+            // std::cout << "U:" << std::endl << U << std::endl << "det: " << U.determinant() << std::endl;
 
             T.block<3,3> ( 0,0 ) = U;
             T ( 0,3 ) = mean_data ( 0,0 );
