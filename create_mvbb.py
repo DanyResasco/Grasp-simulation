@@ -108,6 +108,24 @@ def numpy_to_trimesh(vertices, faces):
         tm.indices.append(int(faces[i, 2]))
     return tm
 
+def skip_decimate_or_return(object, min_vertices = 100, max_vertices = 2000):
+    tm = object.geometry().getTriangleMesh()
+    n_vertices = tm.vertices.size() / 3
+    decimator = pydany_bb.MVBBDecimator()
+    vertices_old, faces_old = trimesh_to_numpy(tm)
+    if n_vertices <= min_vertices:
+        return None, None
+    if n_vertices > max_vertices:
+        print "Object has", n_vertices, "vertices - decimating"
+        decimator.decimateTriMesh(vertices_old, faces_old)
+        vertices = decimator.getEigenVertices()
+        faces = decimator.getEigenFaces()
+        tm_decimated = numpy_to_trimesh(vertices, faces)
+        print "Decimated to", vertices.shape[0], "vertices"
+        return vertices, tm_decimated
+    else:
+        return object, None
+
 def compute_poses(obj, new_method = False):
     if isinstance(obj, np.ndarray):
         vertices = obj
