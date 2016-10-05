@@ -925,9 +925,35 @@ std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectO
                     -box.Isobox( 0, 1)  + box.Isobox( 1, 1),
                     -box.Isobox( 0, 2)  + box.Isobox( 1, 2);
     results = populate_face(axis_dimensions, 3, 0.005, box.T);
-
+    results = filter_poses(results, ObjectOriginal);
 
     return results;
+}
+
+
+std::vector<Eigen::MatrixXd> filter_poses(std::vector<Eigen::MatrixXd> all_poses, Box ObjectOriginal)
+{
+    std::vector<Eigen::MatrixXd> results;
+    for (int i = 0; i < all_poses.size(); i++)
+    {
+        if ( pose_inside_box(all_poses[i], ObjectOriginal ))
+            continue;
+
+        results.push_back(all_poses[i]);
+    }
+
+    return results;
+}
+
+bool pose_inside_box(Eigen::MatrixXd Pose, Box ObjectOriginal)
+{
+
+    Eigen::MatrixXd pose_local = ObjectOriginal.T.inverse()*Pose;
+    if (    (pose_local(0,3) > ObjectOriginal.Isobox(0,0) && pose_local(0,3) < ObjectOriginal.Isobox(1,0)) &&
+            (pose_local(1,3) > ObjectOriginal.Isobox(0,1) && pose_local(1,3) < ObjectOriginal.Isobox(1,1)) &&
+            (pose_local(2,3) > ObjectOriginal.Isobox(0,2) && pose_local(2,3) < ObjectOriginal.Isobox(1,2)) )
+        return true;
+    return false;
 }
 
 
