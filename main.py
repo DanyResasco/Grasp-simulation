@@ -233,10 +233,10 @@ sim.setController(robot,simple_controller.make(sim,hand,program.dt))
 collision = CheckCollision(world,robot,obj)
 print("collision"),collision
 
-Pose_test = [[0.99947965, 0.03162912, 0.00632645, -0.04016062],
+Pose_test = np.array([[0.99947965, 0.03162912, 0.00632645, -0.04016062],
  [0.02898519, -0.79464251, -0.60638531, 0.06087496],
  [-0.01415216, 0.60625315, -0.79514579, 0.0205424],
- [0.0, 0.0, 0.0, 1.0]]
+ [0.0, 0.0, 0.0, 1.0]])
 
 r_ot = CollisionTestPose(world,robot,obj,Pose_test)
 print("robot-object/robot-terrain"), r_ot

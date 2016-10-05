@@ -2,7 +2,7 @@
 from klampt import *
 from klampt.vis.glrobotprogram import * #Per il simulatore
 from klampt.model import collide
-from ..moving_base_control import set_moving_base_xform, get_moving_base_xform
+from moving_base_control import set_moving_base_xform, get_moving_base_xform
 import math
 
 
@@ -32,7 +32,8 @@ def CheckCollision(world, robot, obj, collision = None):
 
 def CollisionTestInterpolate(world,robot,obj,o_P_h):
     q_old = robot.getConfig()
-    o_T_h_curr = get_moving_base_xform(robot)[0]
+    o_T_h_curr = get_moving_base_xform(robot)
+
     if not isinstance(o_P_h, tuple):
         o_T_h = se3.from_homogeneous(o_P_h) #o_P_h is end-effector in object frame
     else:
@@ -46,7 +47,7 @@ def CollisionTestInterpolate(world,robot,obj,o_P_h):
     step_size = 0.01
     d = vectorops.distance(t_curr, t_des)
 
-    n_steps = math.ceil(d / step_size)
+    n_steps = int(math.ceil(d / step_size))
     if n_steps == 0:    # if o_T_h_current == o_T_h_desired
         return CheckCollision(world, robot, obj)
 
@@ -55,7 +56,7 @@ def CollisionTestInterpolate(world,robot,obj,o_P_h):
     for i in range(n_steps):
         t_int = vectorops.interpolate(t_curr,t_des,float(i+1)/n_steps)
 
-        set_moving_base_xform(o_T_h[0], t_int)
+        set_moving_base_xform(robot, o_T_h[0], t_int)
         if CheckCollision(world, robot, obj, collider):
             robot.setConfig(q_old)
             return True
