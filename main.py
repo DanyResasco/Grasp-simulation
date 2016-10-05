@@ -32,7 +32,7 @@ from IPython import embed
 from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
-from mvbb.CollisionCheck import CheckCollision,CollisionTestInterpolate,CollisionTestPoseRobotTerrain,CollisionTestPoseRobotObject
+from mvbb.CollisionCheck import CheckCollision,CollisionTestInterpolate,CollisionTestPose
 
 #Declare all variables
 world = WorldModel()
@@ -238,10 +238,8 @@ Pose_test = [[0.99947965, 0.03162912, 0.00632645, -0.04016062],
  [-0.01415216, 0.60625315, -0.79514579, 0.0205424],
  [0.0, 0.0, 0.0, 1.0]]
 
-r_t = CollisionTestPoseRobotTerrain(world,robot,Pose_test)
-print("robot-terrain"), r_t
-r_o = CollisionTestPoseRobotObject(world,robot,obj,Pose_test)
-print("robot-object"), r_o
+r_ot = CollisionTestPose(world,robot,obj,Pose_test)
+print("robot-object/robot-terrain"), r_ot
 
 #this code manually updates the visualization
 vis.add("world",world)
