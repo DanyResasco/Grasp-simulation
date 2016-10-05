@@ -102,7 +102,7 @@ Eigen::MatrixXd FInd_angle( Box first_boxes, std::vector<double> figure, double 
 std::list<Box> extractBoxes ( pacman::Box ObjectOriginal, float gain, float vol_gain, float min_points = 2 );
 std::vector<Eigen::MatrixXd> getTrasformsforHand(std::list<Box> sorted_boxes, Box ObjectOriginal);
 std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int disc = 3, double dist_hand = 0.005, Eigen::Matrix4d T_init = Eigen::Matrix4d::Identity());
-std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectOriginal);
+std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectOriginal, int disc = 3, double dist_hand = 0.005);
 
 std::vector<Eigen::MatrixXd> filter_poses(std::vector<Eigen::MatrixXd> all_boxes, Box ObjectOriginal);
 bool pose_inside_box(Eigen::MatrixXd Pose, Box ObjectOriginal);

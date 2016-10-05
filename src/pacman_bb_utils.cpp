@@ -917,14 +917,14 @@ std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int
 
 }
 
-std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectOriginal)
+std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectOriginal, int disc, double dist_hand)
 {
     std::vector<Eigen::MatrixXd> results;
     Eigen::Vector3d axis_dimensions;
     axis_dimensions <<  -box.Isobox( 0, 0)  + box.Isobox( 1, 0),
                     -box.Isobox( 0, 1)  + box.Isobox( 1, 1),
                     -box.Isobox( 0, 2)  + box.Isobox( 1, 2);
-    results = populate_face(axis_dimensions, 3, 0.005, box.T);
+    results = populate_face(axis_dimensions, disc, dist_hand, box.T);
     results = filter_poses(results, ObjectOriginal);
 
     return results;

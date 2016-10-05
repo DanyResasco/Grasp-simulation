@@ -48,15 +48,19 @@ class FilteredMVBBVisualizer(MVBBVisualizer):
         MVBBVisualizer.__init__(self, poses, poses_variations, boxes, world, alt_trimesh)
 
     def display(self):
-        self.world.drawGL()
-        self.obj.drawGL()
         T0 = get_moving_base_xform(self.robot)
+        T0_invisible = T0
+        T0_invisible[1][2] = -1
+        set_moving_base_xform(self.robot,T0_invisible[0], T0_invisible[1])
+        self.world.drawGL()
+        set_moving_base_xform(self.robot, T0[0], T0[1])
+        self.obj.drawGL()
         for pose in self.poses:
             T = se3.from_homogeneous(pose)
             if not CollisionTestPose(self.world, self.robot, self.obj, T):
                 draw_GL_frame(T)
-                set_moving_base_xform(self.robot, T[0], T[1])
-                self.robot.drawGL()
+                #set_moving_base_xform(self.robot, T[0], T[1])
+                #self.robot.drawGL()
             else:
                 "robot collides with object at", T
                 draw_GL_frame(T, color=(0.5,0.5,0.5))
@@ -110,18 +114,19 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
 
     w_T_o = np.eye(4)
     h_T_h2 = np.eye(4)
-    if True:
+    if False:
         import PyKDL
         f = PyKDL.Frame()
-        f.M.DoRotY(2*np.pi)
         f.p[2] -= 0.15
         h_T_h2 = kdltonumpy4(f)
 
 
     for i in range(len(poses)):
         poses[i] = w_T_o.dot(poses[i]).dot(h_T_h2)
+    """
     for i in range(len(poses_variations)):
         poses_variations[i] = w_T_o.dot(poses_variations[i]).dot(h_T_h2)
+    """
 
     embed()
     # now the simulation is launched

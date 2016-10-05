@@ -144,7 +144,7 @@ def compute_poses(obj, new_method = False):
     if new_method:
         poses = []
         for box in boxes:
-            poses += pydany_bb.get_populated_TrasformsforHand(box, bbox)
+            poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 2)
         poses_variations = []
     else:
         poses = pydany_bb.getTrasformsforHand(boxes, bbox)
