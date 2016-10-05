@@ -43,11 +43,19 @@ robot_files = {
     'reflex':'data/robots/reflex.rob'
 }
 
-class FilteredMVBBTesterVisualizer(MVBBVisualizer):
-    def __init__(self, poses, poses_variations, boxes, world, h_T_h2):
-        MVBBVisualizer.__init__(self, poses, poses_variations, boxes, world, None)
+class FilteredMVBBTesterVisualizer(GLSimulationProgram):
+    def __init__(self, poses, poses_variations, boxes, world, h_T_h2, R, hand):
+        GLSimulationProgram.__init__(self, "FilteredMVBBTestVisualizer")
         self.boxes = boxes
         self.world = world
+        self.h_T_h2 = h_T_h2
+        self.poses = poses
+        self.poses_variations = poses_variations
+        self.R = R
+        self.hand = hand
+        self.is_simulating = False
+        self.pose_i = 0
+        self.all_poses = self.poses + self.poses_variations
 
     def display(self):
         if self.world.numRigidObjects() > 0:
@@ -57,15 +65,49 @@ class FilteredMVBBTesterVisualizer(MVBBVisualizer):
         self.obj.drawGL()
 
         for pose in self.poses:
+            T = se3.from_homogeneous(pose)
             draw_GL_frame(T)
 
         hand_xform = get_moving_base_xform(self.robot)
-        h_T_g_np = np.array(se3.homogeneous(hand_xform)).dot(h_T_h2)
+        h_T_g_np = np.array(se3.homogeneous(hand_xform)).dot(self.h_T_h2)
         T_h = se3.from_homogeneous(h_T_g_np)
         draw_GL_frame(T_h)
 
         for box in self.boxes:
             draw_bbox(box.Isobox, box.T)
+
+    def idle(self):
+        if not self.is_simulating:
+            if len(self.all_poses) > 0:
+                pose = self.all_poses.pop()
+            else:
+                vis.kill()
+                return
+            self.obj.setTransform(self.R, [0, 0, 0])
+            w_T_o = np.array(se3.homogeneous(self.obj.getTransform())
+            pose_se3 = se3.from_homogeneous( w_T_o.dot(pose).dot(self.h_T_h2) )
+            set_moving_base_xform(self.robot, pose_se3[0], pose_se3[1])
+            object_com_z_0 = getObjectGlobalCom(object)[2]
+            self.world.loadElement("data/terrains/plane.env")
+            object_fell = False
+            t_0 = self.sim.getTime()
+            self.is_simulating = True
+
+        if self.is_simulating:
+            object_com_z = getObjectGlobalCom(self.obj)[2]
+            if self.sim.getTime() - t_0 == 0:
+                self.hand.setCommand([0.7]) # TODO close hand
+            elif self.sim.getTime() - t_0 == 1.0:
+                self.world.remove(world.terrain(0))
+
+            if object_com_z < object_com_z_0 - 1.0:
+                object_fell = True # TODO use grasp quality evaluator from Daniela
+
+            if not vis.shown() or time >= 4.0 or object_fell:
+                self.is_simulating = False
+
+def getObjectGlobalCom(obj):
+    return se3.apply(obj.getTransform(), obj.getMass().getCom())
 
 def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
     """Launches a very simple program that spawns an object from one of the
@@ -119,31 +161,25 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
 
         embed()
 
-        hand = None
-        program = FilteredMVBBTesterVisualizer(filtered_poses, filtered_poses_variations, world, h_T_h2)
+        program = FilteredMVBBTesterVisualizer(filtered_poses, filtered_poses_variations, world, h_T_h2, R)
+        sim = program.sim
+
+        # create a hand emulator from the given robot name
+        module = importlib.import_module('plugins.' + robotname)
+        # emulator takes the robot index (0), start link index (6), and start driver index (6)
+        hand = module.HandEmulator(sim, 0, 6, 6)
+        sim.addEmulator(0, hand)
+
+        # the next line latches the current configuration in the PID controller...
+        sim.controller(0).setPIDCommand(robot.getConfig(), robot.getVelocity())
+
         vis.setPlugin(program)
         program.reshape(800, 600)
 
         vis.show()
         # this code manually updates the visualization
-        for pose in filtered_poses + filtered_poses_variations:
-            object_com_z_0 = None # TODO
-            world.loadElement("data/terrains/plane.env")
-            object_fell = False
-            time = 0.0
-
-            while vis.shown() and time <= 4.0 or object_fell:
-                object_com_z = None # TODO
-                if time == 0:
-                    #hand.send_command(0.7) # TODO
-                elif time == 1.0:
-                    world.remove(world.terrain(0))
-                time += 0.01
-
-                if object_com_z < object_com_z_0 - 1.0:
-                    object_fell = True
-
-        vis.kill()
+        while vis.shown():
+            time.sleep(0.1)
     return
 
 if __name__ == '__main__':
