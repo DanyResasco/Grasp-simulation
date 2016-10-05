@@ -45,11 +45,11 @@ def CollisionTestInterpolate(world,robot,obj,T):
              robot.setConfig(xa) #set the previously configuration
 
 
-def  SetRobotConfig(robot,o_R_w):
+def  SetRobotConfig(robot,o_R_h):
     #****+ Simple function that takes robot and desired pose. From pose extract rpy
     # and make a robot configuration
-    if not isinstance(o_R_w, tuple):
-        o_T_w = se3.from_homogeneous(o_R_w) #o_R_w is end-effector in object frame
+    if not isinstance(o_R_h, tuple):
+        o_T_w = se3.from_homogeneous(o_R_h) #o_R_h is end-effector in object frame
     import PyKDL
     # print("o_T_w"),o_T_w[0]
     R_kdl = PyKDL.Rotation(o_T_w[0][0],o_T_w[0][1],o_T_w[0][2],o_T_w[0][3],o_T_w[0][4],o_T_w[0][5],o_T_w[0][6],o_T_w[0][7],o_T_w[0][8])
@@ -65,9 +65,9 @@ def  SetRobotConfig(robot,o_R_w):
 
 
 
-def CollisionTestPoseRobotObject(world,robot,obj,o_R_w):
+def CollisionTestPoseRobotObject(world,robot,obj,o_R_h):
     P_prev = robot.getConfig()
-    SetRobotConfig(robot,o_R_w)
+    SetRobotConfig(robot,o_R_h)
     collision = collide.WorldCollider(world) #init
     R_O = collision.robotObjectCollisions(robot,obj) #check collision robot-object. the output is generator
     li = [] # make a list to know how many collisions we have been
@@ -80,9 +80,9 @@ def CollisionTestPoseRobotObject(world,robot,obj,o_R_w):
         robot.setConfig(P_prev)
         return False
 
-def CollisionTestPoseRobotTerrain(world,robot,o_R_w):
+def CollisionTestPoseRobotTerrain(world,robot,w_R_h):
     P_prev = robot.getConfig()
-    SetRobotConfig(robot,o_R_w)
+    SetRobotConfig(robot,w_R_h)
     collision = collide.WorldCollider(world) #init
     R_w = collision.robotTerrainCollisions(robot) # check collision robot-plane
     li2 = [] # The output is generator so we make a list to know how many collision we have been
