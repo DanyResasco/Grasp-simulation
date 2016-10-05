@@ -475,6 +475,7 @@ Eigen::MatrixXd info_adams( Box  first_boxes, Box ObjectOriginal)
 
     if (T_l.determinant() == 0.0)
     {
+        std::cout << "angle: " << angle << std::endl;
         std::cout << "R :" << R.transpose() << std::endl;
         std::cout << std::endl << "angle****" << std::endl << angle << std::endl;
         std::cout << "axis: " << axis_x.transpose() << std::endl;
@@ -516,7 +517,7 @@ Eigen::MatrixXd FInd_angle( Box first_boxes, std::vector<double> figure, double 
 
         /*length*/
         // std::cout << "first_boxes" << std::endl << first_boxes.T << std::endl << "det:" << first_boxes.T.determinant() << std::endl;
-        L1 = abs(sqrt(pow(first_boxes.T(0, i), 2) + pow(first_boxes.T(1, i), 2) + pow(first_boxes.T(2, i), 2)));
+        // L1 = abs(sqrt(pow(first_boxes.T(0, i), 2) + pow(first_boxes.T(1, i), 2) + pow(first_boxes.T(2, i), 2)));
         // std::cout << "L1: " << L1 << std::endl;
         // std::cout << "sum: " << sum << std::endl;
         tmp_vec = Normal.cross(first_boxes.T.block<1, 3>(0, i));
@@ -569,7 +570,7 @@ Eigen::MatrixXd FInd_angle( Box first_boxes, std::vector<double> figure, double 
     if (ori == flag_axis)
     {
 
-        // std::cout << "I'm here again" << std::endl;
+        std::cout << "I'm here again" << std::endl;
         angle.clear();
 
         Normal(0, 0) = -ObjectOriginal.centroid(0, 0) + first_boxes.centroid(0, 0);
@@ -595,7 +596,7 @@ Eigen::MatrixXd FInd_angle( Box first_boxes, std::vector<double> figure, double 
 
             tmp_vec = Normal.cross(first_boxes.T.block<1, 3>(0, i));
             double angle2 = std::atan2( tmp_vec.norm(), sum );
-            L1 = abs(sqrt(pow(first_boxes.T(0, i), 2) + pow(first_boxes.T(1, i), 2) + pow(first_boxes.T(2, i), 2)));
+            // L1 = abs(sqrt(pow(first_boxes.T(0, i), 2) + pow(first_boxes.T(1, i), 2) + pow(first_boxes.T(2, i), 2)));
 
             /*angle*/
             angle.push_back( angle2 * 180.0 / PI);
