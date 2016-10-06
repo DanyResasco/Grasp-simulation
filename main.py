@@ -210,7 +210,7 @@ obj = import_object()
 # print "extracting Boxes"
 # boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
 # print "getting transforms"
-# poses = pydany_bb.getTrasformsforHand(boxes, bbox)
+# poses = pydany_bb.getTransformsForHand(boxes, bbox)
 
 # poses_variations = []
 # for pose in poses:

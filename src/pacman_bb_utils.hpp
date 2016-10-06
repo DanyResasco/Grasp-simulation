@@ -86,7 +86,7 @@ bool compare_box (Box i, Box j);
 	*				$) third column --> axis with minimun angle and zeros for the last row
 	*				$) fourth column --> length side with minimun angle/2 plus distance for the hand and one for the last row
 */
-Eigen::MatrixXd info_adams( Box first_boxes, Box ObjectOriginal );
+Eigen::MatrixXd info_adams( Box first_boxes, Box ObjectOriginal, double distance = 0.005 );
 
 
 /**Function: FInd_angle
@@ -100,7 +100,7 @@ Eigen::MatrixXd info_adams( Box first_boxes, Box ObjectOriginal );
 Eigen::MatrixXd FInd_angle( Box first_boxes, std::vector<double> figure, double distance, int flag_axis, Box ObjectOriginal);
 
 std::list<Box> extractBoxes ( pacman::Box ObjectOriginal, float gain, float vol_gain, float min_points = 2 );
-std::vector<Eigen::MatrixXd> getTrasformsforHand(std::list<Box> sorted_boxes, Box ObjectOriginal);
+std::vector<Eigen::MatrixXd> getTransformsForHand(std::list<Box> sorted_boxes, Box ObjectOriginal, double dist_hand = 0.005);
 std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int disc = 3, double dist_hand = 0.005, Eigen::Matrix4d T_init = Eigen::Matrix4d::Identity());
 std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectOriginal, int disc = 3, double dist_hand = 0.005);
 

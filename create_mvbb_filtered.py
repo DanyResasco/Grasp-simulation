@@ -15,7 +15,7 @@ import string
 import sys
 import time
 
-from create_mvbb import MVBBVisualizer, trimesh_to_numpy, numpy_to_trimesh, compute_poses
+from create_mvbb import MVBBVisualizer, trimesh_to_numpy, numpy_to_trimesh, compute_poses, skip_decimate_or_return
 from klampt.math import so3, se3
 import pydany_bb
 import numpy as np
@@ -44,8 +44,9 @@ robot_files = {
 }
 
 class FilteredMVBBVisualizer(MVBBVisualizer):
-    def __init__(self, poses, poses_variations, boxes, world, alt_trimesh = None):
+    def __init__(self, poses, poses_variations, boxes, world, xform, alt_trimesh = None):
         MVBBVisualizer.__init__(self, poses, poses_variations, boxes, world, alt_trimesh)
+        self.xform = xform
 
     def display(self):
         T0 = get_moving_base_xform(self.robot)
@@ -57,12 +58,13 @@ class FilteredMVBBVisualizer(MVBBVisualizer):
         self.obj.drawGL()
         for pose in self.poses:
             T = se3.from_homogeneous(pose)
-            if not CollisionTestPose(self.world, self.robot, self.obj, T):
+            T_coll = pose.dot(np.array(se3.homogeneous(self.xform)))
+            if not CollisionTestPose(self.world, self.robot, self.obj, T_coll):
                 draw_GL_frame(T)
                 #set_moving_base_xform(self.robot, T[0], T[1])
                 #self.robot.drawGL()
             else:
-                "robot collides with object at", T
+                "robot collides with object at", T_coll
                 draw_GL_frame(T, color=(0.5,0.5,0.5))
         for box in self.boxes:
             draw_bbox(box.Isobox, box.T)
@@ -96,42 +98,37 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
 
     R,t = object.getTransform()
     object.setTransform(R, [0, 0, 0])
-    tm = object.geometry().getTriangleMesh()
-    n_vertices = tm.vertices.size() / 3
-    decimator = pydany_bb.MVBBDecimator()
-    vertices_old, faces_old = trimesh_to_numpy(tm)
-    tm_decimated = None
-    if n_vertices > 2000:
-        print "Object has", n_vertices, "vertices - decimating"
-        decimator.decimateTriMesh(vertices_old, faces_old)
-        vertices = decimator.getEigenVertices()
-        faces = decimator.getEigenFaces()
-        tm_decimated = numpy_to_trimesh(vertices, faces)
-        print "Decimated to", vertices.shape[0], "vertices"
-        poses, poses_variations, boxes = compute_poses(vertices)
-    else:
-        poses, poses_variations, boxes = compute_poses(object)
 
-    w_T_o = np.eye(4)
-    h_T_h2 = np.eye(4)
-    if True:
-        import PyKDL
-        f = PyKDL.Frame()
-        f.p[2] -= 0.15
-        h_T_h2 = kdltonumpy4(f)
+    object_vertices_or_none, tm_decimated = skip_decimate_or_return(object)
+    poses, poses_variations, boxes = compute_poses(object_vertices_or_none)
 
+    # now the simulation is launched
+    xform = resource.get("default_initial_%s.xform" % robotname, description="Initial hand transform",
+                         default=se3.identity(), world=world, doedit=False)
+
+    p_T_h = np.array(se3.homogeneous(xform))
+
+    poses_h = []
+    poses_variations_h = []
 
     for i in range(len(poses)):
-        poses[i] = w_T_o.dot(poses[i]).dot(h_T_h2)
-    """
+        poses_h.append(poses[i].dot(p_T_h))
     for i in range(len(poses_variations)):
-        poses_variations[i] = w_T_o.dot(poses_variations[i]).dot(h_T_h2)
-    """
+        poses_variations_h.append(poses_variations[i].dot(p_T_h))
 
-    embed()
-    # now the simulation is launched
+    filtered_poses = []
+    for i in range(len(poses)):
+        if not CollisionTestPose(world, robot, object, poses_h[i]):
+            filtered_poses.append(poses[i])
+    filtered_poses_variations = []
+    for i in range(len(poses_variations)):
+        if not CollisionTestPose(world, robot, object, poses_variations_h[i]):
+            filtered_poses_variations.append(poses_variations[i])
+    print "Filtered from", len(poses + poses_variations), "to", len(filtered_poses + filtered_poses_variations)
+    if len(filtered_poses + filtered_poses_variations) == 0:
+        print "Filtering returned 0 feasible poses"
 
-    program = FilteredMVBBVisualizer(poses, poses_variations, boxes, world, tm_decimated)
+    program = FilteredMVBBVisualizer(poses, poses_variations, boxes, world, xform, tm_decimated)
     vis.setPlugin(program)
     program.reshape(800, 600)
 

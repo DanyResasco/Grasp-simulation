@@ -108,7 +108,7 @@ def numpy_to_trimesh(vertices, faces):
         tm.indices.append(int(faces[i, 2]))
     return tm
 
-def skip_decimate_or_return(object, min_vertices = 100, max_vertices = 2000):
+def skip_decimate_or_return(object, min_vertices = 0, max_vertices = 2000):
     tm = object.geometry().getTriangleMesh()
     n_vertices = tm.vertices.size() / 3
     decimator = pydany_bb.MVBBDecimator()
@@ -153,6 +153,9 @@ def compute_poses(obj, new_method = False):
     print "Found Bounding Box:"
     print bbox.Isobox
 
+    # rubbermaid_ice_guard_pitcher_blue
+    #param_area = 0.95
+    #param_volume = 4E-7
     param_area = 0.9
     param_volume = 5E-7
 
@@ -165,7 +168,9 @@ def compute_poses(obj, new_method = False):
             poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 2)
         poses_variations = []
     else:
-        poses = pydany_bb.getTrasformsforHand(boxes, bbox)
+        # rubbermaid_ice_guard_pitcher_blue
+        #poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.01)
+        poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.003)
 
         poses_variations = []
         for pose in poses:

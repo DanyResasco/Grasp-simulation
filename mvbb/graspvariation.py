@@ -37,8 +37,4 @@ def PoseVariation(pose, longSide):
     listVarPose.append(pose.dot(I))
     listVarPose.append(pose.dot(I).dot(R))
 
-    I[0:3,3] = np.array([3*dim,0,0])
-    listVarPose.append(pose.dot(I))
-    listVarPose.append(pose.dot(I).dot(R))
-
     return listVarPose

@@ -379,7 +379,7 @@ std::list< Box > box_sort (std::list< Box > results)
 }
 
 
-Eigen::MatrixXd info_adams( Box  first_boxes, Box ObjectOriginal)
+Eigen::MatrixXd info_adams( Box  first_boxes, Box ObjectOriginal, double distance)
 {
     double side_x, side_y, side_z;
     Eigen::Matrix<double, 4, 4> T_l = Eigen::Matrix<double, 4, 4>::Identity();
@@ -454,7 +454,7 @@ Eigen::MatrixXd info_adams( Box  first_boxes, Box ObjectOriginal)
     R.row(1) = F.row(1);
     R.row(2) = F.row(2);
 
-    angle = FInd_angle(first_boxes, figure, 0.005, flag_axis, ObjectOriginal);
+    angle = FInd_angle(first_boxes, figure, distance, flag_axis, ObjectOriginal);
 
     Eigen::Matrix<double, 3, 1> third_col, axis_x;
 
@@ -797,13 +797,13 @@ std::list<Box> extractBoxes ( Box ObjectOriginal, float gain, float min_volume, 
 }
 
 
-std::vector<Eigen::MatrixXd> getTrasformsforHand(std::list<Box> sorted_boxes, Box ObjectOriginal)
+std::vector<Eigen::MatrixXd> getTransformsForHand(std::list<Box> sorted_boxes, Box ObjectOriginal, double dist_hand)
 {
 
     std::vector<Eigen::MatrixXd> results;
     while (!sorted_boxes.empty() )
     {
-        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal));
+        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, dist_hand));
         // std::cout << info_adams(sorted_boxes.front(), ObjectOriginal) << std::endl;
         sorted_boxes.pop_front();
     }

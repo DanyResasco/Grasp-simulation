@@ -18,6 +18,7 @@ import sys
 import time
 
 from create_mvbb import MVBBVisualizer, compute_poses, skip_decimate_or_return
+from create_mvbb_filtered import FilteredMVBBVisualizer
 from klampt.math import so3, se3
 import pydany_bb
 import numpy as np
@@ -34,22 +35,12 @@ objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 robots = ['reflex_col', 'soft_hand', 'reflex']
 
-object_geom_file_patterns = {
-    'ycb':['data/objects/ycb/%s/meshes/tsdf_mesh.stl','data/objects/ycb/%s/meshes/poisson_mesh.stl'],
-    'apc2015':['data/objects/apc2015/%s/textured_meshes/optimized_tsdf_textured_mesh.ply']
-}
-
-robot_files = {
-    'reflex_col':'data/robots/reflex_col.rob',
-    'soft_hand':'data/robots/soft_hand.urdf',
-    'reflex':'data/robots/reflex.rob'
-}
-
 class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
     def __init__(self, poses, poses_variations, world, p_T_h, R, module):
         GLRealtimeProgram.__init__(self, "FilteredMVBBTEsterVisualizer")
         self.world = world
-        self.h_T_h2 = p_T_h
+        self.p_T_h = p_T_h
+        self.h_T_p = np.linalg.inv(self.p_T_h)
         self.poses = poses
         self.poses_variations = poses_variations
         self.R = R
@@ -59,29 +50,35 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.all_poses = self.poses + self.poses_variations
         self.robot = self.world.robot(0)
         self.q_0 = self.robot.getConfig()
+        self.w_T_o = None
         self.obj = None
         self.t_0 = None
         self.object_com_z_0 = None
         self.object_fell = None
         self.sim = None
         self.module = module
+        self.running = True
 
     def display(self):
-        self.world.drawGL()
+        if self.running:
+            self.world.drawGL()
 
-        for pose in self.poses+self.poses_variations:
-            T = se3.from_homogeneous(pose)
-            draw_GL_frame(T, color=(0.5,0.5,0.5))
-        if self.curr_pose is not None:
-            T = se3.from_homogeneous(self.curr_pose)
-            draw_GL_frame(T)
+            for pose in self.poses+self.poses_variations:
+                T = se3.from_homogeneous(pose)
+                draw_GL_frame(T, color=(0.5,0.5,0.5))
+            if self.curr_pose is not None:
+                T = se3.from_homogeneous(self.curr_pose)
+                draw_GL_frame(T)
 
-        hand_xform = get_moving_base_xform(self.robot)
-        h_T_g_np = np.array(se3.homogeneous(hand_xform)).dot(np.linalg.inv(self.h_T_h2))
-        T_h = se3.from_homogeneous(h_T_g_np)
-        draw_GL_frame(T_h)
+            hand_xform = get_moving_base_xform(self.robot)
+            w_T_p_np = np.array(se3.homogeneous(hand_xform)).dot(self.h_T_p)
+            w_T_p = se3.from_homogeneous(w_T_p_np)
+            draw_GL_frame(w_T_p)
 
     def idle(self):
+        if not self.running:
+            return
+
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
         else:
@@ -93,14 +90,15 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 print "Simulating Next Pose Grasp"
                 print self.curr_pose
             else:
-                print "Done. Quitting"
-                vis.kill()
+                print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
+                print "Quitting"
+                self.running = False
+                vis.show(hidden=True)
                 return
 
-            self.world.loadElement("data/terrains/plane.env")
             self.obj.setTransform(self.R, [0, 0, 0])
-            w_T_o = np.array(se3.homogeneous(self.obj.getTransform()))
-            pose_se3 = se3.from_homogeneous( w_T_o.dot(self.curr_pose).dot(self.h_T_h2) )
+            self.w_T_o = np.array(se3.homogeneous(self.obj.getTransform()))
+            pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
             self.robot.setConfig(self.q_0)
             set_moving_base_xform(self.robot, pose_se3[0], pose_se3[1])
 
@@ -117,15 +115,20 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             self.is_simulating = True
 
         if self.is_simulating:
+            t_lift = 1.3 # when to lift
+            d_lift = 1.0 # duration
             print "t:", self.sim.getTime() - self.t_0
             object_com_z = getObjectGlobalCom(self.obj)[2]
             if self.sim.getTime() - self.t_0 == 0:
                 print "Closing hand"
-                self.hand.setCommand([1.0]) # TODO close hand
-            elif (self.sim.getTime() - self.t_0) >= 1.0 and (self.sim.getTime() - self.t_0) < 1.01:
+                self.hand.setCommand([1.0])
+            elif (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) <= t_lift+d_lift:
                 print "Lifting"
-                pose_se3 = get_moving_base_xform(self.robot)
-                send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.add(pose_se3[1], (0,0,0.2)))
+                pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
+                t_i = pose_se3[1]
+                t_f = vectorops.add(t_i, (0,0,0.2))
+                u = np.min((self.sim.getTime() - self.t_0 - t_lift, 1))
+                send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.interpolate(t_i, t_f ,u))
 
 
             if object_com_z < self.object_com_z_0 - 0.5:
@@ -149,60 +152,72 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
     """
 
     world = WorldModel()
+    world.loadElement("data/terrains/plane.env")
     robot = make_moving_base_robot(robotname, world)
     xform = resource.get("default_initial_%s.xform" % robotname, description="Initial hand transform",
                          default=se3.identity(), world=world, doedit=False)
 
     for object_name in object_list:
+        obj = None
         for object_set, objects_in_set in objects.items():
             if object_name in objects_in_set:
-                object = make_object(object_set, object_name, world)
-            else:
-                continue
+                if world.numRigidObjects() > 0:
+                    world.remove(world.rigidObject(0))
+                obj = make_object(object_set, object_name, world)
+        if obj is None:
+            print "Could not find object", object_name
+            continue
 
 
-        R,t = object.getTransform()
-        object.setTransform(R, [0, 0, 0])
-        object_vertices_or_none, tm_decimated = skip_decimate_or_return(object, min_vertices, 2000)
+        R,t = obj.getTransform()
+        obj.setTransform(R, [0, 0, 0])
+        object_vertices_or_none, tm_decimated = skip_decimate_or_return(obj, min_vertices, 2000)
         if object_vertices_or_none is None:
-            pass
+            print "-------skipping object", obj.getName()
+            continue
         object_or_vertices = object_vertices_or_none
 
-        print "------Computing poses:"
+        print "------Computing poses for object:", object_name
         poses, poses_variations, boxes = compute_poses(object_or_vertices)
 
+        w_T_o = np.array(se3.homogeneous((R,[0, 0, 0]))) # object is at origin
 
-        w_T_o = np.eye(4) # object is at origin
-        h_T_h2 = np.array(se3.homogeneous(xform))
+        p_T_h = np.array(se3.homogeneous(xform))
 
         poses_h = []
         poses_variations_h = []
 
         for i in range(len(poses)):
-            poses_h.append(w_T_o.dot(poses[i]).dot(h_T_h2))
+            poses_h.append(w_T_o.dot(poses[i]).dot(p_T_h))
         for i in range(len(poses_variations)):
-            poses_variations_h.append(w_T_o.dot(poses_variations[i]).dot(h_T_h2))
+            poses_variations_h.append(w_T_o.dot(poses_variations[i]).dot(p_T_h))
 
         print "-------Filtering poses:"
         filtered_poses = []
         for i in range(len(poses)):
-            if not CollisionTestPose(world, robot, object, poses_h[i]):
+            if not CollisionTestPose(world, robot, obj, poses_h[i]):
                 filtered_poses.append(poses[i])
         filtered_poses_variations = []
         for i in range(len(poses_variations)):
-            if not CollisionTestPose(world, robot, object, poses_variations_h[i]):
+            if not CollisionTestPose(world, robot, obj, poses_variations_h[i]):
                 filtered_poses_variations.append(poses_variations[i])
-
-
+        print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)
+        if len(filtered_poses+filtered_poses_variations) == 0:
+            print "Filtering returned 0 feasible poses"
+            continue
 
         # create a hand emulator from the given robot name
         module = importlib.import_module('plugins.' + robotname)
         # emulator takes the robot index (0), start link index (6), and start driver index (6)
 
-        program = FilteredMVBBTesterVisualizer(filtered_poses, filtered_poses_variations, world, h_T_h2, R, module)
+        program = FilteredMVBBTesterVisualizer(filtered_poses,
+                                               filtered_poses_variations,
+                                               world,
+                                               p_T_h,
+                                               R,
+                                               module)
 
-        embed()
-
+        vis.setPlugin(None)
         vis.setPlugin(program)
         program.reshape(800, 600)
 
@@ -216,8 +231,41 @@ if __name__ == '__main__':
     all_objects = []
     for dataset in objects.values():
         all_objects += dataset
+
+    to_filter = ['stanley_13oz_hammer', # falls down
+                 'red_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
+                 '2in_metal_washer', # too small TODO come up with a strategy for small objects
+                 'blue_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
+                 'domino_sugar_1lb',  # cannot grasp box?
+                 'expo_black_dry_erase_marker', # cannot grasp box?
+                 'cheeze-it_388g', # cannot grasp box?
+                 '1_and_a_half_in_metal_washer', # too small TODO come up with a strategy for small objects
+                 'block_of_wood_6in', # canno grasp box, too big?
+                 'sterilite_bin_12qt_cap', # what ?
+                 'starkist_chunk_light_tuna',  # what?
+                 'yellow_plastic_chain', # what?
+                 'purple_wood_block_1inx1in', # TODO too small
+                 ]
+    to_do = [   'champion_sports_official_softball', # TODO grasp balls
+                'penn_raquet_ball',                  # TODO grasp balls
+                'wilson_100_tennis_ball',            # TODO grasp balls
+                'wearever_cooking_pan_with_lid',     # TODO good handle, should be easy to grasp
+                'rubbermaid_ice_guard_pitcher_blue', # TODO good handle, should be easy to grasp
+                'jell-o_strawberry_gelatin_dessert',  # box, should be graspable
+                ]
+    done = [    'red_metal_bowl_white_speckles'] # effort_scaling = -0.5; sinergy_scaling = 11
+    other =  [   'starkist_chunk_light_tuna']
+    for obj_name in to_filter + to_do + done:
+        all_objects.pop(all_objects.index(obj_name))
+
     print "-------------"
     print all_objects
     print "-------------"
 
-    launch_test_mvbb_filtered("soft_hand", all_objects, 100)
+    try:
+        objname = sys.argv[1]
+        launch_test_mvbb_filtered("soft_hand", [objname], 100)
+    except:
+        launch_test_mvbb_filtered("soft_hand", all_objects, 100)
+
+
