@@ -46,16 +46,16 @@ robot_files = {
 }
 
 class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
-    def __init__(self, poses, poses_variations, world, h_T_h2, R, module):
+    def __init__(self, poses, poses_variations, world, p_T_h, R, module):
         GLRealtimeProgram.__init__(self, "FilteredMVBBTEsterVisualizer")
         self.world = world
-        self.h_T_h2 = h_T_h2
+        self.h_T_h2 = p_T_h
         self.poses = poses
         self.poses_variations = poses_variations
         self.R = R
         self.hand = None
         self.is_simulating = False
-        self.pose_i = 0
+        self.curr_pose = None
         self.all_poses = self.poses + self.poses_variations
         self.robot = self.world.robot(0)
         self.q_0 = self.robot.getConfig()
@@ -69,12 +69,15 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
     def display(self):
         self.world.drawGL()
 
-        for pose in self.poses:
+        for pose in self.poses+self.poses_variations:
             T = se3.from_homogeneous(pose)
+            draw_GL_frame(T, color=(0.5,0.5,0.5))
+        if self.curr_pose is not None:
+            T = se3.from_homogeneous(self.curr_pose)
             draw_GL_frame(T)
 
         hand_xform = get_moving_base_xform(self.robot)
-        h_T_g_np = np.array(se3.homogeneous(hand_xform)).dot(self.h_T_h2)
+        h_T_g_np = np.array(se3.homogeneous(hand_xform)).dot(np.linalg.inv(self.h_T_h2))
         T_h = se3.from_homogeneous(h_T_g_np)
         draw_GL_frame(T_h)
 
@@ -86,8 +89,9 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
         if not self.is_simulating:
             if len(self.all_poses) > 0:
+                self.curr_pose = self.all_poses.pop()
                 print "Simulating Next Pose Grasp"
-                pose = self.all_poses.pop()
+                print self.curr_pose
             else:
                 print "Done. Quitting"
                 vis.kill()
@@ -96,7 +100,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             self.world.loadElement("data/terrains/plane.env")
             self.obj.setTransform(self.R, [0, 0, 0])
             w_T_o = np.array(se3.homogeneous(self.obj.getTransform()))
-            pose_se3 = se3.from_homogeneous( w_T_o.dot(pose).dot(self.h_T_h2) )
+            pose_se3 = se3.from_homogeneous( w_T_o.dot(self.curr_pose).dot(self.h_T_h2) )
             self.robot.setConfig(self.q_0)
             set_moving_base_xform(self.robot, pose_se3[0], pose_se3[1])
 
