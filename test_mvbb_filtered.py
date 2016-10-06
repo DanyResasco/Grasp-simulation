@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import pkg_resources
 pkg_resources.require("klampt>=0.7.0")
 from klampt import *

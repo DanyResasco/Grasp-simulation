@@ -65,6 +65,19 @@ class HandEmulator(CompliantHandEmulator):
                 print "Link name (id):", self.world.getName(self.u_to_l[u_id])
         """
 
+        n_links = self.robot.numLinks()
+        for i in range(n_links-link_offset):
+            l_i = i + link_offset
+            link_name = self.robot.link(l_i).getName()
+            if 'fake' not in link_name:
+                sh_link = self.sim.body(self.world.robotLink(robotindex, l_i))
+                s = sh_link.getSurface()
+                if 'soft_hand_palm_link' in link_name:
+                    s.kFriction = 1.6
+                else:
+                    s.kFriction = 1.3
+                sh_link.setSurface(s)
+
     def loadHandParameters(self):
         global klampt_model_name, gripper_name
         self.paramsLoader = SoftHandLoader(klampt_model_name)
