@@ -266,7 +266,6 @@ if __name__ == '__main__':
                  'yellow_plastic_chain', # what?
                  'purple_wood_block_1inx1in', # TODO too small
                  'stainless_steel_spatula', # ?!?
-                 '', #?!?
                  ]
     to_do = [   'champion_sports_official_softball', # TODO grasp balls
                 'penn_raquet_ball',                  # TODO grasp balls
@@ -277,8 +276,8 @@ if __name__ == '__main__':
                 'clorox_disinfecting_wipes_35',      # maybe too big
                 ]
     done = [    'red_metal_bowl_white_speckles',
-                'blank_hard_plastic_card'] # effort_scaling = -0.5; sinergy_scaling = 11
-    to_check =  [   'starkist_chunk_light_tuna',    # TODO check, 0 poses
+                'blank_hard_plastic_card'] # effort_scaling = -0.5; synergy_scaling = 11
+    to_check =  [   
                     'wilson_golf_ball',             # TODO check, 0 poses
                     ]
     for obj_name in to_filter + to_do + done + to_check:

@@ -104,6 +104,7 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
 
     db = MVBBLoader()
     loaded_poses = db.get_poses(object.getName())
+    loaded_poses = []
 
     if len(loaded_poses) > 0:
         tm_decimated = None
