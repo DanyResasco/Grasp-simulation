@@ -173,7 +173,13 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         obj.setTransform(R, [0, 0, 0])
         object_vertices_or_none, tm_decimated = skip_decimate_or_return(obj, min_vertices, 2000)
         if object_vertices_or_none is None:
-            print "-------skipping object", obj.getName()
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
+            print "skipping object, too few vertices", obj.getName()
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
             continue
         object_or_vertices = object_vertices_or_none
 
@@ -211,7 +217,13 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
                 filtered_poses_variations.append(poses_variations[i])
         print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)
         if len(filtered_poses+filtered_poses_variations) == 0:
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             print "Filtering returned 0 feasible poses"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             continue
 
         # create a hand emulator from the given robot name
@@ -254,17 +266,22 @@ if __name__ == '__main__':
                  'yellow_plastic_chain', # what?
                  'purple_wood_block_1inx1in', # TODO too small
                  'stainless_steel_spatula', # ?!?
+                 '', #?!?
                  ]
     to_do = [   'champion_sports_official_softball', # TODO grasp balls
                 'penn_raquet_ball',                  # TODO grasp balls
                 'wilson_100_tennis_ball',            # TODO grasp balls
                 'wearever_cooking_pan_with_lid',     # TODO good handle, should be easy to grasp
                 'rubbermaid_ice_guard_pitcher_blue', # TODO good handle, should be easy to grasp
-                'jell-o_strawberry_gelatin_dessert',  # box, should be graspable
+                'jell-o_strawberry_gelatin_dessert', # box, should be graspable
+                'clorox_disinfecting_wipes_35',      # maybe too big
                 ]
-    done = [    'red_metal_bowl_white_speckles'] # effort_scaling = -0.5; sinergy_scaling = 11
-    other =  [   'starkist_chunk_light_tuna']
-    for obj_name in to_filter + to_do + done:
+    done = [    'red_metal_bowl_white_speckles',
+                'blank_hard_plastic_card'] # effort_scaling = -0.5; sinergy_scaling = 11
+    to_check =  [   'starkist_chunk_light_tuna',    # TODO check, 0 poses
+                    'wilson_golf_ball',             # TODO check, 0 poses
+                    ]
+    for obj_name in to_filter + to_do + done + to_check:
         all_objects.pop(all_objects.index(obj_name))
 
     print "-------------"
