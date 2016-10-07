@@ -22,6 +22,7 @@ import numpy as np
 from IPython import embed
 from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
+from mvbb.db import MVBBLoader
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
 from i16mc import make_object, make_moving_base_robot
 from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose
@@ -99,8 +100,15 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
     R,t = object.getTransform()
     object.setTransform(R, [0, 0, 0])
 
-    object_vertices_or_none, tm_decimated = skip_decimate_or_return(object)
-    poses, poses_variations, boxes = compute_poses(object_vertices_or_none)
+    db = MVBBLoader()
+    loaded_poses = db.get_poses(object.getName())
+
+    if len(loaded_poses) > 0:
+        tm_decimated = None
+        poses, poses_variations, boxes = (loaded_poses, [], [])
+    else:
+        object_vertices_or_none, tm_decimated = skip_decimate_or_return(object)
+        poses, poses_variations, boxes = compute_poses(object_vertices_or_none)
 
     # now the simulation is launched
     xform = resource.get("default_initial_%s.xform" % robotname, description="Initial hand transform",
@@ -144,6 +152,7 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
 
 if __name__ == '__main__':
     import random
+
     try:
         dataset = sys.argv[1]
     except IndexError:

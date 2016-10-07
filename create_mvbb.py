@@ -170,7 +170,7 @@ def compute_poses(obj, new_method = False):
     else:
         # rubbermaid_ice_guard_pitcher_blue
         #poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.01)
-        poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.003)
+        poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.005)
 
         poses_variations = []
         for pose in poses:
@@ -202,8 +202,8 @@ def launch_mvbb(object_set, objectname):
     if n_vertices > 2000:
         print "Object has", n_vertices, "vertices - decimating"
         meshfile = pattern%(objectname,)
-        #decimator.decimateTriMesh(meshfile)
-        decimator.decimateTriMesh(vertices_old, faces_old)
+        decimator.decimateTriMesh(meshfile)
+        #decimator.decimateTriMesh(vertices_old, faces_old)
         vertices = decimator.getEigenVertices()
         faces = decimator.getEigenFaces()
         tm_decimated = numpy_to_trimesh(vertices, faces)
