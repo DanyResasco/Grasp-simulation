@@ -253,6 +253,7 @@ if __name__ == '__main__':
                  'starkist_chunk_light_tuna',  # what?
                  'yellow_plastic_chain', # what?
                  'purple_wood_block_1inx1in', # TODO too small
+                 'stainless_steel_spatula', # ?!?
                  ]
     to_do = [   'champion_sports_official_softball', # TODO grasp balls
                 'penn_raquet_ball',                  # TODO grasp balls
