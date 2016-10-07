@@ -86,7 +86,7 @@ bool compare_box (Box i, Box j);
 	*				$) third column --> axis with minimun angle and zeros for the last row
 	*				$) fourth column --> length side with minimun angle/2 plus distance for the hand and one for the last row
 */
-Eigen::MatrixXd info_adams( Box first_boxes, Box ObjectOriginal, double distance = 0.005 );
+Eigen::MatrixXd info_adams( Box first_boxes, Box ObjectOriginal, double distance = 0.005, bool morrirred = false);
 
 
 /**Function: FInd_angle
