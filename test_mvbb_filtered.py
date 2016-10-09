@@ -65,7 +65,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
             for pose in self.poses+self.poses_variations:
                 T = se3.from_homogeneous(pose)
-                # draw_GL_frame(T, color=(0.5,0.5   ,0.5))
+                draw_GL_frame(T, color=(0.5,0.5,0.5))
             if self.curr_pose is not None:
                 T = se3.from_homogeneous(self.curr_pose)
                 draw_GL_frame(T)
@@ -108,6 +108,13 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 self.sim.addEmulator(0, self.hand)
                 # the next line latches the current configuration in the PID controller...
                 self.sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
+
+                # setup the preshrink
+                visPreshrink = True  # turn this to true if you want to see the "shrunken" models used for collision detection
+                for l in range(self.robot.numLinks()):
+                    self.sim.body(self.robot.link(l)).setCollisionPreshrink(visPreshrink)
+                for l in range(self.world.numRigidObjects()):
+                    self.sim.body(self.world.rigidObject(l)).setCollisionPreshrink(visPreshrink)
 
             self.object_com_z_0 = getObjectGlobalCom(self.obj)[2]
             self.object_fell = False
@@ -158,8 +165,6 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
                          default=se3.identity(), world=world, doedit=False)
 
     for object_name in object_list:
-        print '**************Object Name: ', object_name, '***************'
-        print '**************Object list: ', object_name, '***************'
         obj = None
         for object_set, objects_in_set in objects.items():
             if object_name in objects_in_set:
