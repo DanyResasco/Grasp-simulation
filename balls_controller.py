@@ -3,9 +3,10 @@ from klampt.math import vectorops,so3,se3
 from moving_base_control import *
 from reflex_control import *
 from klampt.io import resource
-from ..i16mc import box_dims
+from i16mc import box_dims
 from IPython import embed
 import numpy as np
+from copy import deepcopy
 
 class BallsStateMachineController(object):
     """A more sophisticated controller that uses a state machine."""
@@ -15,7 +16,7 @@ class BallsStateMachineController(object):
         self.dt = dt
         self.sim.updateWorld()
         self.base_xform = get_moving_base_xform(self.sim.controller(0).model())
-        self.state = 'idle'
+        self.state = 'wait'
         self.balls_to_move = []
         self.attempts = {}
         self.ball = None
@@ -24,9 +25,9 @@ class BallsStateMachineController(object):
         self.goal_pose = None
         self.p_T_h = resource.get("default_initial_soft_hand.xform", description="Initial hand transform",
                              default=se3.identity(), world=sim.world, doedit=False)
-        embed()
 
     def __call__(self,controller):
+        self.sim.updateWorld()
         sim = self.sim
         xform = self.base_xform
 
@@ -37,6 +38,12 @@ class BallsStateMachineController(object):
         t_grasp = 1.0
         t_lift = 0.5
         t_ungrasp = 0.5
+        t_wait = 2.0
+        if self.state == 'wait':
+            if sim.getTime() > t_wait:
+                self.state = 'idle'
+                print self.state
+
         if self.state == 'idle':
             if len(self._get_balls_to_move()) > 0:
                 ball = self.balls_to_move.pop(0)
@@ -54,7 +61,7 @@ class BallsStateMachineController(object):
 
         elif self.state == 'parking':
             u = (sim.getTime() - self.t0) / t_park
-            goal_pose = self.goal_pose
+            goal_pose = deepcopy(self.goal_pose)
             goal_pose[1][2] = self.start_pose[1][2] # translate and rotate, do not lower
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u,1.0)))
             desired = (goal_pose[0], t)
@@ -85,7 +92,7 @@ class BallsStateMachineController(object):
             if sim.getTime() - self.t0 > t_grasp:
                 self.t0 = sim.getTime()
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
-                goal_pose = self.goal_pose
+                goal_pose = deepcopy(self.goal_pose)
                 goal_pose[1][2] = self.base_xform[1][2]  # translate and rotate, do not lower
                 self.goal_pose = goal_pose
                 self.state = 'lifting'
@@ -93,7 +100,7 @@ class BallsStateMachineController(object):
 
         elif self.state == 'lifting':
             u = (sim.getTime() - self.t0) / t_lift
-            goal_pose = self.goal_pose
+            goal_pose = deepcopy(self.goal_pose)
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
@@ -105,13 +112,14 @@ class BallsStateMachineController(object):
                     self.state = 'parking_for_ungrasp'
                 else:
                     self.ball = None
+                    self.hand.setCommand([0.0])
                     self.state = 'idle'
                     print "Failed to raise ball"
                 print self.state
 
         elif self.state == 'parking_for_ungrasp':
             u = (sim.getTime() - self.t0) / t_park
-            goal_pose = self.goal_pose
+            goal_pose = deepcopy(self.goal_pose)
             goal_pose[1][0] += 0.7  # translate to the next box
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
             desired = (goal_pose[0], t)
@@ -139,25 +147,24 @@ class BallsStateMachineController(object):
             o = w.rigidObject(i)
 
             if 'sphere' in o.getName():
-                R, t = o.getTransform
+                R, t = o.getTransform()
                 if t[0] < box_dims[0]/2.0 - 0.005 and t[1] < box_dims[1]/2.0 - 0.005:
                     self.balls_to_move.append(o)
-                    self.balls_to_move = sorted(self.balls_to_move, key = lambda obj: (obj.getTransform()[1][3],
-                                                                                       obj.getTransform()[1][0]**2+
-                                                                                       obj.getTransform()[1][1]**2))
+            self.balls_to_move = sorted(self.balls_to_move, key = lambda obj: (obj.getTransform()[1][2],
+                                                                               obj.getTransform()[1][0]**2+
+                                                                               obj.getTransform()[1][1]**2))
         return self.balls_to_move
 
     def _get_hand_pose_for_ball(self, ball):
         w_T_op = np.eye(4)
-        w_T_op[2,3] = -0.05 # TODO Manuel get this value from the BB or from the algorithm
+        w_T_op[2,3] = 0.11 # TODO Manuel get this value from the BB or from the algorithm
         """
         w_T_o = np.array(ball.getTransform())
         p_T_h = np.array(se3.homogeneous(self.p_T_h))
         w_T_p =  w_T_op.dot(w_T_o)
         return w_T_p.dot(p_T_h)
         """
-        pose = self.base_xform
-        pose[1] = ball.getTransform()[1]
+        pose = (self.base_xform[0], ball.getTransform()[1])
         final_pose = w_T_op.dot(np.array(se3.homogeneous(pose)))
         return se3.from_homogeneous(final_pose)
 
