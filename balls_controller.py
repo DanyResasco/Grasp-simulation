@@ -17,7 +17,8 @@ class BallsStateMachineController(object):
         self.base_xform = get_moving_base_xform(self.sim.controller(0).model())
         self.state = 'idle'
         self.balls_to_move = []
-        self.attemps = {}
+        self.attempts = {}
+        self.ball = None
         self.t0 = 0
         self.start_pose = None
         self.goal_pose = None
@@ -40,10 +41,11 @@ class BallsStateMachineController(object):
         if self.state == 'idle':
             if len(self._get_balls_to_move()) > 0:
                 ball = self.balls_to_move.pop(0)
-                if ball not in self.attemps:
-                    self.attemps[ball] = 0
-                self.attemps[ball] += 1
-                print "Attempt", self.attemps[ball]
+                if ball not in self.attempts:
+                    self.attempts[ball] = 0
+                self.attempts[ball] += 1
+                self.ball = ball
+                print "Attempt", self.attempts[ball]
 
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.goal_pose = self._get_hand_pose_for_ball(ball)
@@ -52,7 +54,7 @@ class BallsStateMachineController(object):
                 print self.state
 
         elif self.state == 'parking':
-            u = (sim.getTime() - self.t0)/t_park
+            u = (sim.getTime() - self.t0) / t_park
             goal_pose = self.goal_pose
             goal_pose[1][3] = self.start_pose[1][3] # translate and rotate, do not lower
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u,1.0)))
@@ -74,9 +76,6 @@ class BallsStateMachineController(object):
             if sim.getTime() - self.t0 > t_lower:
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.t0 = sim.getTime()
-                self.state = 'grasping'
-                print self.state
-
                 #this is needed to stop at the current position in case there's some residual velocity
                 controller.setPIDCommand(controller.getCommandedConfig(),[0.0]*len(controller.getCommandedConfig()))
                 self.hand.setCommand([1.0])
@@ -87,26 +86,34 @@ class BallsStateMachineController(object):
             if sim.getTime() - self.t0 > t_grasp:
                 self.t0 = sim.getTime()
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
-                self.state = 'raising'
+                goal_pose = self.goal_pose
+                goal_pose[1][3] = self.base_xform[1][3]  # translate and rotate, do not lower
+                self.goal_pose = goal_pose
+                self.state = 'lifting'
                 print self.state
-        elif self.state == 'raising':
+
+        elif self.state == 'lifting':
             u = (sim.getTime() - self.t0) / t_lift
             goal_pose = self.goal_pose
-            goal_pose[1][3] = self.base_xform[1][3]  # translate and rotate, do not lower
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
             if sim.getTime() - self.t0 > t_lift:
-                self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
-                self.t0 = sim.getTime()
-                self.state = 'parking_for_ungrasp'
+                if self._ball_lifted():
+                    self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
+                    self.t0 = sim.getTime()
+                    self.state = 'parking_for_ungrasp'
+                else:
+                    self.ball = None
+                    self.state = 'idle'
+                    print "Failed to raise ball"
                 print self.state
 
         elif self.state == 'parking_for_ungrasp':
             u = (sim.getTime() - self.t0) / t_park
             goal_pose = self.goal_pose
-            goal_pose[1][3] = self.start_pose[1][3]  # translate and rotate, do not lower
+            goal_pose[1][0] += 0.7  # translate to the next box
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
@@ -149,6 +156,10 @@ class BallsStateMachineController(object):
         pose[1] = ball.getTransform()[1]
         final_pose = w_T_op.dot(np.array(se3.homogeneous(pose)))
         return se3.from_homogeneous(final_pose)
+
+    def _ball_lifted(self):
+        # TODO check if ball lifted
+        return True
 
 
 def make(sim,hand,dt):
