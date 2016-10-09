@@ -252,6 +252,8 @@ def launch_simple(robotname,object_set,objectname,use_box=False):
 	vis.add("world",world)
 	vis.show()
 
+	fake_screenshot = True
+
 	print "waiting for the user to setup viewport"
 	time.sleep(wait_for_setup)
 
@@ -270,7 +272,8 @@ def launch_simple(robotname,object_set,objectname,use_box=False):
 		sim.simulate(0.01)
 		sim.updateWorld()
 		if program.saveScreenshots and sim.getTime() >= program.nextScreenshotTime:
-			program.save_screen("image%04d.ppm" % (program.screenshotCount))
+			if not fake_screenshot:
+				program.save_screen("image%04d.ppm" % (program.screenshotCount))
 			program.screenshotCount += 1
 			program.nextScreenshotTime += 1.0 / 30.0;
 		vis.unlock()
