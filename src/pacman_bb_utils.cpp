@@ -819,8 +819,8 @@ std::vector<Eigen::MatrixXd> getTransformsForHand(std::list<Box> sorted_boxes, B
     std::vector<Eigen::MatrixXd> results;
     while (!sorted_boxes.empty() )
     {
-        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, 0.005, false));
-        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, 0.005, true));
+        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, dist_hand, false));
+        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, dist_hand, true));
         sorted_boxes.pop_front();
     }
 

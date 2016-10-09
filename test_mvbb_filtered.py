@@ -65,7 +65,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
             for pose in self.poses+self.poses_variations:
                 T = se3.from_homogeneous(pose)
-                draw_GL_frame(T, color=(0.5,0.5,0.5))
+                # draw_GL_frame(T, color=(0.5,0.5   ,0.5))
             if self.curr_pose is not None:
                 T = se3.from_homogeneous(self.curr_pose)
                 draw_GL_frame(T)
@@ -117,13 +117,13 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         if self.is_simulating:
             t_lift = 1.3 # when to lift
             d_lift = 1.0 # duration
-            print "t:", self.sim.getTime() - self.t_0
+            # print "t:", self.sim.getTime() - self.t_0
             object_com_z = getObjectGlobalCom(self.obj)[2]
             if self.sim.getTime() - self.t_0 == 0:
-                print "Closing hand"
+                # print "Closing hand"
                 self.hand.setCommand([1.0])
             elif (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) <= t_lift+d_lift:
-                print "Lifting"
+                # print "Lifting"
                 pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
                 t_i = pose_se3[1]
                 t_f = vectorops.add(t_i, (0,0,0.2))
@@ -158,6 +158,8 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
                          default=se3.identity(), world=world, doedit=False)
 
     for object_name in object_list:
+        print '**************Object Name: ', object_name, '***************'
+        print '**************Object list: ', object_name, '***************'
         obj = None
         for object_set, objects_in_set in objects.items():
             if object_name in objects_in_set:
@@ -252,7 +254,7 @@ if __name__ == '__main__':
     for dataset in objects.values():
         all_objects += dataset
 
-    to_filter = ['stanley_13oz_hammer', # falls down
+    to_filter = [#'stanley_13oz_hammer', # falls down
                  'red_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
                  '2in_metal_washer', # too small TODO come up with a strategy for small objects
                  'blue_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
@@ -266,17 +268,112 @@ if __name__ == '__main__':
                  'yellow_plastic_chain', # what?
                  'purple_wood_block_1inx1in', # TODO too small
                  'stainless_steel_spatula', # ?!?
+                 'learning_resources_one-inch_color_cubes_box', # to big to grasp with soft hand. We can try again  
+                 'genuine_joe_plastic_stir_sticks', #too big to grasp with soft hand
+                 'mead_index_cards', # TODO too small
+                 'black_and_decker_lithium_drill_driver', #too small
+                 'mommys_helper_outlet_plugs',
+                 'brine_mini_soccer_ball', #tooo big
+                 # 'champion_sports_official_softball',
+                 # 'learning_resources_one-inch_color_cubes_box',
+                 # 'yellow_plastic_chain',#it could be
+                 'moutain_security_steel_shackle_key',
+                 'white_rope',
+                 'plastic_nut_grey',
+                 'play_go_rainbow_stakin_cups_box',
+                 'plastic_wine_cup', #stupid mesh
+                 'thick_wood_block_6in', #tto big?? try up
+                 # 'sterilite_bin_12qt_cap',
+                 'sterilite_bin_12qt_bottom', #object erros?
                  ]
     to_do = [   'champion_sports_official_softball', # TODO grasp balls
                 'penn_raquet_ball',                  # TODO grasp balls
                 'wilson_100_tennis_ball',            # TODO grasp balls
-                'wearever_cooking_pan_with_lid',     # TODO good handle, should be easy to grasp
+                # 'wearever_cooking_pan_with_lid',     # TODO good handle, should be easy to grasp
                 'rubbermaid_ice_guard_pitcher_blue', # TODO good handle, should be easy to grasp
-                'jell-o_strawberry_gelatin_dessert', # box, should be graspable
+                # 'jell-o_strawberry_gelatin_dessert', # box, should be graspable
                 'clorox_disinfecting_wipes_35',      # maybe too big
+                'melissa_doug_farm_fresh_fruit_orange', # TODO grasp balls
+                'champion_copper_plus_spark_plug', # should be easy to set it up
+                'cheezit_big_original', # Should be easy ti set it up. Using new algorithm?
+                'crayola_64_ct', # Should be easy ti set it up. Using new algorithm?
+                'feline_greenies_dental_treats',  #Should be easy ti set it up. Using new algorithm?
+                'highland_6539_self_stick_notes', #Should be easy ti set it up. Using new algorithm?
+                'laugh_out_loud_joke_book', #Should be easy ti set it up. Using new algorithm?
+                'one_with_nature_soap_dead_sea_mud', #Should be easy ti set it up. Using new algorithm?
+                'black_and_decker_lithium_drill_driver_unboxed', #Should be easy ti set it up. Using new algorithm?
+                'block_of_wood_12in', #Should be easy ti set it up. Using new algorithm?
+                # 'block_of_wood_6in', #Should be easy ti set it up. Using new algorithm?
+                'campbells_condensed_tomato_soup', #Should be easy ti set it up. Using new algorithm?
+                'mark_twain_huckleberry_finn',
+                'cheerios_14oz',
+                # 'cheeze-it_388g',
+                'comet_lemon_fresh_bleach',
+                'dark_red_foam_block_with_three_holes',
+                # 'clorox_disinfecting_wipes_35',
+                # 'domino_sugar_1lb',
+                'expo_black_dry_erase_marker_fine',
+                'melissa_doug_farm_fresh_fruit_apple',
+                'kong_duck_dog_toy', # what a fuck is this
+                'munchkin_white_hot_duck_bath_toy',
+                'jell-o_chocolate_flavor_pudding',
+                'jell-o_strawberry_gelatin_dessert',
+                'master_chef_ground_coffee_297g',
+                'rollodex_mesh_collection_jumbo_pencil_cup', #physically should be really easy. In simulation the mesh is useless
+                'safety_works_safety_glasses',
+                'sharpie_accent_tank_style_highlighters', # bootstrap fuck
+                'stanley_66_052',
+                'frenchs_classic_yellow_mustard_14oz',
+                'melissa_doug_farm_fresh_fruit_banana',
+                'melissa_doug_farm_fresh_fruit_lemon',
+                # 'melissa_doug_farm_fresh_fruit_orange',
+                'melissa_doug_farm_fresh_fruit_peach',
+                'melissa_doug_farm_fresh_fruit_pear',
+                'melissa_doug_farm_fresh_fruit_strawberry',
+                # 'wilson_golf_ball',
+                # 'wilson_100_tennis_ball',
+                # 'starkist_chunk_light_tuna',
+                # 'penn_raquet_b    all',
+                'morton_pepper_shaker',
+                'morton_salt_shaker',
+                'moutain_security_steel_shackle',
+                'play_go_rainbow_stakin_cups_10_blue',
+                'play_go_rainbow_stakin_cups_6_purple',
+                'play_go_rainbow_stakin_cups_7_yellow',
+                'play_go_rainbow_stakin_cups_8_orange',
+                'play_go_rainbow_stakin_cups_9_red',
+                # 'play_go_rainbow_stakin_cups_9_red',
+                'pringles_original',
+                'stanley_philips_screwdriver',
+                'stanley_flathead_screwdriver',
+                'sharpie_marker',
+                'small_black_spring_clamp',
+                'sponge_with_textured_cover',
+                'yellow_wood_block_1inx1in',
+                'soft_scrub_2lb_4oz',
+                # 'stainless_steel_spatula', #n
                 ]
     done = [    'red_metal_bowl_white_speckles',
-                'blank_hard_plastic_card'] # effort_scaling = -0.5; synergy_scaling = 11
+                'blank_hard_plastic_card', # effort_scaling = -0.5; synergy_scaling = 11
+                'stainless_steel_knife_red_handle', # tested with default configurations
+                'elmers_washable_no_run_school_glue', # tested with default configurations
+                'kong_sitting_frog_dog_toy',
+                # 'kygen_squeakin_eggs_plush_puppies',
+                'paper_mate_12_count_mirado_black_warrior',
+                'large_black_spring_clamp',
+                'medium_black_spring_clamp',
+                'windex',
+                'play_go_rainbow_stakin_cups_3_red',
+                'play_go_rainbow_stakin_cups_5_green',
+                'wescott_orange_grey_scissors',
+                'wearever_cooking_pan_with_lid',
+                # 'red_metal_bowl_white_speckles',
+                'stanley_13oz_hammer',
+                'stainless_steel_spoon_red_handle',
+                'stainless_steel_fork_red_handle',
+                # 'stainless_steel_knife_red_handle',
+                'dr_browns_bottle_brush', #using new approach and area = 0.5, dist = 3. not at the first time
+                ]
     to_check =  [   
                     'wilson_golf_ball',             # TODO check, 0 poses
                     ]
@@ -293,4 +390,19 @@ if __name__ == '__main__':
     except:
         launch_test_mvbb_filtered("soft_hand", all_objects, 100)
 
-
+# Not working objects
+#dove_beauty_bar, no poses generated
+#expo_black_dry_erase_marker, no poses
+#stanley_flathead_screwdriver
+# play_go_rainbow_stakin_cups_1_yellow
+# play_go_rainbow_stakin_cups_1_yellow
+#extra_small_black_spring_clamp
+#oreo_mega_stuf
+#first_years_take_and_toss_straw_cups looks like mesh is downside
+#1in_metal_washer Not possible poses
+#melissa_doug_play-time_produce_farm_fresh_fruit_unopened_box
+#orange_wood_block_1inx1in
+#plastic_bolt_grey
+#purple_wood_block_1inx1in
+#spam_12oz
+#paper_mate_12_count_mirado_black_warrior
