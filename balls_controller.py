@@ -37,7 +37,6 @@ class BallsStateMachineController(object):
         t_grasp = 1.0
         t_lift = 0.5
         t_ungrasp = 0.5
-        lift_traj_duration = 0.5
         if self.state == 'idle':
             if len(self._get_balls_to_move()) > 0:
                 ball = self.balls_to_move.pop(0)
@@ -56,7 +55,7 @@ class BallsStateMachineController(object):
         elif self.state == 'parking':
             u = (sim.getTime() - self.t0) / t_park
             goal_pose = self.goal_pose
-            goal_pose[1][3] = self.start_pose[1][3] # translate and rotate, do not lower
+            goal_pose[1][2] = self.start_pose[1][2] # translate and rotate, do not lower
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u,1.0)))
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
@@ -87,7 +86,7 @@ class BallsStateMachineController(object):
                 self.t0 = sim.getTime()
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 goal_pose = self.goal_pose
-                goal_pose[1][3] = self.base_xform[1][3]  # translate and rotate, do not lower
+                goal_pose[1][2] = self.base_xform[1][2]  # translate and rotate, do not lower
                 self.goal_pose = goal_pose
                 self.state = 'lifting'
                 print self.state
@@ -119,7 +118,13 @@ class BallsStateMachineController(object):
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
             if sim.getTime() - self.t0 > t_park:
+                self.t0 = sim.getTime()
                 self.hand.setCommand([0.0])
+                self.state = 'ungrasp'
+                print self.state
+
+        elif self.state == 'ungrasp':
+            if sim.getTime() - self.t0 > t_ungrasp:
                 self.state = 'idle'
                 print self.state
 
@@ -143,9 +148,8 @@ class BallsStateMachineController(object):
         return self.balls_to_move
 
     def _get_hand_pose_for_ball(self, ball):
-
         w_T_op = np.eye(4)
-        w_T_op[3,3] = -0.05 # TODO Manuel get this value from the BB or from the algorithm
+        w_T_op[2,3] = -0.05 # TODO Manuel get this value from the BB or from the algorithm
         """
         w_T_o = np.array(ball.getTransform())
         p_T_h = np.array(se3.homogeneous(self.p_T_h))
@@ -158,9 +162,15 @@ class BallsStateMachineController(object):
         return se3.from_homogeneous(final_pose)
 
     def _ball_lifted(self):
-        # TODO check if ball lifted
+        com = se3.apply(self.ball.getTransform(), self.ball.getMass().getCom())
+        xform = get_moving_base_xform(self.sim.controller(0).model())
+        w_T_h = np.array(se3.homogeneous(xform))
+        h_T_p = np.linalg.inv(np.array(se3.homogeneous(self.p_T_h)))
+        w_T_p = w_T_h.dot(h_T_p)
+        com = np.array(com)
+        if np.linalg.norm(com - w_T_p[0:3,3]) > 0.1:
+            return False
         return True
-
 
 def make(sim,hand,dt):
     """The make() function returns a 1-argument function that takes a SimRobotController and performs whatever
