@@ -109,6 +109,13 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 # the next line latches the current configuration in the PID controller...
                 self.sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
 
+                # setup the preshrink
+                visPreshrink = True  # turn this to true if you want to see the "shrunken" models used for collision detection
+                for l in range(self.robot.numLinks()):
+                    self.sim.body(self.robot.link(l)).setCollisionPreshrink(visPreshrink)
+                for l in range(self.world.numRigidObjects()):
+                    self.sim.body(self.world.rigidObject(l)).setCollisionPreshrink(visPreshrink)
+
             self.object_com_z_0 = getObjectGlobalCom(self.obj)[2]
             self.object_fell = False
             self.t_0 = self.sim.getTime()
@@ -206,7 +213,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         for i in range(len(poses_variations)):
             poses_variations_h.append(w_T_o.dot(poses_variations[i]).dot(p_T_h))
 
-        print "-------Filtering poses:"
+        print "-------Filtering poses:" # preshrink and padding do not effect this value. Collision margin does (by default = 0)
         filtered_poses = []
         for i in range(len(poses)):
             if not CollisionTestPose(world, robot, obj, poses_h[i]):
@@ -277,7 +284,7 @@ if __name__ == '__main__':
                 ]
     done = [    'red_metal_bowl_white_speckles',
                 'blank_hard_plastic_card'] # effort_scaling = -0.5; synergy_scaling = 11
-    to_check =  [   
+    to_check =  [
                     'wilson_golf_ball',             # TODO check, 0 poses
                     ]
     for obj_name in to_filter + to_do + done + to_check:
