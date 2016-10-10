@@ -147,7 +147,8 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             self.sim.updateWorld()
 
             if not vis.shown() or (self.sim.getTime() - self.t_0) >= 2.5 or self.object_fell:
-                db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell)
+                if vis.shown(): # simulation stopped because it was succesfull
+                    db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell)
                 self.is_simulating = False
                 self.sim = None
 
