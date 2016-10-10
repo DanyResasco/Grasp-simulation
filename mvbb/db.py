@@ -8,7 +8,11 @@ class MVBBLoader(object):
     def __init__(self, new_method = False):
         self.new_method = new_method
         self.filename = 'db/database.csv' if not new_method else 'db/database_populated.csv'
+        self.filename_scored = 'db/database_scored.csv' if not new_method else 'db/database_populated_scored.csv'
         self.db = {}
+        self.db_scored = {}
+        self._load_mvbbs()
+        self._load_mvbbs_scored()
 
     def _load_mvbbs(self):
         try:
@@ -25,6 +29,57 @@ class MVBBLoader(object):
 
         except:
             print "Error loading file", self.filename
+
+    def _load_mvbbs_scored(self):
+        try:
+            f = open(self.filename_scored)
+            reader = csv.reader(f)
+            for row in reader:
+                object_name = row.pop(0).strip()
+                R = [float(v) for i, v in enumerate(row) if i in range(9)]
+                t = [float(v) for i, v in enumerate(row) if i in range(9,12)]
+                T = (R,t)
+                grasped = True if row[12] == 'True' else False
+                kindness = None
+                try:
+                    if row[13] != 'x':
+                        kindness = float(row[13])
+                except:
+                    pass
+
+                if object_name not in self.db_scored:
+                    self.db_scored[object_name] = []
+                obj_pose_score = {'T': np.array(se3.homogeneous(T)),
+                                  'grasped': grasped,
+                                  'kindness': kindness}
+                self.db_scored[object_name].append(obj_pose_score)
+        except:
+            print "Error loading file", self.filename_scored
+
+    def save_score(self, object_name, pose, grasped, kindness = None):
+        if not self.has_score(object_name, pose, True if kindness is not None else False):
+            values = [object_name]
+            f = open(self.filename_scored, 'a')
+            if isinstance(pose, np.ndarray):
+                pose = se3.from_homogeneous(pose)
+            values += pose[0]
+            values += pose[1]
+            values.append(grasped)
+            values.append(kindness if kindness is not None else 'x')
+            f.write(','.join([str(v) for v in values]))
+            f.write('\n')
+            f.close()
+        self._load_mvbbs_scored()
+
+    def has_score(self, object_name, pose, need_kindness = False):
+        self._load_mvbbs_scored()
+        if not isinstance(pose, np.ndarray):
+            pose = np.array(se3.homogeneous(pose))
+        poses = [p['T'] for p in self.db_scored if not need_kindness or p['kindness'] is not None]
+        for p in poses:
+            if np.all(pose == p):
+                return True
+        return False
 
     def get_poses(self, object_name):
         if self.db == {}:
