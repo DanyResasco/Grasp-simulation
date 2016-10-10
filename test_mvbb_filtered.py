@@ -110,6 +110,10 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 self.sim.addEmulator(0, self.hand)
                 # the next line latches the current configuration in the PID controller...
                 self.sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
+                embed()
+
+                obj_b = self.sim.body(self.obj)
+                obj_b.setVelocity([0., 0., 0.],[0., 0., 0.])
 
                 # setup the preshrink
                 visPreshrink = False  # turn this to true if you want to see the "shrunken" models used for collision detection
