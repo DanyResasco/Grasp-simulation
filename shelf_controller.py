@@ -3,10 +3,12 @@ from klampt.math import vectorops,so3,se3
 from moving_base_control import *
 from reflex_control import *
 from klampt.io import resource
-from i16mc import box_dims
+from i16mc import shelf_dims, shelf_offset, shelf_height
 from IPython import embed
 import numpy as np
 from copy import deepcopy
+from mvbb.db import MVBBLoader
+from mvbb.CollisionCheck import CollisionTestInterpolate, CollisionTestPoseAll, WillCollideDuringClosure
 
 class ShelfStateMachineController(object):
     """A more sophisticated controller that uses a state machine."""
@@ -17,14 +19,14 @@ class ShelfStateMachineController(object):
         self.sim.updateWorld()
         self.base_xform = get_moving_base_xform(self.sim.controller(0).model())
         self.state = 'wait'
-        self.balls_to_move = []
-        self.attempts = {}
-        self.ball = None
+        self.objs_to_move = []
+        self.obj = None
         self.t0 = 0
         self.start_pose = None
         self.goal_pose = None
         self.p_T_h = resource.get("default_initial_soft_hand.xform", description="Initial hand transform",
                              default=se3.identity(), world=sim.world, doedit=False)
+        self.db = MVBBLoader()
 
     def __call__(self,controller):
         self.sim.updateWorld()
@@ -34,27 +36,31 @@ class ShelfStateMachineController(object):
         #controller state machine
         #print "State:",state
         t_park = 0.5
-        t_lower = 0.5
+        t_approach = 0.5
         t_grasp = 1.0
-        t_lift = 0.5
+        t_move = 0.5
         t_ungrasp = 0.5
-        t_wait = 2.0
+        t_wait = 1.0
         if self.state == 'wait':
             if sim.getTime() > t_wait:
                 self.state = 'idle'
                 print self.state
 
         if self.state == 'idle':
-            if len(self._get_balls_to_move()) > 0:
-                ball = self.balls_to_move.pop(0)
-                if ball not in self.attempts:
-                    self.attempts[ball] = 0
-                self.attempts[ball] += 1
-                self.ball = ball
-                print "Attempt", self.attempts[ball]
+            self.obj = None
+            if len(self._get_objs_to_move()) > 0:
+                for i, obj in enumerate(self.objs_to_move):
+                    goal_pose = self._get_hand_pose_for_obj(obj)
+                    if goal_pose is not None:
+                        self.obj =self.objs_to_move.pop(i)
+                        print "Found", len(goal_pose), "for object", obj.getName()
+                        self.goal_pose = goal_pose[0]
+
+                if self.obj is None:
+                    self.obj = self.objs_to_move.pop(0)
+                    self.goal_pose = self.get_hand_pose_to_throw_obj(obj)
 
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
-                self.goal_pose = self._get_hand_pose_for_ball(ball)
                 self.t0 = sim.getTime()
                 self.state = 'parking'
                 print self.state
@@ -62,7 +68,7 @@ class ShelfStateMachineController(object):
         elif self.state == 'parking':
             u = (sim.getTime() - self.t0) / t_park
             goal_pose = deepcopy(self.goal_pose)
-            goal_pose[1][2] = self.start_pose[1][2] # translate and rotate, do not lower
+            goal_pose[1][2] = self.goal_pose[1][2] - 0.1
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u,1.0)))
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
@@ -70,16 +76,16 @@ class ShelfStateMachineController(object):
             if sim.getTime() - self.t0 > t_park:
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.t0 = sim.getTime()
-                self.state = 'lowering'
+                self.state = 'approaching'
                 print self.state
 
-        elif self.state == 'lowering':
-            u = (sim.getTime() - self.t0) / t_lower
+        elif self.state == 'approaching':
+            u = (sim.getTime() - self.t0) / t_approach
             t = vectorops.interpolate(self.start_pose[1], self.goal_pose[1], np.min((u, 1.0)))
             desired = (self.goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
-            if sim.getTime() - self.t0 > t_lower:
+            if sim.getTime() - self.t0 > t_approach:
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.t0 = sim.getTime()
                 #this is needed to stop at the current position in case there's some residual velocity
@@ -92,93 +98,66 @@ class ShelfStateMachineController(object):
             if sim.getTime() - self.t0 > t_grasp:
                 self.t0 = sim.getTime()
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
-                goal_pose = deepcopy(self.goal_pose)
-                goal_pose[1][2] = self.base_xform[1][2]  # translate and rotate, do not lower
+                goal_pose = deepcopy(self.base_xform) # back to initial pose
                 self.goal_pose = goal_pose
-                self.state = 'lifting'
+                self.state = 'moving'
                 print self.state
 
-        elif self.state == 'lifting':
-            u = (sim.getTime() - self.t0) / t_lift
+        elif self.state == 'moving':
+            u = (sim.getTime() - self.t0) / t_move
             goal_pose = deepcopy(self.goal_pose)
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
-            if sim.getTime() - self.t0 > t_lift:
-                if self._ball_lifted():
-                    self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
-                    self.t0 = sim.getTime()
-                    self.state = 'parking_for_ungrasp'
-                else:
-                    self.ball = None
-                    self.hand.setCommand([0.0])
-                    self.state = 'idle'
-                    print "Failed to raise ball"
-                print self.state
+            if sim.getTime() - self.t0 > t_move:
 
-        elif self.state == 'parking_for_ungrasp':
-            u = (sim.getTime() - self.t0) / t_park
-            goal_pose = deepcopy(self.goal_pose)
-            goal_pose[1][0] += 0.7  # translate to the next box
-            t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
-            desired = (goal_pose[0], t)
-            send_moving_base_xform_PID(controller, desired[0], desired[1])
-
-            if sim.getTime() - self.t0 > t_park:
-                self.t0 = sim.getTime()
+                self.obj = None
                 self.hand.setCommand([0.0])
-                self.state = 'ungrasp'
+                self.state = 'wait'
                 print self.state
-
-        elif self.state == 'ungrasp':
-            if sim.getTime() - self.t0 > t_ungrasp:
-                self.state = 'idle'
-                print self.state
-
 
         # need to manually call the hand emulator
         self.hand.process({}, self.dt)
 
-    def _get_balls_to_move(self):
+    def _get_objs_to_move(self):
         w = self.sim.world
-        self.balls_to_move = []
+        self.objs_to_move = []
         for i in range(w.numRigidObjects()):
             o = w.rigidObject(i)
+            R, t = o.getTransform()
+            if t[0] < shelf_dims[0]/2.0 and t[0] > -shelf_dims[0]/2.0 and \
+               t[1] < shelf_offset - shelf_dims[1]/2.0 and  t[1] > shelf_dims[1]/2.0 + shelf_offset and \
+               t[2] < shelf_height - shelf_dims[2]/2.0 and t[2] > shelf_height + shelf_dims[2]:
+                self.objs_to_move.append(o)
 
-            if 'sphere' in o.getName():
-                R, t = o.getTransform()
-                if t[0] < box_dims[0]/2.0 - 0.005 and t[1] < box_dims[1]/2.0 - 0.005:
-                    self.balls_to_move.append(o)
-            #self.balls_to_move = sorted(self.balls_to_move, key = lambda obj: (obj.getTransform()[1][2],
-            #                                                                   obj.getTransform()[1][0]**2+
-            #                                                                   obj.getTransform()[1][1]**2), reverse=True)
-            self.balls_to_move = sorted(self.balls_to_move, key=lambda obj: obj.getTransform()[1][2], reverse=True)
-        return self.balls_to_move
+            self.objs_to_move = sorted(self.objs_to_move, key=lambda obj: obj.getTransform()[1][1])
+        return self.objs_to_move
 
-    def _get_hand_pose_for_ball(self, ball):
-        w_T_op = np.eye(4)
-        w_T_op[2,3] = 0.11 # TODO Manuel get this value from the BB or from the algorithm
-        """
-        w_T_o = np.array(ball.getTransform())
-        p_T_h = np.array(se3.homogeneous(self.p_T_h))
-        w_T_p =  w_T_op.dot(w_T_o)
-        return w_T_p.dot(p_T_h)
-        """
-        pose = (self.base_xform[0], ball.getTransform()[1])
-        final_pose = w_T_op.dot(np.array(se3.homogeneous(pose)))
-        return se3.from_homogeneous(final_pose)
+    def _get_hand_pose_for_obj(self, obj):
+        w_T_o = np.array(se3.homogeneous(obj.getTransform()))
+        poses = self.db.get_scored_poses(obj.getName())
+        filtered_poses = []
+        alternate_strategy = False
 
-    def _ball_lifted(self):
-        com = se3.apply(self.ball.getTransform(), self.ball.getMass().getCom())
-        xform = get_moving_base_xform(self.sim.controller(0).model())
-        w_T_h = np.array(se3.homogeneous(xform))
-        h_T_p = np.linalg.inv(np.array(se3.homogeneous(self.p_T_h)))
-        w_T_p = w_T_h.dot(h_T_p)
-        com = np.array(com)
-        if np.linalg.norm(com - w_T_p[0:3,3]) > 0.1:
-            return False
-        return True
+        if len(poses) == 0:
+            alternate_strategy = True
+        else:
+            for pose in poses:
+                p = w_T_o.dot(pose).dot(self.p_T_h)
+                #if WillCollideDuringClosure(self.hand,obj):
+                if not CollisionTestPoseAll(self.world, self.robot, p):
+                    filtered_poses.append(p)
+            if len(filtered_poses) == 0:
+                alternate_strategy = True
+
+        if alternate_strategy:
+            return None
+        else:
+            return filtered_poses
+
+    def get_hand_pose_to_throw_obj(self, obj):
+        return np.array(se3.from_homogeneous(obj.getTransform()))
 
 def make(sim,hand,dt):
     """The make() function returns a 1-argument function that takes a SimRobotController and performs whatever
