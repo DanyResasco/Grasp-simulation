@@ -58,7 +58,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.sim = None
         self.module = module
         self.running = True
-        self.db = MVBBLoader()
+        self.db = MVBBLoader(suffix='')
         
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)

@@ -5,10 +5,10 @@ from klampt.math import se3
 import numpy as np
 
 class MVBBLoader(object):
-    def __init__(self, new_method = False):
+    def __init__(self, new_method = False, suffix = ''):
         self.new_method = new_method
         self.filename = 'db/database.csv' if not new_method else 'db/database_populated.csv'
-        self.filename_scored = 'db/database_scored.csv' if not new_method else 'db/database_populated_scored.csv'
+        self.filename_scored = 'db/database_scored%s.csv'%suffix if not new_method else 'db/database_populated_scored%s.csv'%suffix
         self.db = {}
         self.db_scored = {}
         self._load_mvbbs()
