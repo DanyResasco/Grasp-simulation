@@ -31,19 +31,26 @@ def CheckCollision(world, robot, obj, collision = None):
     else:
         return False
 
-def CollisionTestInterpolate(world,robot,obj,o_P_h):
+def CollisionTestInterpolate(world, robot, obj, w_P_h_goal, w_P_h_start = None):
     q_old = robot.getConfig()
-    o_T_h_curr = get_moving_base_xform(robot)
 
-    if not isinstance(o_P_h, tuple):
-        o_T_h = se3.from_homogeneous(o_P_h) #o_P_h is end-effector in object frame
+    if not isinstance(w_P_h_goal, tuple):
+        w_T_h_goal = se3.from_homogeneous(w_P_h_goal) #o_P_h is end-effector in object frame
     else:
-        o_T_h = o_P_h
+        w_T_h_goal = w_P_h_goal
 
-    t_des = o_T_h[1]
-    t_curr = o_T_h_curr[1]
+    if w_P_h_start is None:
+        w_T_h_start = get_moving_base_xform(robot)
+    else:
+        if not isinstance(w_P_h_start, tuple):
+            w_T_h_start = se3.from_homogeneous(w_P_h_start)  # o_P_h is end-effector in object frame
+        else:
+            w_T_h_start = w_P_h_start
 
-    set_moving_base_xform(robot, o_T_h[0], o_T_h[1])
+    t_des = w_T_h_goal[1]
+    t_curr = w_T_h_start[1]
+
+    set_moving_base_xform(robot, w_T_h_goal[0], w_T_h_start[1])
 
     step_size = 0.01
     d = vectorops.distance(t_curr, t_des)
@@ -57,7 +64,7 @@ def CollisionTestInterpolate(world,robot,obj,o_P_h):
     for i in range(n_steps):
         t_int = vectorops.interpolate(t_curr,t_des,float(i+1)/n_steps)
 
-        set_moving_base_xform(robot, o_T_h[0], t_int)
+        set_moving_base_xform(robot, w_T_h_goal[0], t_int)
         if CheckCollision(world, robot, obj, collider):
             robot.setConfig(q_old)
             return True
@@ -79,31 +86,6 @@ def CollisionTestPose(world, robot, obj, w_P_h):
 
     robot.setConfig(q_old)
     return coll
-
-def CollisionTestPoseAll(world, robot, w_P_h):
-    q_old = robot.getConfig()
-    if not isinstance(w_P_h, tuple):
-        w_T_h = se3.from_homogeneous(w_P_h) #o_P_h is end-effector in object frame
-    else:
-        w_T_h = w_P_h
-
-    set_moving_base_xform(robot, w_T_h[0], w_T_h[1])
-
-    collider = collide.WorldCollider(world)
-    r_o_coll = collider.robotObjectCollisions(robot)  # check collision robot-object. the output is generator
-    list_r_o_coll = []  # make a list to know how many collisions we have been
-    for coll in r_o_coll:
-        list_r_o_coll.append(coll)
-    r_t_coll = collider.robotTerrainCollisions(robot)  # check collision robot-plane
-    list_r_t_coll = []  # same as above. The output is generator so make a list to know how many collision we have been
-    for coll in r_t_coll:
-        list_r_t_coll.append(coll)
-    colliding = False
-    if len(list_r_o_coll) > 0 or len(list_r_t_coll) > 0:
-        colliding = True
-
-    robot.setConfig(q_old)
-    return colliding
 
 def WillCollideDuringClosure(hand, obj):
     world = hand.world

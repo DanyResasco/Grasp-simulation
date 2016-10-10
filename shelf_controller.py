@@ -8,7 +8,7 @@ from IPython import embed
 import numpy as np
 from copy import deepcopy
 from mvbb.db import MVBBLoader
-from mvbb.CollisionCheck import CollisionTestInterpolate, CollisionTestPoseAll, WillCollideDuringClosure
+from mvbb.CollisionCheck import CollisionTestInterpolate, CollisionTestPose, WillCollideDuringClosure
 
 class ShelfStateMachineController(object):
     """A more sophisticated controller that uses a state machine."""
@@ -29,6 +29,7 @@ class ShelfStateMachineController(object):
         self.p_T_h = np.array(se3.homogeneous(resource.get("default_initial_soft_hand.xform", description="Initial hand transform",
                              default=se3.identity(), world=sim.world, doedit=False)))
         self.db = MVBBLoader()
+        self.t_wait = 3.0
 
     def __call__(self,controller):
         self.sim.updateWorld()
@@ -36,16 +37,17 @@ class ShelfStateMachineController(object):
         xform = self.base_xform
 
         #controller state machine
-        t_park = 1.0
+        t_park = 0.5
+        t_park_settle = 1.0
         t_approach = 0.5
         t_grasp = 1.0
         t_move = 0.5
-        t_ungrasp = 0.5
-        t_wait = 1.0
+        t_wait = self.t_wait
 
         if self.state == 'wait':
             if sim.getTime() - self.t0 > t_wait:
                 self.state = 'idle'
+                self.t_wait = 1.0
                 print self.state
 
         if self.state == 'idle':
@@ -86,7 +88,7 @@ class ShelfStateMachineController(object):
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
-            if sim.getTime() - self.t0 > t_park:
+            if sim.getTime() - self.t0 > t_park + t_park_settle:
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.t0 = sim.getTime()
                 self.state = 'approaching'
@@ -161,8 +163,14 @@ class ShelfStateMachineController(object):
         else:
             for pose in poses:
                 p = w_T_o.dot(pose).dot(self.p_T_h)
+                s = np.array(se3.homogeneous(self.base_xform)) # linear distance from s TODO use planning instead
+
+                s[0:3,0:3] = p[0:3,0:3] # copying rotation from final pose
+                s[2,3] = p[2,3]         # copying height from final pose
+
                 #if WillCollideDuringClosure(self.hand,obj):
-                if not CollisionTestPoseAll(self.world, self.robot, p):
+                if not CollisionTestPose(self.world, self.robot, None, p) and \
+                   not CollisionTestInterpolate(self.world, self.robot, None, p, s):
                     filtered_poses.append(p)
             if len(filtered_poses) == 0:
                 alternate_strategy = True
@@ -173,7 +181,7 @@ class ShelfStateMachineController(object):
             return sorted(filtered_poses, key= lambda pose: pose[2,3], reverse=True)
 
     def get_hand_pose_to_throw_obj(self, obj):
-        return np.array(se3.from_homogeneous(obj.getTransform()))
+        return np.array(se3.homogeneous(obj.getTransform()))
 
 def make(sim,hand,dt):
     """The make() function returns a 1-argument function that takes a SimRobotController and performs whatever
