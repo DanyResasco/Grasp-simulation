@@ -28,6 +28,7 @@ from mvbb.TakePoses import SimulationPoses
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
 from i16mc import make_object, make_moving_base_robot
 from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose
+from mvbb.db import MVBBLoader
 
 
 objects = {}
@@ -58,6 +59,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.sim = None
         self.module = module
         self.running = True
+        self.db = MVBBLoader()
 
     def display(self):
         if self.running:
@@ -145,6 +147,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             self.sim.updateWorld()
 
             if not vis.shown() or (self.sim.getTime() - self.t_0) >= 2.5 or self.object_fell:
+                db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell)
                 self.is_simulating = False
                 self.sim = None
 

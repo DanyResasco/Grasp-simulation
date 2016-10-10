@@ -57,17 +57,36 @@ class MVBBLoader(object):
             print "Error loading file", self.filename_scored
 
     def save_score(self, object_name, pose, grasped, kindness = None):
-        if not self.has_score(object_name, pose, True if kindness is not None else False):
-            values = [object_name]
-            f = open(self.filename_scored, 'a')
-            if isinstance(pose, np.ndarray):
-                pose = se3.from_homogeneous(pose)
-            values += pose[0]
-            values += pose[1]
-            values.append(grasped)
-            values.append(kindness if kindness is not None else 'x')
-            f.write(','.join([str(v) for v in values]))
-            f.write('\n')
+        if not self.has_score(object_name, pose):
+            if kindness is not None and self.has_score(object_name, pose, True):
+                for i,p in enumerate(self.db_scored[object_name]):
+                    if np.all(pose == p['T']):
+                        self.db_scored[object_name][i] = {'T': pose,
+                                                          'grasped': grasped,
+                                                          'kindness': kindness}
+                f = open(self.filename_scored, 'w')
+                for pose_obj_name in self.db_scored:
+                    values = [pose_obj_name]
+                    pose = se3.from_homogeneous(self.db_scored[pose_obj_name]['T'])
+                    values += pose[0]
+                    values += pose[1]
+                    grasped = self.db_scored[pose_obj_name]['grasped']
+                    kindness = self.db_scored[pose_obj_name]['kindness']
+                    values.append(grasped)
+                    values.append(kindness if kindness is not None else 'x')
+                    f.write(','.join([str(v) for v in values]))
+                    f.write('\n')
+            else:
+                f = open(self.filename_scored, 'a')
+                values = [object_name]
+                if isinstance(pose, np.ndarray):
+                    pose = se3.from_homogeneous(pose)
+                values += pose[0]
+                values += pose[1]
+                values.append(grasped)
+                values.append(kindness if kindness is not None else 'x')
+                f.write(','.join([str(v) for v in values]))
+                f.write('\n')
             f.close()
         self._load_mvbbs_scored()
 
