@@ -174,10 +174,11 @@ def compute_poses(obj, new_method = False):
     # poses_sorted = sorted(poses_total, key=lambda pose:pose[2,3], reverse=True)
     # for posesss in poses_sorted:
     #     print 'pose', posesss 
-    poses_sorted = sorted(poses_total, key=lambda pose:(pose[2,3]-np.linalg.norm(pose[0:2,3])))
+    # poses_sorted = sorted(poses_total, key=lambda pose:(pose[2,3]-np.linalg.norm(pose[0:2,3])))
+    poses_sorted = sorted(poses_total, key=lambda pose: pose[2,3]-np.linalg.norm(pose[0:2,3]), reverse=True)
     
     print "done. Found", len(poses_total), "poses,", len(boxes), "boxes"
-    return poses_sorted, poses_variations, boxes
+    return poses_sorted, [], boxes
 
 def launch_mvbb(object_set, objectname):
     """Launches a very simple program that spawns an object from one of the
