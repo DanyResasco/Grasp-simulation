@@ -499,6 +499,7 @@ def launch_shelf(robotname,objects):
     #the next line latches the current configuration in the PID controller...
     sim.controller(0).setPIDCommand(robot.getConfig(),robot.getVelocity())
 
+    """
     #this code uses the GLSimulationProgram structure, which gives a little more control over the visualization
     vis.setPlugin(program)
     program.reshape(800,600)
@@ -506,6 +507,7 @@ def launch_shelf(robotname,objects):
     while vis.shown():
         time.sleep(0.1)
     return
+    """
 
     #this code manually updates the vis
     vis.add("world",world)
