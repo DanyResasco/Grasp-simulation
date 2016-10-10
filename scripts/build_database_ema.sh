@@ -4,18 +4,25 @@
 # Backup to NFS mount script.
 #
 ####################################
-python test_mvbb_filtered.py melissa_doug_farm_fresh_fruit_lemon
-python test_mvbb_filtered.py champion_sports_official_softball
-python test_mvbb_filtered.py penn_raquet_ball
-python test_mvbb_filtered.py wilson_100_tennis_ball
-python test_mvbb_filtered.py rubbermaid_ice_guard_pitcher_blue
-python test_mvbb_filtered.py clorox_disinfecting_wipes_35
-python test_mvbb_filtered.py melissa_doug_farm_fresh_fruit_orange
-python test_mvbb_filtered.py champion_copper_plus_spark_plug
-python test_mvbb_filtered.py cheezit_big_original
-python test_mvbb_filtered.py crayola_64_ct
-python test_mvbb_filtered.py feline_greenies_dental_treats
-python test_mvbb_filtered.py highland_6539_self_stick_notes
-python test_mvbb_filtered.py laugh_out_loud_joke_book
-python test_mvbb_filtered.py one_with_nature_soap_dead_sea_mud
-python test_mvbb_filtered.py black_and_decker_lithium_drill_driver_unboxed
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_10_blue 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_1_yellow 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_2_orange 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_3_red 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_5_green 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_6_purple 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_7_yellow 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_8_orange 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_9_red 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_blue_4 
+python test_mvbb_filtered.py play_go_rainbow_stakin_cups_box 
+python test_mvbb_filtered.py pringles_original 
+python test_mvbb_filtered.py purple_wood_block_1inx1in 
+python test_mvbb_filtered.py red_metal_bowl_white_speckles 
+python test_mvbb_filtered.py red_metal_cup_white_speckles 
+python test_mvbb_filtered.py red_metal_plate_white_speckles 
+python test_mvbb_filtered.py red_wood_block_1inx1in 
+python test_mvbb_filtered.py rubbermaid_ice_guard_pitcher_blue 
+python test_mvbb_filtered.py sharpie_marker 
+python test_mvbb_filtered.py small_black_spring_clamp 
+python test_mvbb_filtered.py soft_scrub_2lb_4oz 
+python test_mvbb_filtered.py spam_12oz 

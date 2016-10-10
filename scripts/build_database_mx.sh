@@ -4,18 +4,23 @@
 # Backup to NFS mount script.
 #
 ####################################
-python test_mvbb_filtered.py red_metal_bowl_white_speckles
-python test_mvbb_filtered.py blank_hard_plastic_card 
+python test_mvbb_filtered.py sponge_with_textured_cover 
+python test_mvbb_filtered.py stainless_steel_fork_red_handle 
 python test_mvbb_filtered.py stainless_steel_knife_red_handle 
-python test_mvbb_filtered.py elmers_washable_no_run_school_glue 
-python test_mvbb_filtered.py paper_mate_12_count_mirado_black_warrior
-python test_mvbb_filtered.py large_black_spring_clamp
-python test_mvbb_filtered.py medium_black_spring_clamp
-python test_mvbb_filtered.py windex
-python test_mvbb_filtered.py play_go_rainbow_stakin_cups_3_red
-python test_mvbb_filtered.py play_go_rainbow_stakin_cups_5_green
-python test_mvbb_filtered.py wearever_cooking_pan_with_lid
-python test_mvbb_filtered.py stanley_13oz_hammer
-python test_mvbb_filtered.py stainless_steel_spoon_red_handle
-python test_mvbb_filtered.py stainless_steel_fork_red_handle
-python test_mvbb_filtered.py dr_browns_bottle_brush
+python test_mvbb_filtered.py stainless_steel_spatula 
+python test_mvbb_filtered.py stainless_steel_spoon_red_handle 
+python test_mvbb_filtered.py stanley_13oz_hammer 
+python test_mvbb_filtered.py stanley_flathead_screwdriver 
+python test_mvbb_filtered.py stanley_philips_screwdriver 
+python test_mvbb_filtered.py starkist_chunk_light_tuna 
+python test_mvbb_filtered.py sterilite_bin_12qt_bottom 
+python test_mvbb_filtered.py sterilite_bin_12qt_cap 
+python test_mvbb_filtered.py thick_wood_block_6in 
+python test_mvbb_filtered.py wearever_cooking_pan_with_lid 
+python test_mvbb_filtered.py wescott_orange_grey_scissors 
+python test_mvbb_filtered.py white_rope 
+python test_mvbb_filtered.py wilson_100_tennis_ball 
+python test_mvbb_filtered.py wilson_golf_ball 
+python test_mvbb_filtered.py windex 
+python test_mvbb_filtered.py yellow_plastic_chain 
+python test_mvbb_filtered.py yellow_wood_block_1inx1in 

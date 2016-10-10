@@ -151,13 +151,14 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             # print "t:", self.sim.getTime() - self.t_0
             object_com_z = getObjectGlobalCom(self.obj)[2]
             hand_curr_pose = get_moving_base_xform(self.robot)
+            pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
+
 
             if self.sim.getTime() - self.t_0 == 0:
                 # print "Closing hand"
                 self.hand.setCommand([1.0])
             elif (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) <= t_lift+d_lift:
                 # print "Lifting"
-                pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
                 t_i = pose_se3[1]
                 t_f = vectorops.add(t_i, (0,0,0.2))
                 u = np.min((self.sim.getTime() - self.t_0 - t_lift, 1))
