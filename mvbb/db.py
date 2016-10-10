@@ -94,10 +94,11 @@ class MVBBLoader(object):
         self._load_mvbbs_scored()
         if not isinstance(pose, np.ndarray):
             pose = np.array(se3.homogeneous(pose))
-        poses = [p['T'] for p in self.db_scored if not need_kindness or p['kindness'] is not None]
-        for p in poses:
-            if np.all(pose == p):
-                return True
+        if object_name in self.db_scored:
+            poses = [p['T'] for p in self.db_scored[object_name] if not need_kindness or p['kindness'] is not None]
+            for p in poses:
+                if np.all(pose == p):
+                    return True
         return False
 
     def get_poses(self, object_name):
