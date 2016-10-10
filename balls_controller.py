@@ -120,7 +120,8 @@ class BallsStateMachineController(object):
         elif self.state == 'parking_for_ungrasp':
             u = (sim.getTime() - self.t0) / t_park
             goal_pose = deepcopy(self.goal_pose)
-            goal_pose[1][0] += 0.7  # translate to the next box
+            goal_pose[1][0] += 0.7  # translate to the next box TODO move to the center of the box
+            goal_pose[1][1] = 0.0
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
             desired = (goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
@@ -150,9 +151,6 @@ class BallsStateMachineController(object):
                 R, t = o.getTransform()
                 if t[0] < box_dims[0]/2.0 - 0.005 and t[1] < box_dims[1]/2.0 - 0.005:
                     self.balls_to_move.append(o)
-            #self.balls_to_move = sorted(self.balls_to_move, key = lambda obj: (obj.getTransform()[1][2],
-            #                                                                   obj.getTransform()[1][0]**2+
-            #                                                                   obj.getTransform()[1][1]**2), reverse=True)
             self.balls_to_move = sorted(self.balls_to_move, key=lambda obj: obj.getTransform()[1][2], reverse=True)
         return self.balls_to_move
 
