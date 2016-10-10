@@ -17,6 +17,7 @@ class MVBBLoader(object):
     def _load_mvbbs(self):
         try:
             f = open(self.filename)
+            self.db = {}
             reader = csv.reader(f)
             for row in reader:
                 object_name = row.pop(0).strip()
@@ -34,6 +35,7 @@ class MVBBLoader(object):
         try:
             f = open(self.filename_scored)
             reader = csv.reader(f)
+            self.db_scored = {}
             for row in reader:
                 object_name = row.pop(0).strip()
                 R = [float(v) for i, v in enumerate(row) if i in range(9)]
@@ -97,7 +99,7 @@ class MVBBLoader(object):
                 pose = np.array(se3.homogeneous(pose))
             poses = [p['T'] for p in self.db_scored[object_name] if not need_kindness or p['kindness'] is not None]
             for p in poses:
-                if np.all(pose == p):
+                if np.all((pose - p) < 1e-12):
                     return True
         return False
 

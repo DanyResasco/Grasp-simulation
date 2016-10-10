@@ -156,28 +156,28 @@ def compute_poses(obj, new_method = False):
     # rubbermaid_ice_guard_pitcher_blue
     #param_area = 0.95
     #param_volume = 4E-7
-    param_area = 0.9
+    param_area = 0.8
     param_volume = 5E-7
 
     print "extracting Boxes"
     boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
     print "getting transforms"
-    if new_method:
-        poses = []
-        for box in boxes:
-            poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 2)
-        poses_variations = []
-    else:
-        # rubbermaid_ice_guard_pitcher_blue
-        #poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.01)
-        poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.005)
+    # new_method =  True
+    poses = pydany_bb.getTransformsForHand(boxes, bbox, 0.005)
 
-        poses_variations = []
-        for pose in poses:
-            poses_variations += PoseVariation(pose, long_side)
-
-    print "done. Found", len(poses_variations), "poses,", len(boxes), "boxes"
-    return poses, poses_variations, boxes
+    poses_variations = []
+    for pose in poses:
+        poses_variations += PoseVariation(pose, long_side)
+    for box in boxes:
+        poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 2, .005)
+    poses_total = poses + poses_variations
+    # poses_sorted = sorted(poses_total, key=lambda pose:pose[2,3], reverse=True)
+    # for posesss in poses_sorted:
+    #     print 'pose', posesss 
+    poses_sorted = sorted(poses_total, key=lambda pose:(pose[2,3]-np.linalg.norm(pose[0:2,3])))
+    
+    print "done. Found", len(poses_total), "poses,", len(boxes), "boxes"
+    return poses_sorted, poses_variations, boxes
 
 def launch_mvbb(object_set, objectname):
     """Launches a very simple program that spawns an object from one of the

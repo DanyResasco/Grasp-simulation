@@ -48,7 +48,6 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.hand = None
         self.is_simulating = False
         self.curr_pose = None
-        self.all_poses = self.poses + self.poses_variations
         self.robot = self.world.robot(0)
         self.q_0 = self.robot.getConfig()
         self.w_T_o = None
@@ -60,21 +59,26 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.module = module
         self.running = True
         self.db = MVBBLoader()
-
+        
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
             for p in poses:
-                if not self.db.has_score(self.obj.getName, p):
+                if not self.db.has_score(self.obj.getName(), p):
                     self.poses.append(p)
                 else:
                     print "Pose", p, "already simulated"
             for p in poses_variations:
-                if not self.db.has_score(self.obj.getName, p):
+                if not self.db.has_score(self.obj.getName(), p):
                     self.poses_variations.append(p)
                 else:
                     print "Pose", p, "already simulated"
         else:
             "Warning: during initialization of visualizer object is still not loaded in world"
+            selp.poses = poses
+            selp.poses_variations = poses_variations
+
+        self.all_poses = self.poses + self.poses_variations
+        print "Will simulate", len(self.poses), "poses,", len(self.poses_variations), "poses variation"
 
     def display(self):
         if self.running:
@@ -98,7 +102,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
-        else:
+        elif self.obj is None:
             return
 
         if not self.is_simulating:
@@ -125,7 +129,6 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 self.sim.addEmulator(0, self.hand)
                 # the next line latches the current configuration in the PID controller...
                 self.sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
-                embed()
 
                 obj_b = self.sim.body(self.obj)
                 obj_b.setVelocity([0., 0., 0.],[0., 0., 0.])
