@@ -118,9 +118,19 @@ class MVBBLoader(object):
                 successful_poses.append(sp)
         return successful_poses
 
-    def get_scored_poses(self, object_name):
+    def get_scored_poses(self, object_name, only_successful = True):
         if self.db_scored == {}:
             self._load_mvbbs_scored()
         if object_name in self.db_scored:
-            return self.db_scored[object_name]
+            return [ pose['T'] for pose in self.db_scored[object_name] if pose['grasped'] or only_successful == False]
         return []
+
+    def get_all_scored_poses(self, only_successful = True):
+        if self.db_scored == {}:
+            self._load_mvbbs_scored()
+        obj_poses = {}
+        for object_name in self.db_scored:
+            poses = [ pose['T'] for pose in self.db_scored[object_name] if pose['grasped'] or only_successful == False]
+            if len(poses) > 0:
+                obj_poses[object_name] = poses
+        return obj_poses
