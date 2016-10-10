@@ -132,6 +132,9 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             d_lift = 1.0 # duration
             # print "t:", self.sim.getTime() - self.t_0
             object_com_z = getObjectGlobalCom(self.obj)[2]
+            pose_se3_h = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose))
+            hand_curr_pose = get_moving_base_xform(self.robot)
+
             if self.sim.getTime() - self.t_0 == 0:
                 # print "Closing hand"
                 self.hand.setCommand([1.0])
@@ -143,9 +146,14 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 u = np.min((self.sim.getTime() - self.t_0 - t_lift, 1))
                 send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.interpolate(t_i, t_f ,u))
 
-
-            if object_com_z < self.object_com_z_0 - 0.5:
-                self.object_fell = True # TODO use grasp quality evaluator from Daniela
+            if (self.sim.getTime() - self.t_0) >= t_lift: # wait for a lift before checking if object fell
+                d_hand = hand_curr_pose[1][2] - pose_se3_h[1][2]
+                d_com = object_com_z - self.object_com_z_0
+                if d_hand - d_com > 0.1:
+                    self.object_fell = True # TODO use grasp quality evaluator from Daniela
+                    print "!!!!!!!!!!!!!!!!!!"
+                    print "Object fell"
+                    print "!!!!!!!!!!!!!!!!!!"
 
             self.sim.simulate(0.01)
             self.sim.updateWorld()
