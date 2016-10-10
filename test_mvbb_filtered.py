@@ -110,7 +110,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 self.sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
 
                 # setup the preshrink
-                visPreshrink = True  # turn this to true if you want to see the "shrunken" models used for collision detection
+                visPreshrink = False  # turn this to true if you want to see the "shrunken" models used for collision detection
                 for l in range(self.robot.numLinks()):
                     self.sim.body(self.robot.link(l)).setCollisionPreshrink(visPreshrink)
                 for l in range(self.world.numRigidObjects()):
@@ -290,6 +290,8 @@ if __name__ == '__main__':
                  'thick_wood_block_6in', #tto big?? try up
                  # 'sterilite_bin_12qt_cap',
                  'sterilite_bin_12qt_bottom', #object erros?
+                 'kong_sitting_frog_dog_toy',
+                 'kygen_squeakin_eggs_plush_puppies',
                  ]
     to_do = [   'champion_sports_official_softball', # TODO grasp balls
                 'penn_raquet_ball',                  # TODO grasp balls
@@ -362,7 +364,6 @@ if __name__ == '__main__':
                 'blank_hard_plastic_card', # effort_scaling = -0.5; synergy_scaling = 11
                 'stainless_steel_knife_red_handle', # tested with default configurations
                 'elmers_washable_no_run_school_glue', # tested with default configurations
-                'kong_sitting_frog_dog_toy',
                 # 'kygen_squeakin_eggs_plush_puppies',
                 'paper_mate_12_count_mirado_black_warrior',
                 'large_black_spring_clamp',

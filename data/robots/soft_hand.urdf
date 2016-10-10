@@ -994,7 +994,7 @@ axis momenta are :
     <joint name="soft_hand_thumb_abd_joint">
       <role>joint1</role>
       <offset>-0.0</offset>
-      <mechanicalReduction>2.3</mechanicalReduction>
+      <mechanicalReduction>2.5</mechanicalReduction>
       <mechanicalElasticity>1.0</mechanicalElasticity>
       <!-- hardwareInterface>PositionJointInterface</hardwareInterface -->
       <hardwareInterface>EffortJointInterface</hardwareInterface>
