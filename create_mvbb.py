@@ -108,6 +108,28 @@ def numpy_to_trimesh(vertices, faces):
         tm.indices.append(int(faces[i, 2]))
     return tm
 
+def get_bb_enclosed_sphere(obj):
+    tm = obj.geometry().getTriangleMesh()
+    n_vertices = tm.vertices.size() / 3
+    box = pydany_bb.Box(n_vertices)
+
+    for i in range(n_vertices):
+        box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
+
+    I = np.eye(4)
+    print "doing PCA"
+    box.doPCA(I)
+    print box.T
+    print "computing Bounding Box"
+    bbox = pydany_bb.ComputeBoundingBox(box)
+    p_0 = bbox.Isobox[0, :]
+    p_1 = bbox.Isobox[1, :]
+    sides = np.abs(p_0 - p_1)
+    if np.max(sides) - np.min(sides) > 1e-12:
+        print "Error: bounding box for", obj.getName(), "is not a sphere"
+    return box.T[0:3,3], sides[0]
+
+
 def skip_decimate_or_return(object, min_vertices = 0, max_vertices = 2000):
     tm = object.geometry().getTriangleMesh()
     n_vertices = tm.vertices.size() / 3
