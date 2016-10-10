@@ -13,12 +13,12 @@ python test_mvbb_filtered.py stanley_13oz_hammer
 python test_mvbb_filtered.py stanley_flathead_screwdriver 
 python test_mvbb_filtered.py stanley_philips_screwdriver 
 python test_mvbb_filtered.py starkist_chunk_light_tuna 
-python test_mvbb_filtered.py sterilite_bin_12qt_bottom 
+# have to press continue always python test_mvbb_filtered.py sterilite_bin_12qt_bottom 
 python test_mvbb_filtered.py sterilite_bin_12qt_cap 
-python test_mvbb_filtered.py thick_wood_block_6in 
+# python test_mvbb_filtered.py thick_wood_block_6in 
 python test_mvbb_filtered.py wearever_cooking_pan_with_lid 
 python test_mvbb_filtered.py wescott_orange_grey_scissors 
-python test_mvbb_filtered.py white_rope 
+# python test_mvbb_filtered.py white_rope 
 python test_mvbb_filtered.py wilson_100_tennis_ball 
 python test_mvbb_filtered.py wilson_golf_ball 
 python test_mvbb_filtered.py windex 

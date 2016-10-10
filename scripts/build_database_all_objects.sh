@@ -25,6 +25,7 @@ python test_mvbb_filtered.py munchkin_white_hot_duck_bath_toy
 python test_mvbb_filtered.py one_with_nature_soap_dead_sea_mud 
 python test_mvbb_filtered.py oreo_mega_stuf 
 python test_mvbb_filtered.py paper_mate_12_count_mirado_black_warrior 
+#..
 python test_mvbb_filtered.py rollodex_mesh_collection_jumbo_pencil_cup 
 python test_mvbb_filtered.py safety_works_safety_glasses 
 python test_mvbb_filtered.py sharpie_accent_tank_style_highlighters 
@@ -46,6 +47,7 @@ python test_mvbb_filtered.py cheerios_14oz
 python test_mvbb_filtered.py cheeze-it_388g 
 python test_mvbb_filtered.py clorox_disinfecting_wipes_35 
 python test_mvbb_filtered.py comet_lemon_fresh_bleach 
+#...
 python test_mvbb_filtered.py dark_red_foam_block_with_three_holes 
 python test_mvbb_filtered.py domino_sugar_1lb 
 python test_mvbb_filtered.py expo_black_dry_erase_marker 
@@ -58,7 +60,7 @@ python test_mvbb_filtered.py large_black_spring_clamp
 python test_mvbb_filtered.py learning_resources_one-inch_color_cubes_box 
 python test_mvbb_filtered.py master_chef_ground_coffee_297g 
 python test_mvbb_filtered.py medium_black_spring_clamp 
-#..
+#Giorgio2
 python test_mvbb_filtered.py melissa_doug_farm_fresh_fruit_apple 
 python test_mvbb_filtered.py melissa_doug_farm_fresh_fruit_banana 
 python test_mvbb_filtered.py melissa_doug_farm_fresh_fruit_lemon 
@@ -69,7 +71,8 @@ python test_mvbb_filtered.py melissa_doug_farm_fresh_fruit_plum
 python test_mvbb_filtered.py melissa_doug_farm_fresh_fruit_strawberry 
 python test_mvbb_filtered.py melissa_doug_play-time_produce_farm_fresh_fruit_unopened_box 
 python test_mvbb_filtered.py morton_pepper_shaker 
-python test_mvbb_filtered.py morton_salt_shaker 
+python test_mvbb_filtered.py morton_salt_shaker
+#.. Giorgio
 python test_mvbb_filtered.py moutain_security_steel_shackle 
 python test_mvbb_filtered.py moutain_security_steel_shackle_key 
 python test_mvbb_filtered.py orange_wood_block_1inx1in 

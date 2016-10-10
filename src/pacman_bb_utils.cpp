@@ -973,6 +973,29 @@ bool pose_inside_box(Eigen::MatrixXd Pose, Box ObjectOriginal)
 }
 
 
+std::vector<Eigen::MatrixXd> get_populatedTrasformsforHand_for_spheres(Eigen::MatrixXd w_T_r, int disc, double radius, double dist_hand)
+{
+
+    std::vector<Eigen::MatrixXd> results;
+    Eigen::MatrixXd m = Eigen::MatrixXd::Identity(4,4);
+    Eigen::Matrix3d rot_s = Eigen::Matrix3d::Identity();
+    w_T_r.block<3,3>(0,0) = rot_s;
+    for(double a = -M_PI; a < M_PI; a = a + (2*M_PI/(2*disc)))
+    {
+      for(double b = -M_PI/2; b < M_PI/2; b = b + (M_PI/(2*disc)))  
+      {
+        Eigen::Matrix3d rot = Eigen::Matrix3d::Identity();
+        rot = rot*Eigen::AngleAxisd( a, Eigen::Vector3d::UnitX())*Eigen::AngleAxisd( b, Eigen::Vector3d::UnitY());
+        m.block<3,3>(0,0) = rot;
+        Eigen::MatrixXd tra = Eigen::MatrixXd::Identity(4,4);
+        tra(2,3) = radius;
+        m = m * tra;
+        results.push_back(w_T_r*m);
+      }
+    }
+}
+
+
 
 }
 
