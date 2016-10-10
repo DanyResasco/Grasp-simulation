@@ -44,7 +44,7 @@ class HandEmulator(CompliantHandEmulator):
     def __init__(self, sim, robotindex=0, link_offset=0, driver_offset=0):
         CompliantHandEmulator.__init__(self, sim, robotindex, link_offset, driver_offset, a_dofs=1, d_dofs=0)
 
-        self.synergy_reduction = 11.0  # convert cable tension into motor torque
+        self.synergy_reduction = 3.0  # convert cable tension into motor torque
         self.effort_scaling = -0.5
 
         print 'Mimic Joint Info:', self.mimic
@@ -152,6 +152,7 @@ class HandEmulator(CompliantHandEmulator):
                 self.R[0, u_id] = self.paramsLoader.handParameters[finger][joint_position]['r']
                 self.E[u_id,u_id] = self.paramsLoader.handParameters[finger][joint_position]['e']
 
+        self.R = self.R*(1/np.linalg.norm(self.R[0,:]))
 class HandSimGLViewer(GLSimulationProgram):
     def __init__(self,world,base_link=0,base_driver=0):
         GLSimulationProgram.__init__(self,world,"Reflex simulation program")

@@ -819,8 +819,8 @@ std::vector<Eigen::MatrixXd> getTransformsForHand(std::list<Box> sorted_boxes, B
     std::vector<Eigen::MatrixXd> results;
     while (!sorted_boxes.empty() )
     {
-        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, 0.005, false));
-        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, 0.005, true));
+        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, dist_hand, false));
+        results.push_back(info_adams(sorted_boxes.front(), ObjectOriginal, dist_hand, true));
         sorted_boxes.pop_front();
     }
 
@@ -843,9 +843,9 @@ std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int
     Eigen::Matrix3d m, m_start;
 
     //  Plane YZ;
-    for (double i = -1.0 * axis_dimensions(1) / 2 ; i <= axis_dimensions(1) / 2; i = i + (axis_dimensions(1) / disc) )
+    for (double i = -1.0 * axis_dimensions(1) / 2 ; i <= axis_dimensions(1) / 2; i = i + (axis_dimensions(1) / (disc*2)) )
     {
-        for (double j = -1.0 * axis_dimensions(2) / 2 ; j <= axis_dimensions(2) / 2; j = j + (axis_dimensions(2) / disc) )
+        for (double j = -1.0 * axis_dimensions(2) / 2 ; j <= axis_dimensions(2) / 2; j = j + (axis_dimensions(2) / (disc*2)) )
         {
             Eigen::Matrix4d start = Eigen::MatrixXd::Identity(4, 4);
 
@@ -872,9 +872,9 @@ std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int
     }
     // Plane XZ;
 
-    for (double i = -1.0 * axis_dimensions(0) / 2 ; i <= axis_dimensions(0) / 2; i = i + (axis_dimensions(0) / disc) )
+    for (double i = -1.0 * axis_dimensions(0) / 2 ; i <= axis_dimensions(0) / 2; i = i + (axis_dimensions(0) / (disc*2)) )
     {
-        for (double j = -1.0 * axis_dimensions(2) / 2 ; j <= axis_dimensions(2) / 2; j = j + (axis_dimensions(2) / disc) )
+        for (double j = -1.0 * axis_dimensions(2) / 2 ; j <= axis_dimensions(2) / 2; j = j + (axis_dimensions(2) / (disc*2)) )
         {
             Eigen::Matrix4d start = Eigen::MatrixXd::Identity(4, 4);
 
@@ -902,9 +902,9 @@ std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int
 
     // Plane XY
 
-    for (double i = -1.0 * axis_dimensions(0) / 2 ; i <= axis_dimensions(0) / 2; i = i + (axis_dimensions(0) / disc) )
+    for (double i = -1.0 * axis_dimensions(0) / 2 ; i <= axis_dimensions(0) / 2; i = i + (axis_dimensions(0) / (disc*2)) )
     {
-        for (double j = -1.0 * axis_dimensions(1) / 2 ; j <= axis_dimensions(1) / 2; j = j + (axis_dimensions(1) / disc) )
+        for (double j = -1.0 * axis_dimensions(1) / 2 ; j <= axis_dimensions(1) / 2; j = j + (axis_dimensions(1) / (disc*2)) )
         {
             Eigen::Matrix4d start = Eigen::MatrixXd::Identity(4, 4);
 
