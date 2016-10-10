@@ -92,12 +92,13 @@ class MVBBLoader(object):
 
     def has_score(self, object_name, pose, need_kindness = False):
         self._load_mvbbs_scored()
-        if not isinstance(pose, np.ndarray):
-            pose = np.array(se3.homogeneous(pose))
-        poses = [p['T'] for p in self.db_scored if not need_kindness or p['kindness'] is not None]
-        for p in poses:
-            if np.all(pose == p):
-                return True
+        if object_name in self.db_scored:
+            if not isinstance(pose, np.ndarray):
+                pose = np.array(se3.homogeneous(pose))
+            poses = [p['T'] for p in self.db_scored[object_name] if not need_kindness or p['kindness'] is not None]
+            for p in poses:
+                if np.all(pose == p):
+                    return True
         return False
 
     def get_poses(self, object_name):
@@ -105,4 +106,19 @@ class MVBBLoader(object):
             self._load_mvbbs()
         if object_name in self.db:
             return self.db[object_name]
+        return []
+
+    def get_successful_poses(self, object_name):
+        scored_poses = self.get_scored_poses(object_name)
+        successful_poses = []
+        for sp in scored_poses:
+            if sp['grasped']:
+                successful_poses.append(sp)
+        return successful_poses
+
+    def get_scored_poses(self, object_name):
+        if self.db_scored == {}:
+            self._load_mvbbs_scored()
+        if object_name in self.db_scored:
+            return self.db_scored[object_name]
         return []
