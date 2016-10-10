@@ -42,8 +42,8 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.world = world
         self.p_T_h = p_T_h
         self.h_T_p = np.linalg.inv(self.p_T_h)
-        self.poses = poses
-        self.poses_variations = poses_variations
+        self.poses = []
+        self.poses_variations = []
         self.R = R
         self.hand = None
         self.is_simulating = False
@@ -60,6 +60,21 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.module = module
         self.running = True
         self.db = MVBBLoader()
+
+        if self.world.numRigidObjects() > 0:
+            self.obj = self.world.rigidObject(0)
+            for p in poses:
+                if not self.db.has_score(self.obj.getName, p):
+                    self.poses.append(p)
+                else:
+                    print "Pose", p, "already simulated"
+            for p in poses_variations:
+                if not self.db.has_score(self.obj.getName, p):
+                    self.poses_variations.append(p)
+                else:
+                    print "Pose", p, "already simulated"
+        else:
+            "Warning: during initialization of visualizer object is still not loaded in world"
 
     def display(self):
         if self.running:
