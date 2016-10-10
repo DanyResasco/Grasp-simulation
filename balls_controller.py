@@ -150,9 +150,10 @@ class BallsStateMachineController(object):
                 R, t = o.getTransform()
                 if t[0] < box_dims[0]/2.0 - 0.005 and t[1] < box_dims[1]/2.0 - 0.005:
                     self.balls_to_move.append(o)
-            self.balls_to_move = sorted(self.balls_to_move, key = lambda obj: (obj.getTransform()[1][2],
-                                                                               obj.getTransform()[1][0]**2+
-                                                                               obj.getTransform()[1][1]**2))
+            #self.balls_to_move = sorted(self.balls_to_move, key = lambda obj: (obj.getTransform()[1][2],
+            #                                                                   obj.getTransform()[1][0]**2+
+            #                                                                   obj.getTransform()[1][1]**2), reverse=True)
+            self.balls_to_move = sorted(self.balls_to_move, key=lambda obj: obj.getTransform()[1][2], reverse=True)
         return self.balls_to_move
 
     def _get_hand_pose_for_ball(self, ball):
