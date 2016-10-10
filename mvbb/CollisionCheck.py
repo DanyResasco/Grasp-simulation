@@ -4,6 +4,7 @@ from klampt.vis.glrobotprogram import * #Per il simulatore
 from klampt.model import collide
 from moving_base_control import set_moving_base_xform, get_moving_base_xform
 import math
+from IPython import embed
 
 
 
@@ -78,3 +79,24 @@ def CollisionTestPose(world,robot,obj,o_P_h):
 
     robot.setConfig(q_old)
     return coll
+
+def WillCollideDuringClosure(hand, obj):
+    world = hand.world
+    robot = hand.robot
+    q_old = robot.getConfig()
+    sigma_old = hand.getCommand()
+    collision = collide.WorldCollider(world) #init
+    for i in range(6):
+        hand.setCommand([i/5.0])
+        tau, q = hand.output(kinematic = True)
+        robot.setConfig(q)
+        r_w_coll = collision.robotTerrainCollisions(robot) # check collision robot-plane
+        list_r_w_coll = [] # same as above. The output is generator so make a list to know how many collision we have been
+        for coll in r_w_coll:
+            list_r_w_coll.append(coll)
+    hand.setCommand(sigma_old)
+    robot.setConfig(q_old)
+    if len(list_r_w_coll) >0: #if the length is greater that zero, we have collision
+        return True
+    else:
+        return False

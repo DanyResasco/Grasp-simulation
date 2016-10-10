@@ -130,7 +130,7 @@ class CompliantHandEmulator(ActuatorEmulator):
         print 'R:', self.R
         print 'E:', self.E
 
-    def output(self):
+    def output(self, kinematic_only = False):
         """
         @return (torque, qdes) where #torque = n_dofs, #qdes = n_links
         """
@@ -149,7 +149,10 @@ class CompliantHandEmulator(ActuatorEmulator):
         dq_u = dq[self.u_to_n]
         dq_m = dq[self.m_to_n]
 
-        q_a = q[self.a_to_n]
+        if not kinematic_only:
+            q_a = q[self.a_to_n]
+        else:
+            q_a = self.q_a_ref
         q_u = q[self.u_to_n]
         q_m = q[self.m_to_n]
 
