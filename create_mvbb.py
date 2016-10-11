@@ -14,7 +14,7 @@ from klampt.math import so3, se3
 import string
 import pydany_bb
 import numpy as np
-import math
+import math 
 from IPython import embed
 from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
@@ -137,21 +137,53 @@ def skip_decimate_or_return(object, min_vertices = 0, max_vertices = 2000):
     else:
         return object, None
 
-def compute_poses(obj, new_method = False):
+def compute_poses(obj, new_method = False, soglia_max = 1000, soglia_min = -1000):
     if isinstance(obj, np.ndarray):
         vertices = obj
         n_vertices = vertices.shape[0]
-        box = pydany_bb.Box(n_vertices)
+        vertices_sorted = sorted(vertices, key=lambda vert:vert[2])
+        # n_vertices_sorted = vertices
+        n_vertex_reduced = 0;
+        # soglia = 0.1
+        print "soglia_max: ", soglia_max, "  soglia_min: ", soglia_min
+        vertex_reduced_filtered = []
+        for i in range(n_vertices):
+            if (vertices_sorted[i][2] < soglia_max and vertices_sorted[i][2] > soglia_min):
+                vertex_reduced_filtered.append(i)
 
-        box.SetPoints(vertices)
+        # embed()
+        box = pydany_bb.Box(len(vertex_reduced_filtered))
+        for i in range(len(vertex_reduced_filtered)):
+            box.SetPoint(i, vertices_sorted[vertex_reduced_filtered[i]][0], vertices_sorted[vertex_reduced_filtered[i]][1], vertices_sorted[vertex_reduced_filtered[i]][2])
+
+        print "sono in if"
+        
+        # embed() 
+        # box.SetPoints(vertices)
     else:
         tm = obj.geometry().getTriangleMesh()
         n_vertices = tm.vertices.size() / 3
-        box = pydany_bb.Box(n_vertices)
+        # box = pydany_bb.Box(n_vertices)
 
+        # for i in range(n_vertices):
+        #     box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
+        # embed()
+        n_vertex_reduced = 0;
+        # soglia = 0.1
+        print "soglia_max: ", soglia_max, "  soglia_min: ", soglia_min
+        vertex_reduced_filtered = []
         for i in range(n_vertices):
-            box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
+            if (tm.vertices[3 * i + 2] < soglia_max and tm.vertices[3 * i + 2] > soglia_min):
+                vertex_reduced_filtered.append(i)
 
+        embed()
+        box = pydany_bb.Box(len(vertex_reduced_filtered))
+        for i in range(len(vertex_reduced_filtered)):
+            box.SetPoint(i, vertices_sorted[vertex_reduced_filtered[i]][0], vertices_sorted[vertex_reduced_filtered[i]][1], vertices_sorted[vertex_reduced_filtered[i]][2])
+        print "sono in else"
+        # embed() 
+
+    # embed()
     I = np.eye(4)
     print "doing PCA"
     box.doPCA(I)
@@ -167,8 +199,8 @@ def compute_poses(obj, new_method = False):
     # rubbermaid_ice_guard_pitcher_blue
     #param_area = 0.95
     #param_volume = 4E-7
-    param_area = 0.8
-    param_volume = 5E-7
+    param_area = 0.7
+    param_volume = 5E-6
 
     print "extracting Boxes"
     boxes = pydany_bb.extractBoxes(bbox, param_area, param_volume)
@@ -180,14 +212,13 @@ def compute_poses(obj, new_method = False):
     for pose in poses:
         poses_variations += PoseVariation(pose, long_side)
     for box in boxes:
-        poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 5, .005)
+        poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 1, .005)
     poses_total = poses + poses_variations
     # poses_sorted = sorted(poses_total, key=lambda pose:pose[2,3], reverse=True)
     # for posesss in poses_sorted:
     #     print 'pose', posesss 
     # poses_sorted = sorted(poses_total, key=lambda pose:(pose[2,3]-np.linalg.norm(pose[0:2,3])))
     poses_sorted = sorted(poses_total, key=lambda pose: pose[2,3]-np.linalg.norm(pose[0:2,3]), reverse=True)
-    
     print "done. Found", len(poses_total), "poses,", len(boxes), "boxes"
     return poses_sorted, [], boxes
 
@@ -220,7 +251,7 @@ def launch_mvbb(object_set, objectname):
         faces = decimator.getEigenFaces()
         tm_decimated = numpy_to_trimesh(vertices, faces)
         print "Decimated to", vertices.shape[0], "vertices"
-        poses, poses_variations, boxes = compute_poses(vertices)
+        poses, poses_variations, boxes = compute_poses(vertices, True, 0.11, 0.046)
     else:
         poses, poses_variations, boxes = compute_poses(object)
 
