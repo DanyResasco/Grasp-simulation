@@ -61,13 +61,16 @@ class ShelfStateMachineController(object):
                         self.obj =self.objs_to_move[i]
                         print "Found", len(goal_pose), "for object", obj.getName(), "- using first", goal_pose[0]
                         self.goal_pose = se3.from_homogeneous(goal_pose[0])
-                        break # anyway
+                    break # anyway
 
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.t0 = sim.getTime()
 
                 if self.obj is None:
-                    print "No Pose Found"
+                    self.obj = self.objs_to_move.pop(0)
+                    self.goal_pose = se3.from_homogeneous(self.get_hand_pose_to_move_obj(self.obj))
+                    print "No Pose Found, trying to manipulate", self.obj.getName()
+                    self.state = 'parking_manipulate_enter'
                 else:
                     self.state = 'parking'
                 print self.state
@@ -106,6 +109,51 @@ class ShelfStateMachineController(object):
                 self.hand.setCommand([1.0])
                 self.state = 'grasping'
                 print self.state
+
+        elif self.state == 'parking_manipulate_enter':
+            if sim.getTime() - self.t0 < t_park + t_park_settle:
+                u = (sim.getTime() - self.t0) / t_park
+                goal_pose = deepcopy(self.goal_pose)
+                goal_pose[1][0:2] = self.start_pose[1][0:2]
+                goal_pose[1][2] += 0.01 # TODO put value depending on the object. If very tall, do not go higher
+                t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u,1.0)))
+                desired = (goal_pose[0], t)
+                send_moving_base_xform_PID(controller, desired[0], desired[1])
+            elif sim.getTime() - self.t0 > t_park + t_park_settle:
+                u = (sim.getTime() - self.t0 - t_park - t_park_settle) / t_park
+                start_pose = deepcopy(self.goal_pose)
+                start_pose[1][0:2] = self.start_pose[1][0:2]
+                start_pose[1][2] += 0.01 # TODO put value depending on the object. If very tall, do not go higher
+                goal_pose = deepcopy(self.goal_pose)
+                goal_pose[1][0:2] = self.start_pose[1][0:2]
+                t = vectorops.interpolate(start_pose[1], goal_pose[1], np.min((u, 1.0)))
+                desired = (goal_pose[0], t)
+                send_moving_base_xform_PID(controller, desired[0], desired[1])
+                self.hand.setCommand([0.2])
+            elif sim.getTime() - self.t0 > t_park + t_park_settle + t_park:
+                self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
+                self.goal_pose = get_moving_base_xform(self.sim.controller(0).model())
+                self.goal_pose[1][1] -= 0.05
+                self.t0 = sim.getTime()
+                self.state = 'manipulate'
+                print self.state
+        elif self.state == 'manipulate':
+            u = (sim.getTime() - self.t0) / t_park
+            t = vectorops.interpolate(self.start_pose[1], self.goal_pose[1], np.min((u, 1.0)))
+            desired = (self.start_pose[0], t)
+            send_moving_base_xform_PID(controller, desired[0], desired[1])
+
+            if sim.getTime() - self.t0 > t_park + t_park_settle:
+                self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
+                self.t0 = sim.getTime()
+                self.hand.setCommand([0.0])
+                self.state = 'parking_manipulate_leave'
+                print self.state
+
+        elif self.state == 'parking_manipulate_leave':
+
+            pass
+
 
         elif self.state == 'grasping':
             if sim.getTime() - self.t0 > t_grasp:
@@ -150,6 +198,7 @@ class ShelfStateMachineController(object):
                 print o.getName(), "out of shelf at", t
 
             self.objs_to_move = sorted(self.objs_to_move, key=lambda obj: obj.getTransform()[1][1])
+            print self.objs_to_move
         return self.objs_to_move
 
     def _has_pose_for_obj(self):
@@ -180,6 +229,20 @@ class ShelfStateMachineController(object):
                 return None
 
             return sorted(filtered_poses, key= lambda pose: pose[2,3], reverse=True) # TODO better sorting
+
+    def get_hand_pose_to_move_obj(self, obj):
+        g = obj.geometry()
+        bb = g.getBB()
+        o_top  =  bb[0][2]
+        o_near =  bb[0][1]
+        o_far  =  bb[1][1]
+        o_center = self._getObjectGlobalCom(obj)
+        R = self.base_xform[0]
+        t = self.base_xform[1]
+        t[0] = o_center[0]
+        t[1] = o_far  - 0.3 # back-off by a phalanx
+        t[2] = o_top + 0.0025
+        return np.array(se3.homogeneous((R,t)))
 
     def _getObjectGlobalCom(self, obj):
         return se3.apply(obj.getTransform(), obj.getMass().getCom())

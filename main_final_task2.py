@@ -277,7 +277,7 @@ def launch_shelf(robotname,objects):
     xy_jiggle(world,rigid_objects,[shelf],[-0.5*shelf_dims[0],-0.5*shelf_dims[1]+shelf_offset],[0.5*shelf_dims[0],0.5*shelf_dims[1]+shelf_offset],100)
 
     doedit = True
-    xform = resource.get("shelf/default_initial_%s.xform"%(robotname,),description="Initial hand transform",default=robot.link(5).getTransform(),world=world)
+    xform = resource.get("shelf/default_initial_%s.xform"%(robotname,),description="Initial hand transform",default=robot.link(5).getTransform(),world=world, doedit=doedit)
     if not xform:
         print "User quit the program"
         return
