@@ -28,10 +28,11 @@ class ShelfStateMachineController(object):
         self.t0 = sim.getTime()
         self.start_pose = None
         self.goal_pose = None
+        self.o_T_p = None
         self.p_T_h = np.array(se3.homogeneous(resource.get("default_initial_soft_hand.xform", description="Initial hand transform",
                              default=se3.identity(), world=sim.world, doedit=False)))
         self.db = MVBBLoader()
-        self.t_wait = 3.0
+        self.t_wait = 3.5
 
     def __call__(self,controller):
         self.sim.updateWorld()
@@ -40,11 +41,12 @@ class ShelfStateMachineController(object):
         #embed()
 
         #controller state machine
-        t_park = 0.5
+        t_park = 1.0
         t_park_settle = 0.5
-        t_approach = 1.0
+        t_approach = 1.5
+        t_approach_settle = 0.5
         t_grasp = 1.0
-        t_move = 4.0
+        t_move = 1.0
         t_raise = 0.5
         t_wait = self.t_wait
 
@@ -53,6 +55,7 @@ class ShelfStateMachineController(object):
                 self.state = 'idle'
                 self.t_wait = 1.0
                 print self.state
+                embed()
 
         if self.state == 'idle':
             self.obj = None
@@ -62,9 +65,14 @@ class ShelfStateMachineController(object):
                     goal_pose = self._get_hand_pose_for_obj(obj)
                     if goal_pose is not None:
                         self.obj =self.objs_to_move[i]
-                        print "Found", len(goal_pose), "for object", obj.getName(), "- using first", goal_pose[0]
+                        print "Found", len(goal_pose), "poses for object", obj.getName(), "- using first", goal_pose[0]
                         self.goal_pose = se3.from_homogeneous(goal_pose[0])
+
+                        w_T_o = np.array(se3.homogeneous(obj.getTransform()))
+                        self.o_T_p = np.linalg.inv(w_T_o).dot(goal_pose[0])
                         break # anyway
+                    else:
+                        print "found no poses for object", obj.getName()
 
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.t0 = sim.getTime()
@@ -85,9 +93,8 @@ class ShelfStateMachineController(object):
             u = (sim.getTime() - self.t0) / t_park
             goal_pose = deepcopy(self.goal_pose)
             goal_pose[1][0:2] = self.start_pose[1][0:2]
-            t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u,1.0)))
-            desired = (goal_pose[0], t)
-            send_moving_base_xform_PID(controller, desired[0], desired[1])
+            T = se3.interpolate(self.start_pose, goal_pose, np.min((u,1.0)))
+            send_moving_base_xform_PID(controller, T[0], T[1])
 
             if sim.getTime() - self.t0 > t_park + t_park_settle:
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
@@ -101,7 +108,7 @@ class ShelfStateMachineController(object):
             desired = (self.goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
-            if sim.getTime() - self.t0 > t_approach:
+            if sim.getTime() - self.t0 > t_approach + t_approach_settle:
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
                 self.t0 = sim.getTime()
                 #this is needed to stop at the current position in case there's some residual velocity
@@ -114,38 +121,67 @@ class ShelfStateMachineController(object):
             if sim.getTime() - self.t0 > t_grasp:
                 self.t0 = sim.getTime()
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
+                if self.obj.getName() == 'dove_beauty_bar':
+                    self.goal_pose[1][2] += 0.13  # TODO if the grasp is not too high we can go higher...
+                else:
+                    self.goal_pose[1][2] += 0.07  # TODO if the grasp is not too high we can go higher...
                 self.state = 'raising'
                 print self.state
 
         elif self.state == 'raising':
             u = (sim.getTime() - self.t0) / t_raise
-            goal_pose = deepcopy(self.goal_pose)
-            goal_pose[1][2] += 0.04
-            t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
+            t = vectorops.interpolate(self.start_pose[1], self.goal_pose[1], np.min((u, 1.0)))
             desired = (self.goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
             if sim.getTime() - self.t0 > t_raise:
-                goal_pose = deepcopy(self.base_xform) # back to initial pose
-                goal_pose[1][0] = self.start_pose[1][0]
-                goal_pose[1][2] = self.start_pose[1][2]
-                self.goal_pose = goal_pose
+                self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
+                #goal_pose = deepcopy(self.base_xform) # back to initial pose
+                goal_pose = deepcopy(self.goal_pose)  # back to initial pose
+                goal_pose[1][0] = self.base_xform[1][0]
+                goal_pose[1][1] = self.base_xform[1][1]
+                #set goal pose to have same palm pose wrt original pose
+                w_T_p_initial = se3.mul(self.base_xform, se3.inv(se3.from_homogeneous(self.p_T_h)))
+                w_T_p_current = se3.mul(self.start_pose, se3.inv(se3.from_homogeneous(self.p_T_h)))
+                w_T_p_final = (w_T_p_current[0], w_T_p_initial[1])
+                w_T_p_final[1][2] = w_T_p_current[1][2]
+                self.goal_pose = se3.mul(w_T_p_final, se3.from_homogeneous(self.p_T_h))
                 self.state = 'moving'
+                self.t0 = sim.getTime()
                 print self.state
 
         elif self.state == 'moving':
-            u = (sim.getTime() - self.t0) / t_move
-            goal_pose = deepcopy(self.goal_pose)
-            t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
-            desired = (goal_pose[0], t)
+            curr_pose_p = se3.mul(get_moving_base_xform(self.sim.controller(0).model()), se3.inv(se3.from_homogeneous(self.p_T_h)))
+            curr_g = se3.mul(self.obj.getTransform(), se3.from_homogeneous(self.o_T_p))
+
+            if vectorops.distance(curr_pose_p[1], curr_g[1]) > 0.2:
+                print "Object dropped"
+                print curr_pose_p
+                print curr_g
+                u = 1.0
+            else:
+                u = (sim.getTime() - self.t0) / t_move
+            t = vectorops.interpolate(self.start_pose[1], self.goal_pose[1], np.min((u, 1.0)))
+            desired = (self.goal_pose[0], t)
             send_moving_base_xform_PID(controller, desired[0], desired[1])
 
             if sim.getTime() - self.t0 > t_move:
-
-                self.obj = None
                 self.hand.setCommand([0.0])
+
+            if sim.getTime() - self.t0 > t_move + 0.5:
+                send_moving_base_xform_PID(controller, self.goal_pose[0],
+                                           vectorops.add(self.goal_pose[1], [0, 0, -0.15]))
+            if sim.getTime() - self.t0 > t_move + 0.6:
+                send_moving_base_xform_PID(controller, self.goal_pose[0], self.goal_pose[1])
+            if sim.getTime() - self.t0 > t_move + 0.7:
+                send_moving_base_xform_PID(controller, self.goal_pose[0],
+                                           vectorops.add(self.goal_pose[1], [0, 0, -0.15]))
+            if sim.getTime() - self.t0 > t_move + 0.8:
+                send_moving_base_xform_PID(controller, self.goal_pose[0], self.goal_pose[1])
+            if sim.getTime() - self.t0 > t_move + 0.9:
                 self.state = 'wait'
                 self.t0 = sim.getTime()
+                self.obj = None
                 print self.state
 
         # need to manually call the hand emulator
@@ -161,10 +197,8 @@ class ShelfStateMachineController(object):
                t[1] > shelf_offset - shelf_dims[1]/2.0 and  t[1] < shelf_dims[1]/2.0 + shelf_offset and \
                t[2] > shelf_height - shelf_dims[2]/2.0 and  t[2] < shelf_height + shelf_dims[2]:
                 self.objs_to_move.append(o)
-            else:
-                print o.getName(), "out of shelf at", t
 
-            self.objs_to_move = sorted(self.objs_to_move, key=lambda obj: obj.getTransform()[1][1])
+        self.objs_to_move = sorted(self.objs_to_move, key=lambda obj: obj.getTransform()[1][1])
         return self.objs_to_move
 
     def _has_pose_for_obj(self):
@@ -184,7 +218,7 @@ class ShelfStateMachineController(object):
                 s = np.array(se3.homogeneous(self.base_xform)) # linear distance from s TODO use planning instead
 
                 s[0:3,0:3] = p[0:3,0:3] # copying rotation from final pose
-                s[0,3] = p[0,3]        # copying x from final pose
+                s[0,3] = p[0,3]         # copying x from final pose
                 s[2,3] = p[2,3]         # copying height from final pose
 
                 #if WillCollideDuringClosure(self.hand,obj):
@@ -194,7 +228,7 @@ class ShelfStateMachineController(object):
             if len(filtered_poses) == 0:
                 return None
 
-            curr_pose_kdl = numpytokdl4(np.array(se3.homogeneous(get_moving_base_xform(self.robot))))
+            curr_pose_kdl = numpytokdl4(np.array(se3.homogeneous(get_moving_base_xform(self.sim.controller(0).model()))))
 
             filtered_poses = sorted(filtered_poses, key=lambda pose: PyKDL.diff(curr_pose_kdl, numpytokdl4(pose)).rot.Norm())
             return sorted(filtered_poses, key= lambda pose: pose[2,3], reverse=True) # TODO better sorting
