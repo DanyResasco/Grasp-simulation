@@ -106,9 +106,8 @@ std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectO
 
 std::vector<Eigen::MatrixXd> filter_poses(std::vector<Eigen::MatrixXd> all_boxes, Box ObjectOriginal);
 bool pose_inside_box(Eigen::MatrixXd Pose, Box ObjectOriginal);
-std::vector<Eigen::MatrixXd> get_populatedTrasformsforHand_for_spheres(Eigen::MatrixXd w_T_r = Eigen::MatrixXd::Identity(4,4), int disc = 5, double radius = 1.0, double dist_hand = 0.005);
-
-
+std::vector<Eigen::MatrixXd> populate_face_sphere (Eigen::Vector3d axis_dimensions, int disc, double dist_hand, Eigen::MatrixXd T_init);
+std::vector<Eigen::MatrixXd> get_populated_TrasformsforSphere(Eigen::MatrixXd w_T_s, int disc, double radius, double dist_hand);
 
 
 }

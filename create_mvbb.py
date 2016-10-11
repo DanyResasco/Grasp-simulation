@@ -109,25 +109,14 @@ def numpy_to_trimesh(vertices, faces):
     return tm
 
 def get_bb_enclosed_sphere(obj):
-    tm = obj.geometry().getTriangleMesh()
-    n_vertices = tm.vertices.size() / 3
-    box = pydany_bb.Box(n_vertices)
-
-    for i in range(n_vertices):
-        box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
-
-    I = np.eye(4)
-    print "doing PCA"
-    box.doPCA(I)
-    print box.T
-    print "computing Bounding Box"
-    bbox = pydany_bb.ComputeBoundingBox(box)
-    p_0 = bbox.Isobox[0, :]
-    p_1 = bbox.Isobox[1, :]
+    p_0, p_1= obj.geometry().getBB()
+    p_0 = np.array(p_0)
+    p_1 = np.array(p_1)
     sides = np.abs(p_0 - p_1)
     if np.max(sides) - np.min(sides) > 1e-12:
         print "Error: bounding box for", obj.getName(), "is not a sphere"
-    return box.T[0:3,3], sides[0]
+    R, t = obj.getTransform()
+    return t, sides[0]/2.0
 
 
 def skip_decimate_or_return(object, min_vertices = 0, max_vertices = 2000):
@@ -191,7 +180,7 @@ def compute_poses(obj, new_method = False):
     for pose in poses:
         poses_variations += PoseVariation(pose, long_side)
     for box in boxes:
-        poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 2, .005)
+        poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 5, .005)
     poses_total = poses + poses_variations
     # poses_sorted = sorted(poses_total, key=lambda pose:pose[2,3], reverse=True)
     # for posesss in poses_sorted:
@@ -235,7 +224,7 @@ def launch_mvbb(object_set, objectname):
     else:
         poses, poses_variations, boxes = compute_poses(object)
 
-    embed()
+    # embed()
     # now the simulation is launched
 
     if use_program:
