@@ -7,7 +7,6 @@ from i16mc import box_dims
 from IPython import embed
 import numpy as np
 from copy import deepcopy
-from create_mvbb import get_bb_enclosed_sphere
 
 class BallsStateMachineController(object):
     """A more sophisticated controller that uses a state machine."""
@@ -159,9 +158,6 @@ class BallsStateMachineController(object):
         return self.balls_to_move
 
     def _get_hand_pose_for_ball(self, ball):
-        p, radius = get_bb_enclosed_sphere(ball)
-        closest_wall_dir = _get_closest_wall_direction(self, p)
-        w_T_ball = (so3.identity(), p)
         w_T_op = np.eye(4)
         w_T_op[2,3] = 0.11 # TODO Manuel get this value from the BB or from the algorithm
         """
@@ -173,16 +169,6 @@ class BallsStateMachineController(object):
         pose = (self.base_xform[0], ball.getTransform()[1])
         final_pose = w_T_op.dot(np.array(se3.homogeneous(pose)))
         return se3.from_homogeneous(final_pose)
-
-    def _get_closest_wall_direction(self, point):
-        closest_direction = [0,0]
-        p = np.array(point)
-        dims = np.array([[-box_dims[0] / 2.0 + 0.005 , box_dims[0] / 2.0 - 0.005],
-                         [-box_dims[1] / 2.0 + 0.005, box_dims[1] / 2.0 - 0.005]])
-        dims[:,0] -= p
-        dims[:,1] -= p
-        print "Closest direction found for point", point, "@" closest_direction
-        return closest_direction
 
     def _ball_lifted(self):
         com = se3.apply(self.ball.getTransform(), self.ball.getMass().getCom())
