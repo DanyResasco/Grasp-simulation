@@ -30,7 +30,7 @@ object_template_fn = 'data/objects/object_template.obj'
 objects = {}
 objects['ycb'] = [f for f in sorted(os.listdir('data/objects/ycb'))]
 objects['apc2015'] = [f for f in sorted(os.listdir('data/objects/apc2015'))]
-robots = ['reflex_col']
+robots = ['soft_hand']
 
 object_geom_file_patterns = {
 	'ycb':['data/objects/ycb/%s/meshes/tsdf_mesh.stl','data/objects/ycb/%s/meshes/poisson_mesh.stl'],
@@ -43,7 +43,7 @@ object_masses = {
 	'apc2015':dict(),
 }
 robot_files = {
-	'reflex_col':'data/robots/reflex_col.rob'
+	'soft_hand':'data/robots/soft_hand.urdf'
 }
 
 
@@ -336,7 +336,7 @@ def launch_competition_balls(robotname,num_balls=20):
 
 if __name__ == '__main__':
 	#choose the robot model here
-	robot = "reflex_col"
+	robot = "soft_hand"
 	if len(sys.argv) > 1:
 		robot = sys.argv[1]
 	#choose the setup here
