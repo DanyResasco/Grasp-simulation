@@ -9,6 +9,8 @@ import numpy as np
 from copy import deepcopy
 from mvbb.db import MVBBLoader
 from mvbb.CollisionCheck import CollisionTestInterpolate, CollisionTestPose, WillCollideDuringClosure
+from create_mvbb_filtered import numpytokdl4
+import PyKDL
 
 class ShelfStateMachineController(object):
     """A more sophisticated controller that uses a state machine."""
@@ -179,6 +181,15 @@ class ShelfStateMachineController(object):
             if len(filtered_poses) == 0:
                 return None
 
+            filtered_poses_dist = []
+            curr_pose_kdl = numpytokdl4(np.array(se3.homogeneous(get_moving_base_xform(self.robot))))
+            for pose in filtered_poses:
+                pose_kdl = numpytokdl4(pose)
+                twist = PyKDL.diff(curr_pose_kdl,pose_kdl)
+                twist_norm = twist.rot.Norm()
+                filtered_poses_dist.append(twist_norm)
+
+            filtered_poses = sorted(filtered_poses, key=lambda pose: filtered_poses_dist[filtered_poses.index(pose)])
             return sorted(filtered_poses, key= lambda pose: pose[2,3], reverse=True) # TODO better sorting
 
     def _getObjectGlobalCom(self, obj):

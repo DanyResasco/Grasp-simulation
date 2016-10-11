@@ -28,6 +28,7 @@ from mvbb.db import MVBBLoader
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
 from i16mc import make_object, make_moving_base_robot
 from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose
+import PyKDL
 
 
 objects = {}
@@ -86,6 +87,15 @@ def kdltonumpy4(F):
     for i in range(3):
         npF[i,3] = F.p[i]
     return npF
+
+def numpytokdl4(mat):
+    v = PyKDL.Vector(mat[0,3],mat[1,3],mat[2,3])
+    r = PyKDL.Rotation()
+    frame = kdl.Frame(r, v)
+    for i in range(3):
+        for j in range(3):
+            frame.M[i,j] = mat[i,j]
+    return frame
 
 def launch_mvbb_filtered(robotname, object_set, objectname):
     """Launches a very simple program that spawns an object from one of the
