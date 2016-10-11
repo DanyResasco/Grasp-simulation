@@ -120,7 +120,7 @@ class BallsStateMachineController(object):
         elif self.state == 'parking_for_ungrasp':
             u = (sim.getTime() - self.t0) / t_park
             goal_pose = deepcopy(self.goal_pose)
-            goal_pose[1][0] += 0.7  # translate to the next box TODO move to the center of the box
+            goal_pose[1][0] = 0.7 + box_dims[0]/2
             goal_pose[1][1] = 0.0
             t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
             desired = (goal_pose[0], t)
@@ -149,9 +149,12 @@ class BallsStateMachineController(object):
 
             if 'sphere' in o.getName():
                 R, t = o.getTransform()
-                if t[0] < box_dims[0]/2.0 - 0.005 and t[1] < box_dims[1]/2.0 - 0.005:
+                if t[0] > -box_dims[0]/2.0 + 0.005 and t[0] < box_dims[0]/2.0 - 0.005 and \
+                   t[1] > -box_dims[1]/2.0 + 0.005 and t[1] < box_dims[1]/2.0 - 0.005:
                     self.balls_to_move.append(o)
             self.balls_to_move = sorted(self.balls_to_move, key=lambda obj: obj.getTransform()[1][2], reverse=True)
+
+        print "Found", len(self.balls_to_move), "balls in box"
         return self.balls_to_move
 
     def _get_hand_pose_for_ball(self, ball):
