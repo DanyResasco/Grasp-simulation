@@ -8,7 +8,7 @@
 # python test_mvbb_filtered.py laugh_out_loud_joke_book 
 # python test_mvbb_filtered.py mark_twain_huckleberry_finn 
 python test_mvbb_filtered.py large_black_spring_clamp 
-python test_mvbb_filtered.py large_black_spring_clamp 
+python test_mvbb_filtered.py dove_beauty_bar 
 python test_mvbb_filtered.py black_and_decker_lithium_drill_driver_unboxed 
 python test_mvbb_filtered.py cheezit_bit_original 
 python test_mvbb_filtered.py laugh_out_loud_joke_book 

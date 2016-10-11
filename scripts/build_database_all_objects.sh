@@ -2,6 +2,7 @@
 ####################################
 #
 # Backup to NFS mount sc
+#..giorgio3
 python test_mvbb_filtered.py champion_copper_plus_spark_plug 
 python test_mvbb_filtered.py cheezit_big_original 
 python test_mvbb_filtered.py crayola_64_ct 
@@ -15,7 +16,7 @@ python test_mvbb_filtered.py genuine_joe_plastic_stir_sticks
 python test_mvbb_filtered.py highland_6539_self_stick_notes 
 python test_mvbb_filtered.py kong_air_dog_squeakair_tennis_ball 
 python test_mvbb_filtered.py kong_sitting_frog_dog_toy 
-#..
+#..mx4
 python test_mvbb_filtered.py kygen_squeakin_eggs_plush_puppies 
 python test_mvbb_filtered.py laugh_out_loud_joke_book 
 python test_mvbb_filtered.py mark_twain_huckleberry_finn 
@@ -25,7 +26,7 @@ python test_mvbb_filtered.py munchkin_white_hot_duck_bath_toy
 python test_mvbb_filtered.py one_with_nature_soap_dead_sea_mud 
 python test_mvbb_filtered.py oreo_mega_stuf 
 python test_mvbb_filtered.py paper_mate_12_count_mirado_black_warrior 
-#..
+#..mx4
 python test_mvbb_filtered.py rollodex_mesh_collection_jumbo_pencil_cup 
 python test_mvbb_filtered.py safety_works_safety_glasses 
 python test_mvbb_filtered.py sharpie_accent_tank_style_highlighters 
@@ -36,7 +37,7 @@ python test_mvbb_filtered.py 2in_metal_washer
 python test_mvbb_filtered.py black_and_decker_lithium_drill_driver 
 python test_mvbb_filtered.py black_and_decker_lithium_drill_driver_unboxed 
 python test_mvbb_filtered.py blank_hard_plastic_card 
-#..
+#..mx3
 python test_mvbb_filtered.py block_of_wood_12in 
 python test_mvbb_filtered.py block_of_wood_6in 
 python test_mvbb_filtered.py blue_wood_block_1inx1in 
@@ -47,7 +48,7 @@ python test_mvbb_filtered.py cheerios_14oz
 python test_mvbb_filtered.py cheeze-it_388g 
 python test_mvbb_filtered.py clorox_disinfecting_wipes_35 
 python test_mvbb_filtered.py comet_lemon_fresh_bleach 
-#...
+#...mx2
 python test_mvbb_filtered.py dark_red_foam_block_with_three_holes 
 python test_mvbb_filtered.py domino_sugar_1lb 
 python test_mvbb_filtered.py expo_black_dry_erase_marker 
