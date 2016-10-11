@@ -44,7 +44,8 @@ class ShelfStateMachineController(object):
         t_park_settle = 0.5
         t_approach = 1.0
         t_grasp = 1.0
-        t_move = 0.5
+        t_move = 4.0
+        t_raise = 0.5
         t_wait = self.t_wait
 
         if self.state == 'wait':
@@ -113,6 +114,18 @@ class ShelfStateMachineController(object):
             if sim.getTime() - self.t0 > t_grasp:
                 self.t0 = sim.getTime()
                 self.start_pose = get_moving_base_xform(self.sim.controller(0).model())
+                self.state = 'raising'
+                print self.state
+
+        elif self.state == 'raising':
+            u = (sim.getTime() - self.t0) / t_raise
+            goal_pose = deepcopy(self.goal_pose)
+            goal_pose[1][2] += 0.04
+            t = vectorops.interpolate(self.start_pose[1], goal_pose[1], np.min((u, 1.0)))
+            desired = (self.goal_pose[0], t)
+            send_moving_base_xform_PID(controller, desired[0], desired[1])
+
+            if sim.getTime() - self.t0 > t_raise:
                 goal_pose = deepcopy(self.base_xform) # back to initial pose
                 goal_pose[1][0] = self.start_pose[1][0]
                 goal_pose[1][2] = self.start_pose[1][2]
@@ -181,15 +194,9 @@ class ShelfStateMachineController(object):
             if len(filtered_poses) == 0:
                 return None
 
-            filtered_poses_dist = []
             curr_pose_kdl = numpytokdl4(np.array(se3.homogeneous(get_moving_base_xform(self.robot))))
-            for pose in filtered_poses:
-                pose_kdl = numpytokdl4(pose)
-                twist = PyKDL.diff(curr_pose_kdl,pose_kdl)
-                twist_norm = twist.rot.Norm()
-                filtered_poses_dist.append(twist_norm)
 
-            filtered_poses = sorted(filtered_poses, key=lambda pose: filtered_poses_dist[filtered_poses.index(pose)])
+            filtered_poses = sorted(filtered_poses, key=lambda pose: PyKDL.diff(curr_pose_kdl, numpytokdl4(pose)).rot.Norm())
             return sorted(filtered_poses, key= lambda pose: pose[2,3], reverse=True) # TODO better sorting
 
     def _getObjectGlobalCom(self, obj):

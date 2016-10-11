@@ -91,7 +91,7 @@ def kdltonumpy4(F):
 def numpytokdl4(mat):
     v = PyKDL.Vector(mat[0,3],mat[1,3],mat[2,3])
     r = PyKDL.Rotation()
-    frame = kdl.Frame(r, v)
+    frame = PyKDL.Frame(r, v)
     for i in range(3):
         for j in range(3):
             frame.M[i,j] = mat[i,j]
