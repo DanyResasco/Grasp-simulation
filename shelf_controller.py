@@ -55,7 +55,7 @@ class ShelfStateMachineController(object):
                 self.state = 'idle'
                 self.t_wait = 1.0
                 print self.state
-                embed()
+                # embed()
 
         if self.state == 'idle':
             self.obj = None

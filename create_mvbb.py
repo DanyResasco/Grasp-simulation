@@ -167,7 +167,7 @@ def compute_poses(obj, new_method = False, soglia_max = 1000, soglia_min = -1000
 
         # for i in range(n_vertices):
         #     box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
-        # embed()
+        # embed()   
         n_vertex_reduced = 0;
         # soglia = 0.1
         print "soglia_max: ", soglia_max, "  soglia_min: ", soglia_min
@@ -212,7 +212,7 @@ def compute_poses(obj, new_method = False, soglia_max = 1000, soglia_min = -1000
     for pose in poses:
         poses_variations += PoseVariation(pose, long_side)
     for box in boxes:
-        poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 1, .005)
+        poses += pydany_bb.get_populated_TrasformsforHand(box, bbox, 3, .002)
     poses_total = poses + poses_variations
     # poses_sorted = sorted(poses_total, key=lambda pose:pose[2,3], reverse=True)
     # for posesss in poses_sorted:

@@ -21,6 +21,7 @@ import os
 import time
 import sys
 
+replayfile = None
 box_dims = (0.45,0.45,0.25)
 shelf_dims = (0.4,0.4,0.3)
 shelf_offset = 0.6
@@ -30,7 +31,7 @@ object_template_fn = 'data/objects/object_template.obj'
 objects = {}
 objects['ycb'] = [f for f in sorted(os.listdir('data/objects/ycb'))]
 objects['apc2015'] = [f for f in sorted(os.listdir('data/objects/apc2015'))]
-robots = ['soft_hand']
+robots = ['reflex_col']
 
 object_geom_file_patterns = {
 	'ycb':['data/objects/ycb/%s/meshes/tsdf_mesh.stl','data/objects/ycb/%s/meshes/poisson_mesh.stl'],
@@ -43,7 +44,7 @@ object_masses = {
 	'apc2015':dict(),
 }
 robot_files = {
-	'soft_hand':'data/robots/soft_hand.urdf'
+	'reflex_col':'data/robots/reflex_col.rob'
 }
 
 
@@ -177,12 +178,10 @@ def xy_jiggle(world,objects,fixed_objects,bmin,bmax,iters,randomize = True):
 			xy_randomize(obj,bmin,bmax)
 	inner_iters = 10
 	while iters > 0:
-		print "a"
 		numConflicts = [0]*len(objects)
 		for (i,j) in collide.self_collision_iter([o.geometry() for o in objects]):
 			numConflicts[i] += 1
 			numConflicts[j] += 1
-		print "b"
 		for (i,j) in collide.group_collision_iter([o.geometry() for o in objects],[o.geometry() for o in fixed_objects]):
 			numConflicts[i] += 1
 		
@@ -261,6 +260,7 @@ def launch_competition_balls(robotname,num_balls=20):
 			if bid < 0:
 				raise RuntimeError("data/objects/sphere_10cm.obj couldn't be loaded")
 			ball = world.rigidObject(world.numRigidObjects()-1)
+			ball.setName("ball"+str(world.numRigidObjects()))
 			scale = random.uniform(0.7,1.2)
 			ball.geometry().transform([scale,0,0,0,scale,0,0,0,scale],[0,0,0])
 			mass = ball.getMass()
@@ -319,26 +319,51 @@ def launch_competition_balls(robotname,num_balls=20):
 	return
 	"""
 
+	pattern1 = 'task1_sim_state%d.csv'
+	pattern2 = 'task1_sim_contacts%d.csv'
+	for i in range(1,10000):
+		sim.log_state_fn = pattern1 % (i,)
+		sim.log_contact_fn = pattern2 % (i,)
+		if not os.path.exists(sim.log_state_fn) and not os.path.exists(sim.log_contact_fn):
+			break
+
+	#decide whether to watch a replay or to run the controller
+	watch = (replayfile != None)
+	if watch:
+		playback = simlog.SimLogPlayback(sim,replayfile)
+	else:
+		sim.beginLogging()
+
 	#this code manually updates the visualization
 	vis.add("world",world)
 	vis.show()
+	tstart = time.time()
 	t0 = time.time()
 	while vis.shown():
 		vis.lock()
-		sim.simulate(0.01)
-		sim.updateWorld()
+		if watch:
+			playback.updateSim(time=time.time()-tstart)
+		else:
+			sim.simulate(0.01)
+			sim.updateWorld()
 		vis.unlock()
 		t1 = time.time()
 		time.sleep(max(0.01-(t1-t0),0.001))
 		t0 = t1
+	sim.endLogging()
 	return
 
 
 if __name__ == '__main__':
+	global replayfile
 	#choose the robot model here
-	robot = "soft_hand"
+	random.seed(12347)
+	robot = "reflex_col"
 	if len(sys.argv) > 1:
 		robot = sys.argv[1]
+	if len(sys.argv) > 2:
+		replayfile = sys.argv[2]
+
 	#choose the setup here
 	launch_competition_balls(robot)
 	vis.kill()

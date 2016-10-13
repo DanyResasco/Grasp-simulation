@@ -825,6 +825,12 @@ std::vector<Eigen::MatrixXd> getTransformsForHand(std::list<Box> sorted_boxes, B
     }
 
     return results;
+
+    // std::vector<Eigen::MatrixXd> results1;
+    // results1.push_back(results[0]);
+    // return results1;
+
+
 }
 
 std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int disc, double dist_hand, Eigen::Matrix4d T_init)
@@ -902,33 +908,33 @@ std::vector<Eigen::MatrixXd> populate_face (Eigen::Vector3d axis_dimensions, int
 
     // Plane XY
 
-    // for (double i = -1.0 * axis_dimensions(0) / 2 ; i <= axis_dimensions(0) / 2; i = i + (axis_dimensions(0) / disc) )
-    // {
-    //     for (double j = -1.0 * axis_dimensions(1) / 2 ; j <= axis_dimensions(1) / 2; j = j + (axis_dimensions(1) / disc) )
-    //     {
-    //         Eigen::Matrix4d start = Eigen::MatrixXd::Identity(4, 4);
+    for (double i = -1.0 * axis_dimensions(0) / 2 ; i <= axis_dimensions(0) / 2; i = i + (axis_dimensions(0) / disc) )
+    {
+        for (double j = -1.0 * axis_dimensions(1) / 2 ; j <= axis_dimensions(1) / 2; j = j + (axis_dimensions(1) / disc) )
+        {
+            Eigen::Matrix4d start = Eigen::MatrixXd::Identity(4, 4);
 
-    //         start(0, 3) = i;
-    //         start(1, 3) = j;
-    //         start(2, 3) = axis_dimensions(2) / 2 + dist_hand;
-    //         m_start = Eigen::AngleAxisd( M_PI, Eigen::Vector3d::UnitX());
-    //         for (double k = -M_PI ; k < M_PI; k = k + 2 * M_PI / disc)
-    //         {
-    //             m = m_start * Eigen::AngleAxisd(k, Eigen::Vector3d::UnitZ());
-    //             start.block<3, 3>(0, 0) = m;
-    //             results.push_back(T_init * start);
-    //         }
+            start(0, 3) = i;
+            start(1, 3) = j;
+            start(2, 3) = axis_dimensions(2) / 2 + dist_hand;
+            m_start = Eigen::AngleAxisd( M_PI, Eigen::Vector3d::UnitX());
+            for (double k = -M_PI ; k < M_PI; k = k + 2 * M_PI / disc)
+            {
+                m = m_start * Eigen::AngleAxisd(k, Eigen::Vector3d::UnitZ());
+                start.block<3, 3>(0, 0) = m;
+                results.push_back(T_init * start);
+            }
 
-    //         start(2, 3) = -1.0 * (axis_dimensions(2) / 2 + dist_hand);
-    //         m_start = Eigen::AngleAxisd( 0, Eigen::Vector3d::UnitX());
-    //         for (double k = -M_PI ; k < M_PI; k = k + 2 * M_PI / disc)
-    //         {
-    //             m = m_start * Eigen::AngleAxisd(k, Eigen::Vector3d::UnitZ());
-    //             start.block<3, 3>(0, 0) = m;
-    //             results.push_back(T_init * start);
-    //         }
-    //     }
-    // }
+            start(2, 3) = -1.0 * (axis_dimensions(2) / 2 + dist_hand);
+            m_start = Eigen::AngleAxisd( 0, Eigen::Vector3d::UnitX());
+            for (double k = -M_PI ; k < M_PI; k = k + 2 * M_PI / disc)
+            {
+                m = m_start * Eigen::AngleAxisd(k, Eigen::Vector3d::UnitZ());
+                start.block<3, 3>(0, 0) = m;
+                results.push_back(T_init * start);
+            }
+        }
+    }
     return results;
 
 }
@@ -943,7 +949,10 @@ std::vector<Eigen::MatrixXd> get_populated_TrasformsforHand(Box box, Box ObjectO
     results = populate_face(axis_dimensions, disc, dist_hand, box.T);
     results = filter_poses(results, ObjectOriginal);
 
+    // std::vector<Eigen::MatrixXd> results1;
+    // results1.push_back(results[0]);
     return results;
+    // return results1;
 }
 
 
@@ -1024,11 +1033,11 @@ std::vector<Eigen::MatrixXd> populate_face_sphere (Eigen::Vector3d axis_dimensio
     return results;
 }
 
-std::vector<Eigen::Matrix> generateSpherePose( double radius)
+std::vector<Eigen::MatrixXd> generateSpherePose( double radius)
 {
-    std::vector<Eigen::Matrix> results;
+    std::vector<Eigen::MatrixXd> results;
 
-    return results
+    return results;
 
 }
 
