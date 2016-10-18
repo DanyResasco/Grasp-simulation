@@ -3,7 +3,7 @@ from klampt import *
 from klampt.vis.glrobotprogram import * #Per il simulatore
 from klampt.model import collide
 from moving_base_control import set_moving_base_xform, get_moving_base_xform
-import math
+import numpy as np
 
 
 
@@ -26,6 +26,7 @@ def CheckCollision(world, robot, obj, collision = None):
     for coll in r_w_coll:
         list_r_w_coll.append(coll)
     if len(list_r_o_coll) > 0 or len(list_r_w_coll) >0: #if the length is greater that zero, we have collision
+        # print "collision"
         return True
     else:
         return False
@@ -78,3 +79,36 @@ def CollisionTestPose(world,robot,obj,o_P_h):
 
     robot.setConfig(q_old)
     return coll
+
+def CollisionCheckWordFinger(robot,w_T_h):
+    
+    j = 1
+    coll = 0
+    for i in range(6,robot.numLinks()): # 0-5 link fake?
+        if (robot.link(i).getName() == 'distal_pad_'+str(j)) or (robot.link(i).getName() == 'proximal_pad_'+str(j)):
+            h_linkPose = w_T_h.dot(np.array(se3.homogeneous(robot.link(i).getTransform())))
+            j +=1
+            print "link name", robot.link(i).getName(), "link_pose ", h_linkPose[2][2]
+            if h_linkPose[2][2] > 0.000:
+                print "collision robot-finger with terrain"
+                coll += 1
+    if coll == 0:
+        return False
+    else:
+        return True
+
+
+
+        # print "robot.link(i).getTransform()", np.array(se3.homogeneous(robot.link(i).getTransform()))
+        # link_pose = w_T_h.dot(h_linkPose)
+        
+        # if link_pose[1][2] < 0.0000:
+        #     print "collision robot-finger with terrain"
+            # coll += 1
+            
+    # if coll == 0:
+    #     return False
+    # else:
+    #     return True
+
+

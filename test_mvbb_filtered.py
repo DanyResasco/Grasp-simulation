@@ -16,6 +16,7 @@ import os
 import string
 import sys
 import time
+import pickle
 
 from create_mvbb import MVBBVisualizer, compute_poses, skip_decimate_or_return
 from create_mvbb_filtered import FilteredMVBBVisualizer
@@ -27,7 +28,9 @@ from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
 from i16mc import make_object, make_moving_base_robot
-from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose
+from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose, CollisionCheckWordFinger
+from mvbb.db import MVBBLoader
+from mvbb.kindness import Differential,RelativePosition
 
 
 objects = {}
@@ -36,7 +39,7 @@ objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 robots = ['reflex_col', 'soft_hand', 'reflex']
 
 class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
-    def __init__(self, poses, poses_variations, world, p_T_h, R, module):
+    def __init__(self, poses, poses_variations, world, p_T_h, R, module,PoseDanyDiff):
         GLRealtimeProgram.__init__(self, "FilteredMVBBTEsterVisualizer")
         self.world = world
         self.p_T_h = p_T_h
@@ -50,6 +53,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.all_poses = self.poses + self.poses_variations
         self.robot = self.world.robot(0)
         self.q_0 = self.robot.getConfig()
+        self.PoseDany = PoseDanyDiff
         self.w_T_o = None
         self.obj = None
         self.t_0 = None
@@ -58,6 +62,13 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.sim = None
         self.module = module
         self.running = True
+        self.db = MVBBLoader(suffix='bigbox')
+        self.crashing_states = []
+        try:
+            state = open('state.dump','r')
+            self.crashing_states = pickle.load(state)
+        except:
+            pass
 
     def display(self):
         if self.running:
@@ -101,6 +112,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
             self.robot.setConfig(self.q_0)
             set_moving_base_xform(self.robot, pose_se3[0], pose_se3[1])
+            # PoseDany = RelativePosition(self.robot,self.obj)
 
             if self.sim is None:
                 self.sim = SimpleSimulator(self.world)
@@ -117,29 +129,45 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         if self.is_simulating:
             t_lift = 1.3 # when to lift
             d_lift = 1.0 # duration
-            print "t:", self.sim.getTime() - self.t_0
+            # print "t:", self.sim.getTime() - self.t_0
             object_com_z = getObjectGlobalCom(self.obj)[2]
             if self.sim.getTime() - self.t_0 == 0:
                 print "Closing hand"
-                self.hand.setCommand([1.0])
+                self.hand.setCommand([0.0,0.0,0.0,0.0])
             elif (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) <= t_lift+d_lift:
-                print "Lifting"
+                # print "Lifting"
                 pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
                 t_i = pose_se3[1]
                 t_f = vectorops.add(t_i, (0,0,0.2))
                 u = np.min((self.sim.getTime() - self.t_0 - t_lift, 1))
                 send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.interpolate(t_i, t_f ,u))
 
-
-            if object_com_z < self.object_com_z_0 - 0.5:
-                self.object_fell = True # TODO use grasp quality evaluator from Daniela
-
             self.sim.simulate(0.01)
             self.sim.updateWorld()
 
+            timeDany = self.sim.getTime() - self.t_0
+            # PoseDany = self.q_0
+            kindness = Differential(self.robot, self.obj, self.PoseDany, timeDany)
+            # print "kindness",kindness
+            self.PoseDany = RelativePosition(self.robot, self.obj)
+
+            if (object_com_z < self.object_com_z_0 - 0.5) and (kindness  > 0.0):
+                self.object_fell = True # TODO use grasp quality evaluator from Daniela
+
             if not vis.shown() or (self.sim.getTime() - self.t_0) >= 2.5 or self.object_fell:
+                if vis.shown(): # simulation stopped because it was succesfull
+                    print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+                    print "Saving grasp, object fall status:", "fallen" if self.object_fell else "grasped"
+                    print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+                    # if kindness < 0:
+                    self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,kindness)
+                    if len(self.crashing_states) > 0:
+                        self.crashing_states.pop()
+                    state = open('state.dump','w')
+                    pickle.dump(self.crashing_states, state)
+                    state.close()
                 self.is_simulating = False
-                self.sim = None
+                self.sim = None    
 
 def getObjectGlobalCom(obj):
     return se3.apply(obj.getTransform(), obj.getMass().getCom())
@@ -191,30 +219,39 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
+        # path = 'Project/Tesi/' + object_name
+        # print "path************",path
+        # os.makedirs(path)
+
+
         print "------Computing poses for object:", object_name
         poses, poses_variations, boxes = compute_poses(object_or_vertices)
 
         w_T_o = np.array(se3.homogeneous((R,[0, 0, 0]))) # object is at origin
 
         p_T_h = np.array(se3.homogeneous(xform))
+        # w_T_ref = np.array(se3.homogeneous(se3.inv(xform)))
+        # print "w_T_ref", w_T_ref
 
         poses_h = []
         poses_variations_h = []
 
         for i in range(len(poses)):
-            poses_h.append(w_T_o.dot(poses[i]).dot(p_T_h))
+            poses_h.append((w_T_o.dot(poses[i]).dot(p_T_h)))
         for i in range(len(poses_variations)):
-            poses_variations_h.append(w_T_o.dot(poses_variations[i]).dot(p_T_h))
+            poses_variations_h.append((w_T_o.dot(poses_variations[i]).dot(p_T_h)))
 
         print "-------Filtering poses:"
         filtered_poses = []
         for i in range(len(poses)):
-            if not CollisionTestPose(world, robot, obj, poses_h[i]):
-                filtered_poses.append(poses[i])
+            if not CollisionTestPose(world, robot, obj, poses_h[i]): 
+                if not CollisionCheckWordFinger(robot,p_T_h):
+                    filtered_poses.append(poses[i])
         filtered_poses_variations = []
         for i in range(len(poses_variations)):
-            if not CollisionTestPose(world, robot, obj, poses_variations_h[i]):
-                filtered_poses_variations.append(poses_variations[i])
+            if not CollisionTestPose(world, robot, obj, poses_variations_h[i]): 
+                if not CollisionCheckWordFinger(robot,p_T_h):
+                    filtered_poses_variations.append(poses_variations[i])
         print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)
         if len(filtered_poses+filtered_poses_variations) == 0:
             print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -229,13 +266,14 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         # create a hand emulator from the given robot name
         module = importlib.import_module('plugins.' + robotname)
         # emulator takes the robot index (0), start link index (6), and start driver index (6)
-
+        PoseDanyDiff = RelativePosition(robot,obj)
         program = FilteredMVBBTesterVisualizer(filtered_poses,
                                                filtered_poses_variations,
                                                world,
                                                p_T_h,
                                                R,
-                                               module)
+                                               module,
+                                               PoseDanyDiff)
 
         vis.setPlugin(None)
         vis.setPlugin(program)
@@ -252,34 +290,41 @@ if __name__ == '__main__':
     for dataset in objects.values():
         all_objects += dataset
 
-    to_filter = ['stanley_13oz_hammer', # falls down
-                 'red_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
-                 '2in_metal_washer', # too small TODO come up with a strategy for small objects
-                 'blue_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
-                 'domino_sugar_1lb',  # cannot grasp box?
-                 'expo_black_dry_erase_marker', # cannot grasp box?
-                 'cheeze-it_388g', # cannot grasp box?
-                 '1_and_a_half_in_metal_washer', # too small TODO come up with a strategy for small objects
-                 'block_of_wood_6in', # canno grasp box, too big?
-                 'sterilite_bin_12qt_cap', # what ?
-                 'starkist_chunk_light_tuna',  # what?
-                 'yellow_plastic_chain', # what?
-                 'purple_wood_block_1inx1in', # TODO too small
-                 'stainless_steel_spatula', # ?!?
-                 ]
-    to_do = [   'champion_sports_official_softball', # TODO grasp balls
-                'penn_raquet_ball',                  # TODO grasp balls
-                'wilson_100_tennis_ball',            # TODO grasp balls
-                'wearever_cooking_pan_with_lid',     # TODO good handle, should be easy to grasp
-                'rubbermaid_ice_guard_pitcher_blue', # TODO good handle, should be easy to grasp
-                'jell-o_strawberry_gelatin_dessert', # box, should be graspable
-                'clorox_disinfecting_wipes_35',      # maybe too big
-                ]
-    done = [    'red_metal_bowl_white_speckles',
-                'blank_hard_plastic_card'] # effort_scaling = -0.5; synergy_scaling = 11
-    to_check =  [   
-                    'wilson_golf_ball',             # TODO check, 0 poses
-                    ]
+    # to_filter = ['stanley_13oz_hammer', # falls down
+    #              'red_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
+    #              '2in_metal_washer', # too small TODO come up with a strategy for small objects
+    #              'blue_wood_block_1inx1in', # too small TODO come up with a strategy for small objects
+    #              'domino_sugar_1lb',  # cannot grasp box?
+    #              'expo_black_dry_erase_marker', # cannot grasp box?
+    #              'cheeze-it_388g', # cannot grasp box?
+    #              '1_and_a_half_in_metal_washer', # too small TODO come up with a strategy for small objects
+    #              'block_of_wood_6in', # canno grasp box, too big?
+    #              'sterilite_bin_12qt_cap', # what ?
+    #              'starkist_chunk_light_tuna',  # what?
+    #              'yellow_plastic_chain', # what?
+    #              'purple_wood_block_1inx1in', # TODO too small
+    #              'stainless_steel_spatula', # ?!?
+    #              ]
+    # to_do = [   'champion_sports_official_softball', # TODO grasp balls
+    #             'penn_raquet_ball',                  # TODO grasp balls
+    #             'wilson_100_tennis_ball',            # TODO grasp balls
+    #             'wearever_cooking_pan_with_lid',     # TODO good handle, should be easy to grasp
+    #             'rubbermaid_ice_guard_pitcher_blue', # TODO good handle, should be easy to grasp
+    #             'jell-o_strawberry_gelatin_dessert', # box, should be graspable
+    #             'clorox_disinfecting_wipes_35',      # maybe too big
+    #             ]
+    # done = [    'champion_sports_official_softball','black_and_decker_lithium_drill_driver',
+    # 'red_metal_cup_white_speckles', 'blank_hard_plastic_card','brine_mini_soccer_ball',
+    # 'plastic_bolt_grey','master_chef_ground_coffee_297g','black_and_decker_lithium_drill_driver_unboxed']
+    #             'blank_hard_plastic_card'] # effort_scaling = -0.5; synergy_scaling = 11
+    # to_check =  [   
+    #                 'wilson_golf_ball',             # TODO check, 0 poses
+    #                 ]
+    to_filter = []
+    to_do = []
+    to_check = []#['black_and_decker_lithium_drill_driver_unboxed', 'soft_scrub_2lb_4oz']
+    done = []
+    # embed()
     for obj_name in to_filter + to_do + done + to_check:
         all_objects.pop(all_objects.index(obj_name))
 
@@ -289,8 +334,10 @@ if __name__ == '__main__':
 
     try:
         objname = sys.argv[1]
-        launch_test_mvbb_filtered("soft_hand", [objname], 100)
+        # launch_test_mvbb_filtered("soft_hand", [objname], 100)
+        launch_test_mvbb_filtered("reflex_col", [objname], 100)
     except:
-        launch_test_mvbb_filtered("soft_hand", all_objects, 100)
+        # launch_test_mvbb_filtered("soft_hand", all_objects, 100)
+        launch_test_mvbb_filtered("reflex_col", all_objects, 100)
 
 
