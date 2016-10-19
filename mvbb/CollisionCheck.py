@@ -80,35 +80,36 @@ def CollisionTestPose(world,robot,obj,o_P_h):
     robot.setConfig(q_old)
     return coll
 
-def CollisionCheckWordFinger(robot,w_T_h):
-    
+def CollisionCheckWordFinger(robot,o_T_h,robotname):
+    """
+    :param robot: robot object
+    :param robot: pose from hand to word
+    :return: True if the fingers are under the table
+    """
+    countLinks = 0
     j = 1
-    coll = 0
-    for i in range(6,robot.numLinks()): # 0-5 link fake?
-        if (robot.link(i).getName() == 'distal_pad_'+str(j)) or (robot.link(i).getName() == 'proximal_pad_'+str(j)):
-            h_linkPose = w_T_h.dot(np.array(se3.homogeneous(robot.link(i).getTransform())))
-            j +=1
-            print "link name", robot.link(i).getName(), "link_pose ", h_linkPose[2][2]
-            if h_linkPose[2][2] > 0.000:
-                print "collision robot-finger with terrain"
-                coll += 1
-    if coll == 0:
+    collFinger = 0
+    if not isinstance(o_T_h, tuple):
+        o_T_hd = se3.from_homogeneous(o_T_h) #o_T_h is end-effector in obj frame
+    else:
+        o_T_hd = o_T_h
+    set_moving_base_xform(robot, o_T_hd[0], o_T_hd[1])
+    
+    for i in range(8,robot.numLinks()):
+        if (robot.link(i).getName() == robotname +':'+'distal_pad_'+str(j)) or (robot.link(i).getName() == robotname +':'+'proximal_pad_'+str(j)):
+            # h_linkPose = se3.from_homogeneous(o_T_h.dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
+            # countLinks +=1
+            h_linkPose = (robot.link(i).getTransform())
+            countLinks +=1
+            # print "+++++++++++++++++++++++++"
+            # print "link name", robot.link(i).getName(), "link_pose ", h_linkPose
+            # print "link name", robot.link(i).getName(), "link_pose z axis ", h_linkPose[1][2]
+            if h_linkPose[1][2] < 0.000: #under the table
+                print "collision robot-finger with terrain. "
+                collFinger += 1
+        if countLinks == 4:
+            j += 1 
+    if collFinger == 0:
         return False
     else:
         return True
-
-
-
-        # print "robot.link(i).getTransform()", np.array(se3.homogeneous(robot.link(i).getTransform()))
-        # link_pose = w_T_h.dot(h_linkPose)
-        
-        # if link_pose[1][2] < 0.0000:
-        #     print "collision robot-finger with terrain"
-            # coll += 1
-            
-    # if coll == 0:
-    #     return False
-    # else:
-    #     return True
-
-
