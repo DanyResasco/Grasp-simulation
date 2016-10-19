@@ -4,7 +4,7 @@ from klampt import *
 import klampt.robotsim
 from klampt import vis
 from klampt.vis.glprogram import *
-from klampt.vis.glprogram import GLNavigationProgram	#Per il
+from klampt.vis.glprogram import GLNavigationProgram    #Per il
 from klampt.sim import *
 import importlib
 import sys
@@ -27,8 +27,8 @@ objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 
 object_geom_file_patterns = {
-	'ycb':['data/objects/ycb/%s/meshes/tsdf_mesh.stl','data/objects/ycb/%s/meshes/poisson_mesh.stl'],
-	'apc2015':['data/objects/apc2015/%s/textured_meshes/optimized_tsdf_textured_mesh.ply']
+    'ycb':['data/objects/ycb/%s/meshes/tsdf_mesh.stl','data/objects/ycb/%s/meshes/poisson_mesh.stl'],
+    'apc2015':['data/objects/apc2015/%s/textured_meshes/optimized_tsdf_textured_mesh.ply']
 }
 
 class MVBBVisualizer(GLNavigationProgram):

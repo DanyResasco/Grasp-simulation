@@ -63,6 +63,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.module = module
         self.running = True
         self.db = MVBBLoader(suffix='bigbox')
+        self.kindness = 0
         self.crashing_states = []
         try:
             state = open('state.dump','r')
@@ -131,6 +132,8 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             d_lift = 1.0 # duration
             # print "t:", self.sim.getTime() - self.t_0
             object_com_z = getObjectGlobalCom(self.obj)[2]
+            hand_curr_pose = get_moving_base_xform(self.robot)
+            pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
             if self.sim.getTime() - self.t_0 == 0:
                 print "Closing hand"
                 self.hand.setCommand([0.0,0.0,0.0,0.0])
@@ -141,18 +144,34 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 t_f = vectorops.add(t_i, (0,0,0.2))
                 u = np.min((self.sim.getTime() - self.t_0 - t_lift, 1))
                 send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.interpolate(t_i, t_f ,u))
+                timeDany = self.sim.getTime() - self.t_0
+                # PoseDany = self.q_0
+                self.kindness = Differential(self.robot, self.obj, self.PoseDany, timeDany)
+                # print "kindness",kindness
+                self.PoseDany = RelativePosition(self.robot, self.obj)
+
+            if (self.sim.getTime() - self.t_0) >= t_lift: # wait for a lift before checking if object fell
+                d_hand = hand_curr_pose[1][2] - pose_se3[1][2]
+                d_com = object_com_z - self.object_com_z_0
+                if (d_hand - d_com > 0.1) and (self.kindness > 1E-4):
+                    self.object_fell = True # TODO use grasp quality evaluator from Daniela
+                    print "!!!!!!!!!!!!!!!!!!"
+                    print "Object fell"
+                    print "!!!!!!!!!!!!!!!!!!"
 
             self.sim.simulate(0.01)
             self.sim.updateWorld()
 
-            timeDany = self.sim.getTime() - self.t_0
-            # PoseDany = self.q_0
-            kindness = Differential(self.robot, self.obj, self.PoseDany, timeDany)
-            # print "kindness",kindness
-            self.PoseDany = RelativePosition(self.robot, self.obj)
-
-            if (object_com_z < self.object_com_z_0 - 0.5) and (kindness  > 0.0):
-                self.object_fell = True # TODO use grasp quality evaluator from Daniela
+            # timeDany = self.sim.getTime() - self.t_0
+            # # PoseDany = self.q_0
+            # kindness = Differential(self.robot, self.obj, self.PoseDany, timeDany)
+            # # print "kindness",kindness
+            # self.PoseDany = RelativePosition(self.robot, self.obj)
+            # print "********************************"
+            # if object_com_z < self.object_com_z_0 - 0.5:
+            # and (kindness  > 0.0)):
+                # self.object_fell = True # TODO use grasp quality evaluator from Daniela
+                # print "qui dentro"
 
             if not vis.shown() or (self.sim.getTime() - self.t_0) >= 2.5 or self.object_fell:
                 if vis.shown(): # simulation stopped because it was succesfull
@@ -160,7 +179,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                     print "Saving grasp, object fall status:", "fallen" if self.object_fell else "grasped"
                     print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
                     # if kindness < 0:
-                    self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,kindness)
+                    self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.kindness)
                     if len(self.crashing_states) > 0:
                         self.crashing_states.pop()
                     state = open('state.dump','w')

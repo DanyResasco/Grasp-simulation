@@ -27,7 +27,7 @@ from mvbb.TakePoses import SimulationPoses
 from mvbb.db import MVBBLoader
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
 from i16mc import make_object, make_moving_base_robot
-from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose
+from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose, CollisionCheckWordFinger
 
 
 objects = {}
@@ -62,7 +62,7 @@ class FilteredMVBBVisualizer(MVBBVisualizer):
         for pose in self.poses:
             T = se3.from_homogeneous(pose)
             T_coll = pose.dot(np.array(se3.homogeneous(self.xform)))
-            if not CollisionTestPose(self.world, self.robot, self.obj, T_coll):
+            if not (CollisionTestPose(self.world, self.robot, self.obj, T_coll) and CollisionCheckWordFinger(self.robot)):
                 draw_GL_frame(T)
                 #set_moving_base_xform(self.robot, T[0], T[1])
                 #self.robot.drawGL()
@@ -129,11 +129,11 @@ def launch_mvbb_filtered(robotname, object_set, objectname):
 
     filtered_poses = []
     for i in range(len(poses)):
-        if not CollisionTestPose(world, robot, object, poses_h[i]):
+        if not (CollisionTestPose(world, robot, object, poses_h[i]) and CollisionCheckWordFinger(robot)):
             filtered_poses.append(poses[i])
     filtered_poses_variations = []
     for i in range(len(poses_variations)):
-        if not CollisionTestPose(world, robot, object, poses_variations_h[i]):
+        if not (CollisionTestPose(world, robot, object, poses_variations_h[i]) and CollisionCheckWordFinger(robot)):
             filtered_poses_variations.append(poses_variations[i])
     print "Filtered from", len(poses + poses_variations), "to", len(filtered_poses + filtered_poses_variations)
     if len(filtered_poses + filtered_poses_variations) == 0:
@@ -173,4 +173,6 @@ if __name__ == '__main__':
 
     print "loading object", index, " -", objname, "-from set", dataset
 
-    launch_mvbb_filtered("soft_hand", dataset, objname)
+    # launch_mvbb_filtered("soft_hand", dataset, objname)
+    launch_mvbb_filtered("reflex_col", dataset, objname)
+    
