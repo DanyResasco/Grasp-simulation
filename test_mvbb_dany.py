@@ -62,7 +62,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.sim = None
         self.module = module
         self.running = True
-        self.db = MVBBLoader(suffix='bigbox')
+        self.db = MVBBLoader(suffix='Test')
         self.kindness = 0
         self.crashing_states = []
         try:
@@ -70,6 +70,25 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             self.crashing_states = pickle.load(state)
         except:
             pass
+        # if self.world.numRigidObjects() > 0:
+        #     self.obj = self.world.rigidObject(0)
+        #     for p in poses:
+        #         if not self.db.has_score(self.obj.getName(), p):
+        #             self.poses.append(p)
+        #         else:
+        #             print "Pose", p, "already simulated"
+        #     for p in poses_variations:
+        #         if not self.db.has_score(self.obj.getName(), p):
+        #             self.poses_variations.append(p)
+        #         else:
+        #             print "Pose", p, "already simulated"
+        # else:
+        #     "Warning: during initialization of visualizer object is still not loaded in world"
+        #     selp.poses = poses
+        #     selp.poses_variations = poses_variations
+
+        # self.all_poses = self.poses + self.poses_variations
+        # print "Will simulate", len(self.poses), "poses,", len(self.poses_variations), "poses variation"
 
     def display(self):
         if self.running:
@@ -90,6 +109,48 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
     def idle(self):
         if not self.running:
             return
+        
+        # if self.world.numRigidObjects() > 0:
+        #     self.obj = self.world.rigidObject(0)
+        # elif self.obj is None:
+        #     return
+
+        # if not self.is_simulating:
+        #     if len(self.all_poses) > 0:
+        #         # crashing_states = []
+        #         self.curr_pose = self.all_poses.pop(0)
+        #         current_state_is_crashing = True # we assume
+        #         if len(self.crashing_states) > 0:
+        #             while current_state_is_crashing:
+        #                 crash_found = False           
+        #                 for crashing_state in self.crashing_states:
+        #                     if np.all(self.curr_pose - crashing_state < 1e-12):
+        #                         if len(self.all_poses) > 0:
+        #                             print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
+        #                             print "Quitting"
+        #                             self.running = False
+        #                             vis.show(hidden=True)
+        #                             return
+
+        #                         self.curr_pose = self.all_poses.pop(0)
+        #                         crash_found = True
+        #                         print "Skipping current pose, since we already crashed on this"
+        #                         break
+        #                 if not crash_found:
+        #                     current_state_is_crashing = False
+        #         print "Simulating Next Pose Grasp"
+        #         print self.curr_pose
+        #         self.crashing_states.append(self.curr_pose)
+        #         state = open('state.dump','w')
+        #         pickle.dump(self.crashing_states, state)
+        #         state.close()
+        #     else:
+        #         print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
+        #         print "Quitting"
+        #         self.running = False
+        #         vis.show(hidden=True)
+        #         return
+
 
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
@@ -149,6 +210,13 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 self.kindness = Differential(self.robot, self.obj, self.PoseDany, timeDany)
                 # print "kindness",kindness
                 self.PoseDany = RelativePosition(self.robot, self.obj)
+
+                # setup the preshrink
+                visPreshrink = False  # turn this to true if you want to see the "shrunken" models used for collision detection
+                for l in range(self.robot.numLinks()):
+                    self.sim.body(self.robot.link(l)).setCollisionPreshrink(visPreshrink)
+                for l in range(self.world.numRigidObjects()):
+                    self.sim.body(self.world.rigidObject(l)).setCollisionPreshrink(visPreshrink)
 
             if (self.sim.getTime() - self.t_0) >= t_lift: # wait for a lift before checking if object fell
                 d_hand = hand_curr_pose[1][2] - pose_se3[1][2]
@@ -238,13 +306,23 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
-        # path = 'Project/Tesi/' + object_name
-        # print "path************",path
-        # os.makedirs(path)
-
-
         print "------Computing poses for object:", object_name
         poses, poses_variations, boxes = compute_poses(object_or_vertices)
+
+        # aa = so3.axis_angle(so3.identity())
+        Ry = np.array(se3.homogeneous((so3.from_axis_angle(((0,1,0), 45.*np.pi/180.)),[0,0,0])))
+        Rx = np.array(se3.homogeneous((so3.from_axis_angle(((1,0,0), 45.*np.pi/180.)),[0,0,0])))
+        Rz = np.array(se3.homogeneous((so3.from_axis_angle(((0,0,1), 45.*np.pi/180.)),[0,0,0])))
+        Tx = np.array(se3.homogeneous((so3.identity(), [-.0,0,0])))
+        T = Tx.dot(Rz).dot(Rx).dot(Rx) # object is at origin)
+        T = Rz;
+
+        poses_new = []
+
+        for pose in poses:
+            poses_new.append(pose.dot(T));
+        poses = poses_new
+
 
         w_T_o = np.array(se3.homogeneous((R,[0, 0, 0]))) # object is at origin
 
@@ -273,7 +351,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
             if not CollisionTestPose(world, robot, obj, poses_variations_h[i]):
                 print "No collision wit obj. check the finger. second check"
                 if not CollisionCheckWordFinger(robot,poses_variations_h[i],robotname):
-                    print "no collision with finger. first check"
+                    print "no collision with finger. second check"
                     filtered_poses_variations.append(poses_variations[i])
         print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)
         if len(filtered_poses+filtered_poses_variations) == 0:
@@ -343,10 +421,13 @@ if __name__ == '__main__':
     # to_check =  [   
     #                 'wilson_golf_ball',             # TODO check, 0 poses
     #                 ]
-    to_filter = []
+    to_filter = ['stainless_steel_spatula','blue_wood_block_1inx1in','large_black_spring_clamp','stainless_steel_fork_red_handle','1_and_a_half_in_metal_washer','small_black_spring_clamp','plastic_nut_grey','learning_resources_one-inch_color_cubes_box']
     to_do = []
-    to_check = []#['black_and_decker_lithium_drill_driver_unboxed', 'soft_scrub_2lb_4oz']
-    done = []
+    to_check = ['moutain_security_steel_shackle','wescott_orange_grey_scissors','cheerios_14oz','stainless_steel_spoon_red_handle','black_and_decker_lithium_drill_driver', 'brine_mini_soccer_ball', 'plastic_bolt_grey','sponge_with_textured_cover',
+    'master_chef_ground_coffee_297g','campbells_condensed_tomato_soup','red_metal_cup_white_speckles','morton_salt_shaker']
+    done = ['melissa_doug_farm_fresh_fruit_strawberry', 'champion_sports_official_softball','black_and_decker_lithium_drill_driver_unboxed',
+    'soft_scrub_2lb_4oz','play_go_rainbow_stakin_cups_blue_4','yellow_plastic_chain','play_go_rainbow_stakin_cups_2_orange',
+    'starkist_chunk_light_tuna','expo_black_dry_erase_marker','melissa_doug_farm_fresh_fruit_plum','play_go_rainbow_stakin_cups_9_red']
     # embed()
     for obj_name in to_filter + to_do + done + to_check:
         all_objects.pop(all_objects.index(obj_name))

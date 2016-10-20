@@ -4,6 +4,7 @@ from klampt.vis.glrobotprogram import * #Per il simulatore
 from klampt.model import collide
 from moving_base_control import set_moving_base_xform, get_moving_base_xform
 import numpy as np
+from IPython import embed 
 
 
 
@@ -66,50 +67,49 @@ def CollisionTestInterpolate(world,robot,obj,o_P_h):
     return False
 
 
-def CollisionTestPose(world,robot,obj,o_P_h):
+def CollisionTestPose(world,robot,obj,w_P_h):
     q_old = robot.getConfig()
-    if not isinstance(o_P_h, tuple):
-        o_T_h = se3.from_homogeneous(o_P_h) #o_P_h is end-effector in object frame
+    if not isinstance(w_P_h, tuple):
+        w_T_h = se3.from_homogeneous(w_P_h) #w_P_h is end-effector in object frame
     else:
-        o_T_h = o_P_h
+        w_T_h = w_P_h
 
-    set_moving_base_xform(robot, o_T_h[0], o_T_h[1])
+    set_moving_base_xform(robot, w_T_h[0], w_T_h[1])
 
     coll = CheckCollision(world, robot, obj)
 
     robot.setConfig(q_old)
     return coll
 
-def CollisionCheckWordFinger(robot,o_T_h,robotname):
+def CollisionCheckWordFinger(robot,w_T_h,robotname):
     """
     :param robot: robot object
     :param robot: pose from hand to word
     :return: True if the fingers are under the table
     """
-    countLinks = 0
-    j = 1
+
     collFinger = 0
-    if not isinstance(o_T_h, tuple):
-        o_T_hd = se3.from_homogeneous(o_T_h) #o_T_h is end-effector in obj frame
+    if not isinstance(w_T_h, tuple):
+        w_T_hd = se3.from_homogeneous(w_T_h) #w_T_h is end-effector in obj frame
     else:
-        o_T_hd = o_T_h
-    set_moving_base_xform(robot, o_T_hd[0], o_T_hd[1])
+        w_T_hd = w_T_h
+    set_moving_base_xform(robot, w_T_hd[0], w_T_hd[1])
     
-    for i in range(8,robot.numLinks()):
-        if (robot.link(i).getName() == robotname +':'+'distal_pad_'+str(j)) or (robot.link(i).getName() == robotname +':'+'proximal_pad_'+str(j)):
-            # h_linkPose = se3.from_homogeneous(o_T_h.dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
-            # countLinks +=1
-            h_linkPose = (robot.link(i).getTransform())
-            countLinks +=1
-            # print "+++++++++++++++++++++++++"
-            # print "link name", robot.link(i).getName(), "link_pose ", h_linkPose
-            # print "link name", robot.link(i).getName(), "link_pose z axis ", h_linkPose[1][2]
-            if h_linkPose[1][2] < 0.000: #under the table
-                print "collision robot-finger with terrain. "
-                collFinger += 1
-        if countLinks == 4:
-            j += 1 
+    for i in range(0,robot.numLinks()):
+        # print "name",robot.link(i).getName(), "pose" ,robot.link(i).getTransform()
+        print "name",robot.link(i).getName(), "pose" ,robot.link(i).getTransform()[1]
+        h_linkPose = se3.from_homogeneous(w_T_h.dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
+
+        # h_linkPose = (robot.link(i).getTransform())
+        print "h_linkPose", h_linkPose[1][2]
+
+        if h_linkPose[1][2] < 0.000: #under the table
+                # print "collision robot-finger with terrain. "
+            collFinger += 1
+
     if collFinger == 0:
+        # print "false "
         return False
     else:
+        # print "true"
         return True
