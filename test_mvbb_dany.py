@@ -109,48 +109,6 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
     def idle(self):
         if not self.running:
             return
-        
-        # if self.world.numRigidObjects() > 0:
-        #     self.obj = self.world.rigidObject(0)
-        # elif self.obj is None:
-        #     return
-
-        # if not self.is_simulating:
-        #     if len(self.all_poses) > 0:
-        #         # crashing_states = []
-        #         self.curr_pose = self.all_poses.pop(0)
-        #         current_state_is_crashing = True # we assume
-        #         if len(self.crashing_states) > 0:
-        #             while current_state_is_crashing:
-        #                 crash_found = False           
-        #                 for crashing_state in self.crashing_states:
-        #                     if np.all(self.curr_pose - crashing_state < 1e-12):
-        #                         if len(self.all_poses) > 0:
-        #                             print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
-        #                             print "Quitting"
-        #                             self.running = False
-        #                             vis.show(hidden=True)
-        #                             return
-
-        #                         self.curr_pose = self.all_poses.pop(0)
-        #                         crash_found = True
-        #                         print "Skipping current pose, since we already crashed on this"
-        #                         break
-        #                 if not crash_found:
-        #                     current_state_is_crashing = False
-        #         print "Simulating Next Pose Grasp"
-        #         print self.curr_pose
-        #         self.crashing_states.append(self.curr_pose)
-        #         state = open('state.dump','w')
-        #         pickle.dump(self.crashing_states, state)
-        #         state.close()
-        #     else:
-        #         print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
-        #         print "Quitting"
-        #         self.running = False
-        #         vis.show(hidden=True)
-        #         return
-
 
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
@@ -327,8 +285,6 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         w_T_o = np.array(se3.homogeneous((R,[0, 0, 0]))) # object is at origin
 
         p_T_h = np.array(se3.homogeneous(xform))
-        # w_T_ref = np.array(se3.homogeneous(se3.inv(xform)))
-        # print "w_T_ref", w_T_ref
 
         poses_h = []
         poses_variations_h = []
@@ -343,14 +299,16 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         for i in range(len(poses)):
             if not CollisionTestPose(world, robot, obj, poses_h[i]):
                 print "No collision wit obj. check the finger. first check"
-                if not CollisionCheckWordFinger(robot,poses_h[i],robotname):
+                # print "robot prima ", robot.getConfig()
+                if not CollisionCheckWordFinger(robot,robotname,robot.getActualConfig(robotname)):
                     print "no collision with finger. first check"
                     filtered_poses.append(poses[i])
         filtered_poses_variations = []
         for i in range(len(poses_variations)):
             if not CollisionTestPose(world, robot, obj, poses_variations_h[i]):
                 print "No collision wit obj. check the finger. second check"
-                if not CollisionCheckWordFinger(robot,poses_variations_h[i],robotname):
+                # print "robot prima ", robot.getConfig()
+                if not CollisionCheckWordFinger(robot,robotname,robot.getActualConfig(robotname)):
                     print "no collision with finger. second check"
                     filtered_poses_variations.append(poses_variations[i])
         print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)

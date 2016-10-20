@@ -5,6 +5,7 @@ from klampt.model import collide
 from moving_base_control import set_moving_base_xform, get_moving_base_xform
 import numpy as np
 from IPython import embed 
+from klampt.math import se3,so3
 
 
 
@@ -81,7 +82,17 @@ def CollisionTestPose(world,robot,obj,w_P_h):
     robot.setConfig(q_old)
     return coll
 
-def CollisionCheckWordFinger(robot,w_T_h,robotname):
+
+# def GetRobotPose(R,T):
+#     Rp = se3.from_rpy(R)
+#     U = Rp,T
+
+def FromRPY(rpy):
+    roll,pitch,yaw = rpy
+    Rx,Ry,Rz = so3.from_axis_angle([(1,0,0),roll]),so3.from_axis_angle([(0,1,0),pitch]),so3.from_axis_angle([(0,0,1),yaw])
+    return so3.mul(Rz,so3.mul(Ry,Rx))
+
+def CollisionCheckWordFinger(robot,robotname,w_P_h):
     """
     :param robot: robot object
     :param robot: pose from hand to word
@@ -89,23 +100,25 @@ def CollisionCheckWordFinger(robot,w_T_h,robotname):
     """
 
     collFinger = 0
-    if not isinstance(w_T_h, tuple):
-        w_T_hd = se3.from_homogeneous(w_T_h) #w_T_h is end-effector in obj frame
-    else:
-        w_T_hd = w_T_h
-    set_moving_base_xform(robot, w_T_hd[0], w_T_hd[1])
-    
+
+
+
     for i in range(0,robot.numLinks()):
         # print "name",robot.link(i).getName(), "pose" ,robot.link(i).getTransform()
-        print "name",robot.link(i).getName(), "pose" ,robot.link(i).getTransform()[1]
-        h_linkPose = se3.from_homogeneous(w_T_h.dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
+        # print "name",robot.link(i).getName(), "pose" ,robot.link(i).getTransform()[1]
+        # h_linkPose = se3.from_homogeneous(np.array(se3.homogeneous(w_T_h)).dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
 
+
+        h_linkPose = se3.from_homogeneous(np.array(se3.homogeneous(w_T_r)).dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
+        # h_linkPose = (w_T_r).dot(robot.link(i).getTransform())
         # h_linkPose = (robot.link(i).getTransform())
+        print "h_linkPose", h_linkPose
         print "h_linkPose", h_linkPose[1][2]
 
         if h_linkPose[1][2] < 0.000: #under the table
                 # print "collision robot-finger with terrain. "
             collFinger += 1
+
 
     if collFinger == 0:
         # print "false "
