@@ -16,6 +16,7 @@ import os
 import string
 import sys
 import time
+import pickle
 
 from create_mvbb import MVBBVisualizer, compute_poses, skip_decimate_or_return
 from create_mvbb_filtered import FilteredMVBBVisualizer
@@ -58,7 +59,13 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.sim = None
         self.module = module
         self.running = True
-        self.db = MVBBLoader(suffix='')
+        self.db = MVBBLoader(suffix='bigbox')
+        self.crashing_states = []
+        try:
+            state = open('state.dump','r')
+            self.crashing_states = pickle.load(state)
+        except:
+            pass
         
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
@@ -107,9 +114,33 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
         if not self.is_simulating:
             if len(self.all_poses) > 0:
+                # crashing_states = []
                 self.curr_pose = self.all_poses.pop(0)
+                current_state_is_crashing = True # we assume
+                if len(self.crashing_states) > 0:
+                    while current_state_is_crashing:
+                        crash_found = False           
+                        for crashing_state in self.crashing_states:
+                            if np.all(self.curr_pose - crashing_state < 1e-12):
+                                if len(self.all_poses) > 0:
+                                    print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
+                                    print "Quitting"
+                                    self.running = False
+                                    vis.show(hidden=True)
+                                    return
+
+                                self.curr_pose = self.all_poses.pop(0)
+                                crash_found = True
+                                print "Skipping current pose, since we already crashed on this"
+                                break
+                        if not crash_found:
+                            current_state_is_crashing = False
                 print "Simulating Next Pose Grasp"
                 print self.curr_pose
+                self.crashing_states.append(self.curr_pose)
+                state = open('state.dump','w')
+                pickle.dump(self.crashing_states, state)
+                state.close()
             else:
                 print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
                 print "Quitting"
@@ -182,6 +213,11 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                     print "Saving grasp, object fall status:", "fallen" if self.object_fell else "grasped"
                     print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
                     self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell)
+                    if len(self.crashing_states) > 0:
+                        self.crashing_states.pop()
+                    state = open('state.dump','w')
+                    pickle.dump(self.crashing_states, state)
+                    state.close()
                 self.is_simulating = False
                 self.sim = None
 
@@ -200,7 +236,6 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
     robot = make_moving_base_robot(robotname, world)
     xform = resource.get("default_initial_%s.xform" % robotname, description="Initial hand transform",
                          default=se3.identity(), world=world, doedit=False)
-
     for object_name in object_list:
         obj = None
         for object_set, objects_in_set in objects.items():
@@ -236,7 +271,28 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
         print "------Computing poses for object:", object_name
-        poses, poses_variations, boxes = compute_poses(object_or_vertices)
+        poses, poses_variations, boxes = compute_poses(object_or_vertices, True, 0.19, 0.1)
+        print "---------"
+        # embed() 
+        aa = so3.axis_angle(so3.identity())
+        Ry = np.array(se3.homogeneous((so3.from_axis_angle(((0,1,0), 45.*np.pi/180.)),[0,0,0])))
+        Rx = np.array(se3.homogeneous((so3.from_axis_angle(((1,0,0), 45.*np.pi/180.)),[0,0,0])))
+        Rz = np.array(se3.homogeneous((so3.from_axis_angle(((0,0,1), 45.*np.pi/180.)),[0,0,0])))
+        Tx = np.array(se3.homogeneous((so3.identity(), [-.0,0,0])))
+        T = Tx.dot(Rz).dot(Rx).dot(Rx) # object is at origin)
+        T = Rz;
+
+        poses_new = []
+
+        for pose in poses:
+            poses_new.append(pose.dot(T));
+        poses = poses_new
+
+
+        # embed()
+
+        
+        # poses_h = pose_new
 
         w_T_o = np.array(se3.homogeneous((R,[0, 0, 0]))) # object is at origin
 
@@ -269,7 +325,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
             print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             continue
-
+        # embed()
         # create a hand emulator from the given robot name
         module = importlib.import_module('plugins.' + robotname)
         # emulator takes the robot index (0), start link index (6), and start driver index (6)
@@ -345,7 +401,7 @@ if __name__ == '__main__':
                 'highland_6539_self_stick_notes', #Should be easy ti set it up. Using new algorithm?
                 'laugh_out_loud_joke_book', #Should be easy ti set it up. Using new algorithm?
                 'one_with_nature_soap_dead_sea_mud', #Should be easy ti set it up. Using new algorithm?
-                'black_and_decker_lithium_drill_driver_unboxed', #Should be easy ti set it up. Using new algorithm?
+                # 'black_and_decker_lithium_drill_driver_unboxed', #Should be easy ti set it up. Using new algorithm?
                 'block_of_wood_12in', #Should be easy ti set it up. Using new algorithm?
                 # 'block_of_wood_6in', #Should be easy ti set it up. Using new algorithm?
                 'campbells_condensed_tomato_soup', #Should be easy ti set it up. Using new algorithm?
