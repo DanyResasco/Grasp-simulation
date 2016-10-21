@@ -300,7 +300,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
             if not CollisionTestPose(world, robot, obj, poses_h[i]):
                 print "No collision wit obj. check the finger. first check"
                 # print "robot prima ", robot.getConfig()
-                if not CollisionCheckWordFinger(robot,robotname,robot.getActualConfig(robotname)):
+                if not CollisionCheckWordFinger(robot, poses_h[i]):
                     print "no collision with finger. first check"
                     filtered_poses.append(poses[i])
         filtered_poses_variations = []
@@ -308,7 +308,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
             if not CollisionTestPose(world, robot, obj, poses_variations_h[i]):
                 print "No collision wit obj. check the finger. second check"
                 # print "robot prima ", robot.getConfig()
-                if not CollisionCheckWordFinger(robot,robotname,robot.getActualConfig(robotname)):
+                if not CollisionCheckWordFinger(robot, poses_variations_h[i]):
                     print "no collision with finger. second check"
                     filtered_poses_variations.append(poses_variations[i])
         print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)
