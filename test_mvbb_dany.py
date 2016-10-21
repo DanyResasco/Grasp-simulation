@@ -164,9 +164,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 u = np.min((self.sim.getTime() - self.t_0 - t_lift, 1))
                 send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.interpolate(t_i, t_f ,u))
                 timeDany = self.sim.getTime() - self.t_0
-                # PoseDany = self.q_0
                 self.kindness = Differential(self.robot, self.obj, self.PoseDany, timeDany)
-                # print "kindness",kindness
                 self.PoseDany = RelativePosition(self.robot, self.obj)
 
                 # setup the preshrink
@@ -300,7 +298,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
             if not CollisionTestPose(world, robot, obj, poses_h[i]):
                 print "No collision wit obj. check the finger. first check"
                 # print "robot prima ", robot.getConfig()
-                if not CollisionCheckWordFinger(robot,robotname,robot.getActualConfig(robotname)):
+                if not CollisionCheckWordFinger(robot,robotname,poses_h[i]):
                     print "no collision with finger. first check"
                     filtered_poses.append(poses[i])
         filtered_poses_variations = []
@@ -308,7 +306,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
             if not CollisionTestPose(world, robot, obj, poses_variations_h[i]):
                 print "No collision wit obj. check the finger. second check"
                 # print "robot prima ", robot.getConfig()
-                if not CollisionCheckWordFinger(robot,robotname,robot.getActualConfig(robotname)):
+                if not CollisionCheckWordFinger(robot,robotname,poses_variations_h[i]):
                     print "no collision with finger. second check"
                     filtered_poses_variations.append(poses_variations[i])
         print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)

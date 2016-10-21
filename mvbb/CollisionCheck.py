@@ -100,7 +100,20 @@ def CollisionCheckWordFinger(robot,robotname,w_P_h):
     """
 
     collFinger = 0
+    q_old = robot.getConfig()
+    if not isinstance(w_P_h, tuple):
+        w_T_h = se3.from_homogeneous(w_P_h) #w_P_h is end-effector in object frame
+    else:
+        w_T_h = w_P_h
 
+
+
+    set_moving_base_xform(robot, w_T_h[0], w_T_h[1])
+    q_new = robot.getConfig()
+    rpy = [q_new[5],q_new[4],q_new[3]]
+    R = FromRPY(rpy)
+    T = [q_new[0],q_new[1],q_new[2]]
+    w_T_r = R,T
 
 
     for i in range(0,robot.numLinks()):
@@ -110,6 +123,8 @@ def CollisionCheckWordFinger(robot,robotname,w_P_h):
 
 
         h_linkPose = se3.from_homogeneous(np.array(se3.homogeneous(w_T_r)).dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
+        # robot.collide(robot.link(i))
+
         # h_linkPose = (w_T_r).dot(robot.link(i).getTransform())
         # h_linkPose = (robot.link(i).getTransform())
         print "h_linkPose", h_linkPose
@@ -119,7 +134,7 @@ def CollisionCheckWordFinger(robot,robotname,w_P_h):
                 # print "collision robot-finger with terrain. "
             collFinger += 1
 
-
+    robot.setConfig(q_old)
     if collFinger == 0:
         # print "false "
         return False
