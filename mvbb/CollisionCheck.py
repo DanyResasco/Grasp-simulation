@@ -83,61 +83,42 @@ def CollisionTestPose(world,robot,obj,w_P_h):
     return coll
 
 
-# def GetRobotPose(R,T):
-#     Rp = se3.from_rpy(R)
-#     U = Rp,T
+# def FromRPY(rpy):
+#     roll,pitch,yaw = rpy
+#     Rx,Ry,Rz = so3.from_axis_angle([(1,0,0),roll]),so3.from_axis_angle([(0,1,0),pitch]),so3.from_axis_angle([(0,0,1),yaw])
+#     return so3.mul(Rz,so3.mul(Ry,Rx))
 
-def FromRPY(rpy):
-    roll,pitch,yaw = rpy
-    Rx,Ry,Rz = so3.from_axis_angle([(1,0,0),roll]),so3.from_axis_angle([(0,1,0),pitch]),so3.from_axis_angle([(0,0,1),yaw])
-    return so3.mul(Rz,so3.mul(Ry,Rx))
-
-def CollisionCheckWordFinger(robot,robotname,w_P_h):
+def CollisionCheckWordFinger(robot, w_P_h):
     """
     :param robot: robot object
     :param robot: pose from hand to word
     :return: True if the fingers are under the table
+    Thanks Ale :)
     """
 
-    collFinger = 0
     q_old = robot.getConfig()
     if not isinstance(w_P_h, tuple):
         w_T_h = se3.from_homogeneous(w_P_h) #w_P_h is end-effector in object frame
     else:
         w_T_h = w_P_h
 
+    set_moving_base_xform(robot, w_T_h[0], w_T_h[1]) #move the robot
 
+    collFinger = 0
 
-    set_moving_base_xform(robot, w_T_h[0], w_T_h[1])
-    q_new = robot.getConfig()
-    rpy = [q_new[5],q_new[4],q_new[3]]
-    R = FromRPY(rpy)
-    T = [q_new[0],q_new[1],q_new[2]]
-    w_T_r = R,T
+    for i in range(robot.numLinks()):
 
+        w_T_l = robot.link(i).getTransform()
+        g = robot.link(i).geometry()
+        bb = None
+        if not g.empty():
+            bb = g.getBB() #take axis-aligned bb
 
-    for i in range(0,robot.numLinks()):
-        # print "name",robot.link(i).getName(), "pose" ,robot.link(i).getTransform()
-        # print "name",robot.link(i).getName(), "pose" ,robot.link(i).getTransform()[1]
-        # h_linkPose = se3.from_homogeneous(np.array(se3.homogeneous(w_T_h)).dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
-
-
-        h_linkPose = se3.from_homogeneous(np.array(se3.homogeneous(w_T_r)).dot(np.array(se3.homogeneous(robot.link(i).getTransform()))))
-        # robot.collide(robot.link(i))
-
-        # h_linkPose = (w_T_r).dot(robot.link(i).getTransform())
-        # h_linkPose = (robot.link(i).getTransform())
-        print "h_linkPose", h_linkPose
-        print "h_linkPose", h_linkPose[1][2]
-
-        if h_linkPose[1][2] < 0.000: #under the table
-                # print "collision robot-finger with terrain. "
+        if w_T_l[1][2] < 0. or (bb is not None and (bb[0][2] < 0. or bb[1][2] < 0.)): #under the table
+            print robot.link(i).getName(), "has negative z coord for pose", w_T_h
             collFinger += 1
 
+    coll = collFinger > 0
+
     robot.setConfig(q_old)
-    if collFinger == 0:
-        # print "false "
-        return False
-    else:
-        # print "true"
-        return True
+    return coll

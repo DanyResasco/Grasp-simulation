@@ -465,13 +465,22 @@ Eigen::MatrixXd info_adams( Box  first_boxes, Box ObjectOriginal, double distanc
     axis_x = R.transpose().cross(third_col.transpose()); /* calculates orthogonal vector*/
     // std::cout << "axis: " << axis_x.transpose() << std::endl;
 
-    /*make a transformation*/
-    T_l.block<3, 1> (0, 0) = R;
-    T_l.block<3, 1> (0, 1) = -axis_x; /* it is negative 'cause we need a right handed cordinate system*/
+    /*make a transformation soft-hand*/
+    // T_l.block<3, 1> (0, 0) = R;
+    // T_l.block<3, 1> (0, 1) = -axis_x; /* it is negative 'cause we need a right handed cordinate system*/
+    // T_l.block<3, 1> (0, 2) = angle.col(0);
+    // T_l.block<3, 1> (0, 3) = first_boxes.T.block<3, 1> (0, 3) + T_l.block<3, 3> (0, 0) * angle.col(1);
+    // T_l.block<1, 3> (3, 0) = Eigen::MatrixXd:: Zero(1, 3);
+    // T_l (3, 3) = 1.0;
+
+    /*make a transformation gripper*/
+    T_l.block<3, 1> (0, 1) = R;
+    T_l.block<3, 1> (0, 0) = axis_x; /* it is positive 'cause we need a right handed cordinate system*/
     T_l.block<3, 1> (0, 2) = angle.col(0);
     T_l.block<3, 1> (0, 3) = first_boxes.T.block<3, 1> (0, 3) + T_l.block<3, 3> (0, 0) * angle.col(1);
     T_l.block<1, 3> (3, 0) = Eigen::MatrixXd:: Zero(1, 3);
     T_l (3, 3) = 1.0;
+
 
     if (T_l.determinant() == 0.0)
     {
