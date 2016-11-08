@@ -33,6 +33,8 @@ from mvbb.db import MVBBLoader
 from mvbb.kindness import Differential,RelativePosition
 from mvbb.ScalaReduce import DanyReduceScale
 from mvbb.DanyLogFile import DanyLog
+from mvbb.GetForces import get_contact_forces_and_jacobians
+
 
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
@@ -67,6 +69,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.sim = None
         self.module = module
         self.running = True
+        self.HandClose = False
         self.db = MVBBLoader(suffix='reflex')
         # self.logFile = DanyLog(suffix='logFile')
         self.kindness = None
@@ -106,43 +109,6 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         else:
             return
 
-        #Ale's code for crash state. doesn't works with me :( 
-        # if not self.is_simulating:
-        #     if len(self.all_poses) > 0:
-        #         # crashing_states = []
-        #         self.curr_pose = self.all_poses.pop(0)
-        #         current_state_is_crashing = True # we assume
-        #         if len(self.crashing_states) > 0:
-        #             while current_state_is_crashing:
-        #                 crash_found = False           
-        #                 for crashing_state in self.crashing_states:
-        #                     if np.all(self.curr_pose - crashing_state < 1e-12):
-        #                         if len(self.all_poses) > 0:
-        #                             print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
-        #                             print "Quitting"
-        #                             self.running = False
-        #                             vis.show(hidden=True)
-        #                             return
-
-        #                         self.curr_pose = self.all_poses.pop(0)
-        #                         crash_found = True
-        #                         print "Skipping current pose, since we already crashed on this"
-        #                         break
-        #                 if not crash_found:
-        #                     current_state_is_crashing = False
-        #         print "Simulating Next Pose Grasp"
-        #         print self.curr_pose
-        #         self.crashing_states.append(self.curr_pose)
-        #         state = open('state.dump','w')
-        #         pickle.dump(self.crashing_states, state)
-        #         state.close()
-        #     else:
-        #         print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
-        #         print "Quitting"
-        #         self.running = False
-        #         vis.show(hidden=True)
-        #         return
-
         if not self.is_simulating:
             if len(self.all_poses) > 0:
                 self.curr_pose = self.all_poses.pop()
@@ -167,7 +133,6 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                 self.hand = self.module.HandEmulator(self.sim,0,6,6)
                 self.sim.addEmulator(0, self.hand)
                 # the next line latches the current configuration in the PID controller...
-                # print"muoio riga 169"
                 self.sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
 
                 # setup the preshrink
@@ -176,79 +141,56 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                     self.sim.body(self.robot.link(l)).setCollisionPreshrink(visPreshrink)
                 for l in range(self.world.numRigidObjects()):
                     self.sim.body(self.world.rigidObject(l)).setCollisionPreshrink(visPreshrink)
-            # print"muoio riga 178"
+
             self.object_com_z_0 = getObjectGlobalCom(self.obj)[2]
             self.object_fell = False
             self.t_0 = self.sim.getTime()
             self.t0dany = self.sim.getTime()
             self.is_simulating = True
-        # print"muoio riga 183"
+
         if self.is_simulating:
             t_lift = 1.3 # when to lift
             d_lift = 1.0 # duration
-            # print "t:", self.sim.getTime() - self.t_0
-            # print"muoio riga 188"
             object_com_z = getObjectGlobalCom(self.obj)[2]
-            # print"muoio riga 190"
             hand_curr_pose = get_moving_base_xform(self.robot)
-            # print"muoio rifa 192"
             pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
-            # print "muoio riga 194"
+
             if self.sim.getTime() - self.t_0 == 0:
                 print "Closing hand"
-                self.hand.setCommand([0.2,0.2,0.2,0])
-                """contact sensor"""
-                f1_proximal_takktile_sensors = [self.sim.controller(0).sensor("f1_proximal_takktile_%d"%(i,)) for i in range(1,6)]
-                f1_distal_takktile_sensors = [self.sim.controller(0).sensor("f1_distal_takktile_%d"%(i,)) for i in range(1,6)]
-                f2_proximal_takktile_sensors = [self.sim.controller(0).sensor("f2_proximal_takktile_%d"%(i,)) for i in range(1,6)]
-                f2_distal_takktile_sensors = [self.sim.controller(0).sensor("f2_distal_takktile_%d"%(i,)) for i in range(1,6)]
-                f3_proximal_takktile_sensors = [self.sim.controller(0).sensor("f3_proximal_takktile_%d"%(i,)) for i in range(1,6)]
-                f3_distal_takktile_sensors = [self.sim.controller(0).sensor("f3_distal_takktile_%d"%(i,)) for i in range(1,6)]
-                contact_sensors = f1_proximal_takktile_sensors + f1_distal_takktile_sensors + f2_proximal_takktile_sensors + f2_distal_takktile_sensors + f3_proximal_takktile_sensors + f3_distal_takktile_sensors
-                
-                self.f1_contact = [s.getMeasurements()[0] for s in f1_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f1_distal_takktile_sensors]
-                self.f2_contact = [s.getMeasurements()[0] for s in f2_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f2_distal_takktile_sensors]
-                self.f3_contact = [s.getMeasurements()[0] for s in f3_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f3_distal_takktile_sensors]
-                # print "Contact sensors"
-                print "  finger 1:",[int(v) for v in self.f1_contact]
-                print "  finger 2:",[int(v) for v in self.f2_contact]
-                print "  finger 3:",[int(v) for v in self.f3_contact]
-                print "self.obj.getVelocity() " ,self.obj.getVelocity()
-                print "robot.getVelocity", self.robot.getVelocity()
-                # print"muoio riga 212"
+                # self.hand.setCommand([0.2,0.2,0.2,0]) #TODO chiudila incrementalmente e controlla le forze di contatto
+                hand_close = np.array([0.1,0.1,0.1,0])
+                hand_open = np.array([1.0,1.0,1.0,0])
+                step_size = 0.01
+                while(self.HandClose == False):
+                    d = vectorops.distance(hand_open, hand_close)
+                    # print"d",d
+                    n_steps = int(math.ceil(d / step_size))
+                    # print"n_steps",n_steps
+                    if n_steps == 0:    # if arrived
+                        self.hand.setCommand([0.2,0.2,0.2,0])
+                        self.HandClose = True
+                    for i in range(n_steps):
+                        hand_temp = vectorops.interpolate(hand_open,hand_close,float(i+1)/n_steps)
+                        self.hand.setCommand([hand_temp[0] ,hand_temp[1] ,hand_temp[2] ,0])
+                        self.sim.simulate(0.01)
+                        self.sim.updateWorld()
+                        FC = get_contact_forces_and_jacobians(self.robot,self.world,self.sim)
+                        if hand_temp[0] <= hand_close[0] and hand_temp[1] <= hand_close[1] and hand_temp[2] <= hand_close[2]:
+                            print"qui"
+                            self.HandClose = True
+                            break
+
             elif (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) <= t_lift+d_lift:
                 print "Lifting"
                 pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
                 t_i = pose_se3[1]
                 t_f = vectorops.add(t_i, (0,0,0.2))
                 u = np.min((self.sim.getTime() - self.t_0 - t_lift, 1))
-                # print"muoio riga 219"
                 send_moving_base_xform_PID(self.sim.controller(0), pose_se3[0], vectorops.interpolate(t_i, t_f ,u))
                 timeDany = self.sim.getTime() - self.t_0
                 self.kindness = Differential(self.robot, self.obj, self.PoseDany, timeDany)
                 self.PoseDany = RelativePosition(self.robot, self.obj)
 
-                """contact sensor"""
-                f1_proximal_takktile_sensors = [self.sim.controller(0).sensor("f1_proximal_takktile_%d"%(i,)) for i in range(1,6)]
-                f1_distal_takktile_sensors = [self.sim.controller(0).sensor("f1_distal_takktile_%d"%(i,)) for i in range(1,6)]
-                f2_proximal_takktile_sensors = [self.sim.controller(0).sensor("f2_proximal_takktile_%d"%(i,)) for i in range(1,6)]
-                f2_distal_takktile_sensors = [self.sim.controller(0).sensor("f2_distal_takktile_%d"%(i,)) for i in range(1,6)]
-                f3_proximal_takktile_sensors = [self.sim.controller(0).sensor("f3_proximal_takktile_%d"%(i,)) for i in range(1,6)]
-                f3_distal_takktile_sensors = [self.sim.controller(0).sensor("f3_distal_takktile_%d"%(i,)) for i in range(1,6)]
-                contact_sensors = f1_proximal_takktile_sensors + f1_distal_takktile_sensors + f2_proximal_takktile_sensors + f2_distal_takktile_sensors + f3_proximal_takktile_sensors + f3_distal_takktile_sensors
-                
-                self.f1_contact = [s.getMeasurements()[0] for s in f1_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f1_distal_takktile_sensors]
-                self.f2_contact = [s.getMeasurements()[0] for s in f2_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f2_distal_takktile_sensors]
-                self.f3_contact = [s.getMeasurements()[0] for s in f3_proximal_takktile_sensors] + [s.getMeasurements()[0] for s in f3_distal_takktile_sensors]
-                # print "Contact sensors"
-                print "  finger 1:",[int(v) for v in self.f1_contact]
-                print "  finger 2:",[int(v) for v in self.f2_contact]
-                print "  finger 3:",[int(v) for v in self.f3_contact]
-                print "self.obj.getVelocity() " ,self.obj.getVelocity()
-                print "robot.getVelocity", self.robot.getVelocity()
-                # print "controller.getCommandedVelocity()", self.sim.controller(0).getCommandedVelocity()
-            # print"muoio riga 244"
-            # print"self.sim.getTime() - self.t_0",self.sim.getTime() - self.t_0
             if (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) >= t_lift+d_lift:# wait for a lift before checking if object fell
                 d_hand = hand_curr_pose[1][2] - pose_se3[1][2]
                 d_com = object_com_z - self.object_com_z_0
@@ -257,33 +199,25 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                     print "!!!!!!!!!!!!!!!!!!"
                     print "Object fell"
                     print "!!!!!!!!!!!!!!!!!!"
-                    # print "self.obj.getVelocity() %s self.robot.getVelocity() %s", self.obj.getVelocity(), self.robot.getVelocity()
-            # print"muoio riga257"
-            # self.logFile.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.obj.getVelocity(), self.robot.getVelocity(), self.f1_contact,self.f2_contact,self.f3_contact)
-            # print"muoio riga 259"
-            # print"kinetic energy", self.robot.GetKineticEnergy()
+
             self.sim.simulate(0.01)
-            # print"muoio riga 261"
             self.sim.updateWorld()
-            # print"muoio riga 261"
 
             if not vis.shown() or (self.sim.getTime() - self.t_0) >= 2.5 or self.object_fell:
                 if vis.shown(): # simulation stopped because it was succesfull
                     print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
                     print "Saving grasp, object fall status:", "fallen" if self.object_fell else "grasped"
                     print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-                    # print "self.obj.getVelocity() %s self.robot.getVelocity() %s", self.obj.getVelocity(), self.robot.getVelocity()
                     self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.kindness)
                     # self.logFile.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.obj.getVelocity(), self.robot.getVelocity(), self.f1_contact,self.f2_contact,self.f3_contact)
-                    # print"muoio riga 267"
                     if len(self.crashing_states) > 0:
                         self.crashing_states.pop()
                     state = open('state.dump','w')
                     pickle.dump(self.crashing_states, state)
                     state.close()
-                # print"muoio riga 273"
                 self.is_simulating = False
                 self.sim = None
+                self.HandClose = False
 
 def getObjectGlobalCom(obj):
     return se3.apply(obj.getTransform(), obj.getMass().getCom())
