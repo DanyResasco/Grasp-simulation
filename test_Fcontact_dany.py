@@ -106,12 +106,12 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
-        else:
+        elif self.obj is None:
             return
 
         if not self.is_simulating:
             if len(self.all_poses) > 0:
-                self.curr_pose = self.all_poses.pop()
+                self.curr_pose = self.all_poses.pop(0)
                 print "Simulating Next Pose Grasp"
                 print self.curr_pose
             else:
@@ -175,6 +175,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                         self.sim.simulate(0.01)
                         self.sim.updateWorld()
                         FC = get_contact_forces_and_jacobians(self.robot,self.world,self.sim)
+                        print"contact forces", FC
                         if hand_temp[0] <= hand_close[0] and hand_temp[1] <= hand_close[1] and hand_temp[2] <= hand_close[2]:
                             print"qui"
                             self.HandClose = True

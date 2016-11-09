@@ -13,14 +13,18 @@ def get_contact_forces_and_jacobians(robot,world,sim):
     and a contact jacobian matrix 6*n_contactsxn.
     Contact forces are considered to be applied at the link origin
     """
-    n_contacts = 0  # one contact per link
+    # n_contacts = 0  # one contact per link
     maxid = world.numIDs()
     # print"maxid",maxid
     f_l = dict()
     # contacts_l_id_j = None
+
     for l_id in range(robot.numLinks()):
-        link_in_contact = robot.link(l_id)
-        contacts_per_link = 0
+        # link = robot.link(robot.driver(i).getName())
+    #     u_to_l.append(robot.link(i).getID())
+    # for l_id in u_to_l:
+        link_in_contact = robot.link(l_id).getIndex()
+        # contacts_per_link = 0
         for j in xrange(maxid):  # TODO compute just one contact per link
             contacts_l_id_j = len(sim.getContacts(l_id, j))
             # print"contacts_l_id_j",contacts_l_id_j
