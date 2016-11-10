@@ -23,10 +23,10 @@ def get_contact_forces_and_jacobians(robot,world,sim):
         # link = robot.link(robot.driver(i).getName())
     #     u_to_l.append(robot.link(i).getID())
     # for l_id in u_to_l:
-        link_in_contact = robot.link(l_id).getIndex()
+        link_in_contact = robot.link(l_id).getID()
         # contacts_per_link = 0
         for j in xrange(maxid):  # TODO compute just one contact per link
-            contacts_l_id_j = len(sim.getContacts(l_id, j))
+            contacts_l_id_j = len(sim.getContacts(link_in_contact, j))
             # print"contacts_l_id_j",contacts_l_id_j
             # contacts_per_link += contacts_l_id_j
             if contacts_l_id_j > 0:
@@ -34,13 +34,15 @@ def get_contact_forces_and_jacobians(robot,world,sim):
                     # print"k",k
                     if not f_l.has_key(l_id):
                         # print"dentro il if not e prima di contactForce"
-                        f_l[l_id] = sim.contactForce(l_id, k)
+                        f_l[l_id] = sim.contactForce(link_in_contact, k)
                         # print"dentro il if not e dopo di contactForce"
                     else:
                         # print"dentro else e prima di contactForce"
-                        f_l[l_id] = vectorops.add(f_l[l_id], sim.contactForce(l_id, k))
+                        f_l[l_id] = vectorops.add(f_l[l_id], sim.contactForce(link_in_contact, k))
                         # print"dentro else e dopo di contactForce"
-                    print"nome",robot.link(l_id).getName(),"force", f_l[l_id]
+                if contacts_l_id_j > 1:
+                    f_l[l_id] = vectorops.div(f_l[l_id], contacts_l_id_j)
+                print"nome",robot.link(l_id).getName(),"force", f_l[l_id]
     return (f_l)
     # colliding = []
     # sim.enableContactFeedbackAll()

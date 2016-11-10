@@ -28,11 +28,9 @@ from mvbb.graspvariation import PoseVariation
 from mvbb.TakePoses import SimulationPoses
 from mvbb.draw_bbox import draw_GL_frame, draw_bbox
 from i16mc import make_object, make_moving_base_robot
-from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose, CollisionCheckWordFinger,CompenetrateCheckFinger
+from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, CollisionTestPose, CollisionCheckWordFinger
 from mvbb.db import MVBBLoader
 from mvbb.kindness import Differential,RelativePosition
-from mvbb.ScalaReduce import DanyReduceScale
-from mvbb.DanyLogFile import DanyLog
 from mvbb.GetForces import get_contact_forces_and_jacobians
 
 
@@ -129,6 +127,10 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
             if self.sim is None:
                 self.sim = SimpleSimulator(self.world)
+                self.sim.enableContactFeedbackAll()
+                n = len(self.poses)+len(self.poses_variations) - len(self.all_poses)
+                self.sim.log_state_fn="simulation_state_" + self.obj.getName() + "_%03d"%n + ".csv"
+                self.sim.log_contact_fn="simulation_contact_"+ self.obj.getName() + "_%03d"%n + ".csv"
                 self.sim.beginLogging()
                 self.hand = self.module.HandEmulator(self.sim,0,6,6)
                 self.sim.addEmulator(0, self.hand)
@@ -175,7 +177,8 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                         self.sim.simulate(0.01)
                         self.sim.updateWorld()
                         FC = get_contact_forces_and_jacobians(self.robot,self.world,self.sim)
-                        print"contact forces", FC
+                        n = len(self.poses)+len(self.poses_variations) - len(self.all_poses)
+                        print"pose", n, "contact forces@t:", self.sim.getTime(), "-", FC
                         if hand_temp[0] <= hand_close[0] and hand_temp[1] <= hand_close[1] and hand_temp[2] <= hand_close[2]:
                             print"qui"
                             self.HandClose = True
