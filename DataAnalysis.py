@@ -1,7 +1,5 @@
 import numpy as np
 
-res_dataset = 'db/Results.csv'
-
 def str2bool(st):
     try:
         return ['false', 'true'].index(st.lower())
@@ -48,8 +46,6 @@ class DataAnalysis():
                 self.n_simulation_obj += 1
             else:
                 self.Save_parameter()
-                # self.Mesh_data.append({'Name':self.Nome_finito,'n_simulation_obj':self.n_simulation_obj ,
-                # 'grasp_succesful': self.grasp_succesful,'Percentage': (self.grasp_succesful / float(self.n_simulation_obj))*100})
                 self.Nome_finito = obj_name
                 self.n_simulation_obj = 1
                 analysis.grasp_succesful = 0
@@ -69,6 +65,7 @@ class DataAnalysis():
 import csv
 import sys
 obj_dataset = sys.argv[1]
+res_dataset = sys.argv[2]
 with open(obj_dataset, 'rb') as csvfile:
     file_reader = csv.reader(csvfile, delimiter=',')
     analysis = DataAnalysis()
