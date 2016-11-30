@@ -7,8 +7,7 @@ def str2bool(st):
     except (ValueError, AttributeError):
         raise ValueError('no Valid Conversion Possible')
 
-def Draw_Grasph(kindness):
-    print "disegno"
+def Draw_Grasph(kindness)
     import matplotlib.pyplot as plt
     plt.plot(kindness)
     plt.ylabel('kindness')
@@ -25,7 +24,6 @@ class DataAnalysis():
         self.grasp_status = ''
         self.kindness = []
         self.poses = []
-        # self.parameter = ''
 
     def Write_Results(self,dataset,parameter):
         '''Write the dataset'''
@@ -58,6 +56,7 @@ class DataAnalysis():
                 self.Nome_finito = obj_name
                 self.n_simulation_obj = 1
                 self.grasp_succesful = 0
+                del self.kindness[:]
 
     def Set_Nsimulation(self):
         self.n_simulation_total +=1
