@@ -1,4 +1,9 @@
 import numpy as np
+'''Write two output dataset:
+    1) is composed by: obj_name, n_simulation_total, n_simulation_succesfull, Percentage
+    2) is composed by: obj_name, each pose succesfull founded
+    In input require the csv dataset composed by: obj_name, poses, grasp status (true or false) and kindness'''
+
 
 def str2bool(st):
     '''From string to bool'''
@@ -7,7 +12,7 @@ def str2bool(st):
     except (ValueError, AttributeError):
         raise ValueError('no Valid Conversion Possible')
 
-def Draw_Grasph(kindness)
+def Draw_Grasph(kindness):
     import matplotlib.pyplot as plt
     plt.plot(kindness)
     plt.ylabel('kindness')
@@ -35,14 +40,22 @@ class DataAnalysis():
             csvfilereader.close()
 
     def Save_parameter(self):
-        '''Save the parameters in the vector and in csv file for neural networks set'''
+        '''Save the parameters in the vector and if the grasp is true in csv file for neural networks set'''
+
         self.Mesh_data.append({'Name':self.Nome_finito,'n_simulation_obj':self.n_simulation_obj ,
                 'grasp_succesful': self.grasp_succesful,'Percentage': (self.grasp_succesful / float(self.n_simulation_obj))*100})
 
         if self.grasp_succesful > 0:
-            data_set = 'CNN/NNSet/%s.csv'%self.Nome_finito
+            data_set = '3DCNN/NNSet/Pose/%s.csv'%self.Nome_finito
             self.Write_Results(data_set,self.poses)
-        del self.poses[:]
+        # del self.poses[:]
+            if (self.grasp_succesful / float(self.n_simulation_obj))*100 > 50.0:
+                data_set = '3DCNN/NNSet/Percentage/%s.csv'%self.Nome_finito
+            else:
+                data_set = '3DCNN/NNSet/Nsuccessfull/%s.csv'%self.Nome_finito
+            self.Write_Results(data_set,self.poses)
+            del self.poses[:]
+
 
     def Set_Name(self, obj_name):
         if self.first_time is 0:
@@ -76,8 +89,8 @@ class DataAnalysis():
 
 import csv
 import sys
-obj_dataset = sys.argv[1] #object_dataset
-res_dataset = sys.argv[2] #results_dataset
+obj_dataset = sys.argv[1] #input file with obj and poses
+res_dataset = sys.argv[2] #output results_dataset
 with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
     file_reader = csv.reader(csvfile, delimiter=',')
     analysis = DataAnalysis()
@@ -85,7 +98,12 @@ with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
         analysis.Set_Name(row[0])
         analysis.Get_Grasp_Status(row[13], row[1:12])
         analysis.Get_Kindness(row[14])
-    # Draw_Grasph(self.kindness)
+        # Draw_Grasph(analysis.kindness)
     analysis.Save_parameter()
-    analysis.Write_Results(res_dataset,analysis.Mesh_data,)
-    analysis.Write_Results('CNN/NNSet/%s.csv'% analysis.Nome_finito,analysis.poses)
+    analysis.Write_Results(res_dataset,analysis.Mesh_data)
+    analysis.Write_Results('3DCNN/NNSet/Pose/%s.csv'% analysis.Nome_finito,analysis.poses)
+    if (analysis.grasp_succesful / float(analysis.n_simulation_obj))*100 > 50.0:
+        data_set = '3DCNN/NNSet/Percentage/%s.csv'%analysis.Nome_finito
+    else:
+        data_set = '3DCNN/NNSet/Nsuccessfull/%s.csv'%analysis.Nome_finito
+    analysis.Write_Results(data_set,analysis.poses)
