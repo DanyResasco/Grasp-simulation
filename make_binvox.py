@@ -37,12 +37,12 @@ def Binvox_Dany(obj_list):
                     You need to tweak this number so that the final map (after octree creation) has the desired resolution.
                 -down: downsample voxels by a factor of 2 in each dimension (can be used multiple times)
                 -ri: remove internal voxels 
-                -e exact carving gives best results, but results e.g. in hollow walls (no room for compression in the octree)
+                -e: exact carving gives best results, but results e.g. in hollow walls (no room for compression in the octree)
                 otherwise try a combination of -c and / or -v. This might or might not work for some meshes
-                -fit gives the smallest bounding box fit '''
+                -fit: gives the smallest bounding box fit '''
 
 
-                call(["./binvox","-down","-d"," 127","-e","-fit", model_filepath])
+                call(["./binvox","-down","-ri" ,"-d","128","-e", model_filepath])
                 '''Called a viewvox execute to view a voxel'''
                 # call(["./viewvox", vie_filepath]) 
 

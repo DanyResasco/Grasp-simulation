@@ -47,16 +47,7 @@ def read_binvox(object_list):
                         # print len(data)
                         # print "qui", data
                         data =  data.reshape(dims)
-                        # print len(data)
-                        
-                        # if fix_coords:
-                            # xzy to xyz TODO the right thing
                         data = np.transpose(data, (0, 2, 1))
-                        print len(data)
-                        # print "data",data
-                        #     axis_order = 'xyz'
-                        # else:
-                        #     axis_order = 'xzy'
                 except:
                     print "No binvox in", objectName
                         # no_binvox.append(object_name)
