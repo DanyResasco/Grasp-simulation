@@ -5,36 +5,118 @@ import os, sys, theano, traceback
 import theano.tensor as T
 import matplotlib.pyplot as plt
 
-# def make_dataset():
+
 import csv
 import sys
 import random
+import math
 
 objects = {}
-objects['training'] = [f for f in os.listdir('3DCNN/NNSet')-15]
-for Name in objects.values():
-        all_objects += Name
+objects['Percentage'] = [f for f in os.listdir('NNSet/Percentage')]
+objects['Nsuccessfull'] = [f for f in os.listdir('NNSet/Nsuccessfull')]
 
-print all_objects
+Input_name = [f for f in os.listdir('NNSet/binvox')]
 
 
-# obj_dataset = '3DCNN/NNSet/%s.csv'%Name
-# with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
-#     file_reader = csv.reader(csvfile, delimiter=',')
-#     row_count = sum(1 for row in file_reader)
-#     csvfile.seek(0)
-#     Line_old = []
-#     End = False
-#     for row in file_reader:
-#     	print row
-    # if End is not True:
-    # 	line = random.randint(0,row_count)
-    # 	if line not in Line_old:
-	   #  	Line_old.append(line)
-	   #  	set_train_x = [row for idx, row in enumerate(file_reader) if idx is line]
-	   #  	print set_train_x[0][0]
-	   #  	# set_train_y = [row for idx, row in enumerate(file_reader) if idx is line]
-	   #  	# print set_train_y
+def Set_vector(object_name, vector_set):
+    # for object_name in nome_obj:
+        for object_set, objects_in_set in objects.items():
+            if object_name in objects_in_set:
+                obj_dataset = 'NNSet/%s/%s'%(object_set,object_name)
+                with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+                    file_reader = csv.reader(csvfile, delimiter=',')
+                    for row in file_reader:
+                        vector_set.append(row)
+
+
+
+def Set_input(nome_obj,vector_set):
+    if nome_obj in Input_name:
+        obj_dataset = 'NNSet/binvox/%s'%Input_name[Input_name.index(nome_obj)]
+        try:
+            with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+                file_reader = csv.reader(csvfile, delimiter=',')
+                temp_vecto = []
+                for row in file_reader:
+                    temp_vecto.append(row)
+                vector_set.append(temp_vecto)
+        except:
+            print "No binvox in file", obj_dataset
+
+def Find_binvox(all_obj):
+    vector = []
+    for object_name in all_obj:
+        if object_name in Input_name:
+            vector.append(object_name)
+        # if object_name not in Input_name:
+        #     print object_name
+        #     del all_obj[all_obj.index(object_name)]
+    return vector
+
+# def Input_output():
+all_obj_tmp = []
+for objects_name in objects.values():
+    all_obj_tmp += objects_name
+
+#Sicuro ce' un metodo piu' intelligente
+all_obj = Find_binvox(all_obj_tmp)
+
+random.shuffle(all_obj)
+Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
+Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.85 and i <len(all_obj)*.95]
+Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.95 and i<len(all_obj)*1]
+
+Training_y = []
+Input_training = []
+for object_name in Training_label_set:
+    # print object_name
+    Set_vector(object_name, Training_y)
+    Set_input(object_name,Input_training)
+Validate_y = []
+Input_validate = []
+for object_name in Validate_label_set:
+    Set_vector(object_name, Validate_y)
+    Set_input(object_name,Input_validate)
+
+Test_y = []
+Input_test = []
+for object_name in Test_label_set:
+    Set_vector(object_name, Test_y)
+    Set_input(object_name,Input_test)
+
+print len(Training_label_set) + len(Validate_label_set) + len(Test_label_set)
+print len(Input_training) + len(Input_validate)+ len(Input_test)
+
+return Training_label_set,Input_training, Validate_label_set, Input_validate, Test_label_set, Input_test
+
+# for nome  in Training_label_set:
+#     if nome not in Input_name:
+#         print Training_label_set[Training_label_set.index(nome)]
+
+
+# Output_name = [f for f in os.listdir('NNSet/Pose')]
+# Remove = []
+
+# Training = []
+# Validate = []
+# Test = []
+
+# Input_net = []
+# Output_net = []
+
+
+# def Read_N_row(obj_list):
+#     row_count = 0
+#     for object_name in obj_list:
+#         for object_set, objects_in_set in objects.items():
+#             if object_name in objects_in_set:
+#                 obj_dataset = 'NNSet/%s/%s'%(object_set,object_name)
+#                 with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+#                     file_reader = csv.reader(csvfile, delimiter=',')
+#                     row_count += sum(1 for row in file_reader)
+#     return row_count
+
+
 
 
 
