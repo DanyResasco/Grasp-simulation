@@ -1,11 +1,11 @@
 
+# root = ~/usr/local/cuda-7.0
 from __future__ import division
 import numpy as np
 import os, sys, theano, traceback
 import theano.tensor as T
 import matplotlib.pyplot as plt
-
-
+from read_as_coord_array import read_as_coord_array
 import csv
 import sys
 import random
@@ -15,79 +15,163 @@ objects = {}
 objects['Percentage'] = [f for f in os.listdir('NNSet/Percentage')]
 objects['Nsuccessfull'] = [f for f in os.listdir('NNSet/Nsuccessfull')]
 
+prev_obj = {}
+prev_obj['ycb'] = [f for f in os.listdir('../data/objects/ycb')]
+prev_obj['apc2015'] = [f for f in os.listdir('../data/objects/apc2015')]
+prev_obj['princeton'] = [f for f in os.listdir('../data/objects/princeton')]
+
+
 Input_name = [f for f in os.listdir('NNSet/binvox')]
+Input_training = []
+Training_y = []
+Input_validate = []
+Validate_y = []
+Test_y = []
+Input_test = []
 
 
-def Set_vector(object_name, vector_set):
+def Set_input(objectName,vector_set):
+    # for objectName in object_list:
+
+        objectName = os.path.splitext(objectName)[0]
+        for object_set, objects_in_set in prev_obj.items():
+            if objectName in objects_in_set: 
+                if object_set == 'princeton':
+                    objpath = '../data/objects/princeton/%s/tsdf_mesh.binvox'%objectName
+                elif object_set == 'apc2015':
+                    objpath = '../data/objects/apc2015/%s/meshes/poisson.binvox'%(objectName)
+                else:
+                    objpath = '../data/objects/ycb/%s/meshes/poisson_mesh.binvox'%(objectName)
+                try:
+                    with open(objpath, 'rb') as f:
+                        data = read_as_coord_array(f)
+                        print data[0]
+                        vector_set.append(data[0])
+                except:
+                    print "No binvox in file %s "%(objpath)
+
+        # try:
+        #     with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+        #         file_reader = csv.reader(csvfile, delimiter=',')
+        #         temp_vecto = []
+        #         for row in file_reader:
+        #             temp_vecto.append(row)
+        #         vector_set.append(temp_vecto)
+        # except:
+        #     print "No binvox in file", obj_dataset
+
+
+
+def Set_vector(object_name, vector_set,input_set):
     # for object_name in nome_obj:
-        for object_set, objects_in_set in objects.items():
-            if object_name in objects_in_set:
-                obj_dataset = 'NNSet/%s/%s'%(object_set,object_name)
-                with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
-                    file_reader = csv.reader(csvfile, delimiter=',')
-                    for row in file_reader:
-                        vector_set.append(row)
-
-
-
-def Set_input(nome_obj,vector_set):
-    if nome_obj in Input_name:
-        obj_dataset = 'NNSet/binvox/%s'%Input_name[Input_name.index(nome_obj)]
-        try:
+    row_count =0
+    for object_set, objects_in_set in objects.items():
+        if object_name in objects_in_set:
+            obj_dataset = 'NNSet/%s/%s'%(object_set,object_name)
             with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
-                file_reader = csv.reader(csvfile, delimiter=',')
-                temp_vecto = []
+                file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
-                    temp_vecto.append(row)
-                vector_set.append(temp_vecto)
-        except:
-            print "No binvox in file", obj_dataset
+                    vector_set.append(row)
+                    Set_input(object_name,input_set)
+
 
 def Find_binvox(all_obj):
     vector = []
     for object_name in all_obj:
         if object_name in Input_name:
             vector.append(object_name)
-        # if object_name not in Input_name:
-        #     print object_name
-        #     del all_obj[all_obj.index(object_name)]
     return vector
 
-# def Input_output():
-all_obj_tmp = []
-for objects_name in objects.values():
-    all_obj_tmp += objects_name
 
-#Sicuro ce' un metodo piu' intelligente
-all_obj = Find_binvox(all_obj_tmp)
+#Mi da errore qui.. mi dice che non riesce a convertire il tipo di dato,
+def shared_dataset(data_xy, borrow=True):
+        """ Function that loads the dataset into shared variables
 
-random.shuffle(all_obj)
-Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
-Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.85 and i <len(all_obj)*.95]
-Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.95 and i<len(all_obj)*1]
+        The reason we store our dataset in shared variables is to allow
+        Theano to copy it into the GPU memory (when code is run on GPU).
+        Since copying data into the GPU is slow, copying a minibatch everytime
+        is needed (the default behaviour if the data is not in a shared
+        variable) would lead to a large decrease in performance.
+        """
+        data_x, data_y = data_xy
+        # shared_x = theano.shared(np.asarray(data_x,
+        #                                        dtype=theano.config.floatX),
+        #                          borrow=borrow)
+        # shared_y = theano.shared(np.asarray(data_y,
+        #                                        dtype=theano.config.floatX),
+        #                          borrow=borrow)
 
-Training_y = []
-Input_training = []
-for object_name in Training_label_set:
-    # print object_name
-    Set_vector(object_name, Training_y)
-    Set_input(object_name,Input_training)
-Validate_y = []
-Input_validate = []
-for object_name in Validate_label_set:
-    Set_vector(object_name, Validate_y)
-    Set_input(object_name,Input_validate)
+        'data must be an numpy array'
+        shared_x = theano.shared(value=data_x.astype(theano.config.floatX), borrow=True)
+        shared_y = theano.shared(value=data_y.astype(theano.config.floatX), borrow=True)
+        # When storing data on the GPU it has to be stored as floats
+        # therefore we will store the labels as ``floatX`` as well
+        # (``shared_y`` does exactly that). But during our computations
+        # we need them as ints (we use labels as index, and if they are
+        # floats it doesn't make sense) therefore instead of returning
+        # ``shared_y`` we will have to cast it to int. This little hack
+        # lets ous get around this issue
+        return shared_x, T.cast(shared_y, 'int32')
 
-Test_y = []
-Input_test = []
-for object_name in Test_label_set:
-    Set_vector(object_name, Test_y)
-    Set_input(object_name,Input_test)
 
-print len(Training_label_set) + len(Validate_label_set) + len(Test_label_set)
-print len(Input_training) + len(Input_validate)+ len(Input_test)
 
-return Training_label_set,Input_training, Validate_label_set, Input_validate, Test_label_set, Input_test
+
+
+
+def Input_output():
+    all_obj_tmp = []
+    for objects_name in objects.values():
+        all_obj_tmp += objects_name
+
+    #Sicuro ce' un metodo piu' intelligente
+    all_obj = Find_binvox(all_obj_tmp)
+
+    random.shuffle(all_obj)
+    Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
+    Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.85 and i <len(all_obj)*.95]
+    Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.95 and i<len(all_obj)*1]
+
+    for object_name in Training_label_set:
+        Set_vector(object_name, Training_y,Input_training)
+
+    for object_name in Validate_label_set:
+        Set_vector(object_name, Validate_y,Input_validate)
+
+    for object_name in Test_label_set:
+        Set_vector(object_name, Test_y,Input_test)
+
+    print len(Training_y) + len(Validate_y) + len(Test_y)
+    print len(Input_training) + len(Input_validate)+ len(Input_test)
+
+    Training_ = [Training_y, Input_training]
+    Validate_ = [Validate_y,Input_validate ]
+    Test_ = [Test_y,Input_test ]
+
+    # return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
+    print "Input_training", len(Input_training)
+    print "Training_y",len(Training_y)
+
+
+    print "Input_validate", len(Input_validate)
+    print "Validate_y",len(Validate_y)
+
+    print "Input_test", len(Input_test)
+    print "Test_label_set",len(Input_test)
+
+    # return Training_, Validate_ ,Test_
+
+
+if __name__ == '__main__':
+    Input_output()
+    # import cProfile
+    # import re
+    # cProfile.run('Input_output()')
+
+
+
+
+
+
 
 # for nome  in Training_label_set:
 #     if nome not in Input_name:
