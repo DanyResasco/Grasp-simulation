@@ -61,7 +61,7 @@ def Set_vector(object_name, vector_set,input_set):
                 for row in file_reader:
                     Matrix_ = so3.matrix(row)
                     T = row[7:10]
-                    row_t = (so3.rpy(row),T)
+                    row_t = (list(so3.rpy(row)) + list(T))
                     vector_set.append(np.array(row_t))
                     Set_input(object_name,input_set)
 
@@ -91,18 +91,20 @@ def shared_dataset(data_xy, borrow=True):
 
         # shared_x = theano.shared(np.asarray(data_x,
         #                                        dtype=theano.config.floatX),
-        #                          borrow=borrow)
+        #                          borrow=True)
         # shared_y = theano.shared(np.asarray(data_y,
         #                                        dtype=theano.config.floatX),
-        #                          borrow=borrow)
+        #                          borrow=True)
         'data must be an numpy array'
 
-        # print data_y
         shared_x = theano.shared(np.array(data_x, theano.config.floatX))
-        shared_y = theano.shared(np.array(data_y, theano.config.floatX))
-        
 
-        return shared_x, T.cast(shared_y, 'int32')
+        shared_y = theano.shared(np.array(data_y, theano.config.floatX))
+        # shared_x = theano.shared(data_x,borrow=True)
+        # shared_y = theano.shared(data_y,borrow=True)
+
+        # return shared_x, T.cast(shared_y, 'float32')
+        return shared_x, shared_y
 
 
 
@@ -140,7 +142,6 @@ def Input_output():
     Validate_ = [Validate_y,Input_validate ]
     Test_ = [Test_y,Input_test ]
 
-    return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
     # print "Input_training", len(Input_training)
     # print "Training_y",len(Training_y)
 
@@ -151,16 +152,16 @@ def Input_output():
     # print "Input_test", len(Input_test)
     # print "Test_label_set",len(Input_test)
 
-    # return Training_, Validate_ ,Test_
+    # print shared_dataset(Training_)[0]
+
+    # return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
+
+
+    return Training_, Validate_ ,Test_
 
 
 if __name__ == '__main__':
-    Input_output()
-    # import cProfile
-    # import re
-    # cProfile.run('Input_output()')
-
-
+    T,V,TT = Input_output()
 
 
 

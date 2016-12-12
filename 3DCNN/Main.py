@@ -11,39 +11,6 @@ from IPython import embed
 from dataset_Dany import Input_output 
 
 
-'''From tutorial'''
-def shared_dataset(data_xy, borrow=True):
-        """ Function that loads the dataset into shared variables
-
-        The reason we store our dataset in shared variables is to allow
-        Theano to copy it into the GPU memory (when code is run on GPU).
-        Since copying data into the GPU is slow, copying a minibatch everytime
-        is needed (the default behaviour if the data is not in a shared
-        variable) would lead to a large decrease in performance.
-        """
-        data_x, data_y = data_xy
-        shared_x = theano.shared(np.asarray(data_x,
-                                               dtype=theano.config.floatX),
-                                 borrow=borrow)
-        shared_y = theano.shared(np.asarray(data_y,
-                                               dtype=theano.config.floatX),
-                                 borrow=borrow)
-        # When storing data on the GPU it has to be stored as floats
-        # therefore we will store the labels as ``floatX`` as well
-        # (``shared_y`` does exactly that). But during our computations
-        # we need them as ints (we use labels as index, and if they are
-        # floats it doesn't make sense) therefore instead of returning
-        # ``shared_y`` we will have to cast it to int. This little hack
-        # lets ous get around this issue
-        return shared_x, T.cast(shared_y, 'int32')
-
-
-
-
-
-
-
-
 def save_model(filename, **layer_dict):
 	'''
 	layer_dict is pairs of layer name to layer object. 
@@ -113,12 +80,14 @@ print 'defining train model'
 
 # train_set_X_occ, _, train_set_y = feeder.next_training_set_shared() #TO change
 Dataset_dany =  Input_output()
-train_set_y, train_set_X_occ = shared_dataset(Dataset_dany[2])
-valid_set_y, valid_set_x = shared_dataset(Dataset_dany[1])
-test_set_y, train_set_X_occ = shared_dataset(Dataset_dany[0])
+train_set_y, train_set_X_occ = Dataset_dany[0]
+valid_set_y, valid_set_x = Dataset_dany[1]
+test_set_y, train_set_X_occ = Dataset_dany[2]
 
-print"input dopo", len(train_set_X_occ)
-
+print train_set_y.type
+print y.type
+print train_set_X_occ.type
+print X_occ.type
 # Adam Optimizer Update
 updates = []
 one = np.float32(1)
