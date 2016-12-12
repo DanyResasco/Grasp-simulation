@@ -28,12 +28,13 @@ Input_validate = []
 Validate_y = []
 Test_y = []
 Input_test = []
+binvox = {}
 
 
 def Set_input(objectName,vector_set):
     # for objectName in object_list:
 
-        objectName = os.path.splitext(objectName)[0]
+        objectName = os.path.splitext(objectName)[0]DataFeeder
         for object_set, objects_in_set in prev_obj.items():
             if objectName in objects_in_set: 
                 if object_set == 'princeton':
@@ -45,7 +46,6 @@ def Set_input(objectName,vector_set):
                 try:
                     with open(objpath, 'rb') as f:
                         data = read_as_coord_array(f)
-                        print data[0]
                         vector_set.append(data[0])
                 except:
                     print "No binvox in file %s "%(objpath)
@@ -63,6 +63,7 @@ def Set_input(objectName,vector_set):
 
 
 def Set_vector(object_name, vector_set,input_set):
+    '''Read the poses and store it into a vector'''
     # for object_name in nome_obj:
     row_count =0
     for object_set, objects_in_set in objects.items():
@@ -71,15 +72,28 @@ def Set_vector(object_name, vector_set,input_set):
             with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
-                    vector_set.append(row)
+                    row_temp = []
+                    # for i in range(2,len(row)):
+                    #     # print row[i].split(',')
+                    #     row_temp = float(row[i].split(','))
+                    #     # row_temp2 = [float(n) for n in r]
+                    vector_set.append(row_temp)
+                    # print len(vector_set)
                     Set_input(object_name,input_set)
 
 
+def Save_binvox(nome):
+
+
+
+
 def Find_binvox(all_obj):
+    '''Remove all objects that doesn't has a binvox'''
     vector = []
     for object_name in all_obj:
-        if object_name in Input_name:
-            vector.append(object_name)
+        if object_name in Input_name: #binvox exist!
+            vector.append(object_name) #save obj
+            Save_binvx(object_name)
     return vector
 
 
@@ -101,9 +115,14 @@ def shared_dataset(data_xy, borrow=True):
         #                                        dtype=theano.config.floatX),
         #                          borrow=borrow)
 
+
+    # train_set_x = [train_set[i][0] for i in range(len(train_set))]
+
+
+
         'data must be an numpy array'
-        shared_x = theano.shared(value=data_x.astype(theano.config.floatX), borrow=True)
-        shared_y = theano.shared(value=data_y.astype(theano.config.floatX), borrow=True)
+        shared_x = theano.shared(np.array(data_x, theano.config.floatX))
+        shared_y = theano.shared(np.array(data_y, theano.config.floatX))
         # When storing data on the GPU it has to be stored as floats
         # therefore we will store the labels as ``floatX`` as well
         # (``shared_y`` does exactly that). But during our computations
@@ -147,16 +166,16 @@ def Input_output():
     Validate_ = [Validate_y,Input_validate ]
     Test_ = [Test_y,Input_test ]
 
-    # return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
-    print "Input_training", len(Input_training)
-    print "Training_y",len(Training_y)
+    return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
+    # print "Input_training", len(Input_training)
+    # print "Training_y",len(Training_y)
 
 
-    print "Input_validate", len(Input_validate)
-    print "Validate_y",len(Validate_y)
+    # print "Input_validate", len(Input_validate)
+    # print "Validate_y",len(Validate_y)
 
-    print "Input_test", len(Input_test)
-    print "Test_label_set",len(Input_test)
+    # print "Input_test", len(Input_test)
+    # print "Test_label_set",len(Input_test)
 
     # return Training_, Validate_ ,Test_
 

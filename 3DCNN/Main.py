@@ -7,9 +7,42 @@ import theano.tensor as T
 from conv3d_Dany import Conv3D
 from fully_connected_layer import FullyConnectedLayer
 from cont_output_layer import ContOutputLayer
-# from dataset import DataFeeder
+from IPython import embed
+from dataset_Dany import Input_output 
 
-feeder = DataFeeder()
+
+'''From tutorial'''
+def shared_dataset(data_xy, borrow=True):
+        """ Function that loads the dataset into shared variables
+
+        The reason we store our dataset in shared variables is to allow
+        Theano to copy it into the GPU memory (when code is run on GPU).
+        Since copying data into the GPU is slow, copying a minibatch everytime
+        is needed (the default behaviour if the data is not in a shared
+        variable) would lead to a large decrease in performance.
+        """
+        data_x, data_y = data_xy
+        shared_x = theano.shared(np.asarray(data_x,
+                                               dtype=theano.config.floatX),
+                                 borrow=borrow)
+        shared_y = theano.shared(np.asarray(data_y,
+                                               dtype=theano.config.floatX),
+                                 borrow=borrow)
+        # When storing data on the GPU it has to be stored as floats
+        # therefore we will store the labels as ``floatX`` as well
+        # (``shared_y`` does exactly that). But during our computations
+        # we need them as ints (we use labels as index, and if they are
+        # floats it doesn't make sense) therefore instead of returning
+        # ``shared_y`` we will have to cast it to int. This little hack
+        # lets ous get around this issue
+        return shared_x, T.cast(shared_y, 'int32')
+
+
+
+
+
+
+
 
 def save_model(filename, **layer_dict):
 	'''
@@ -26,38 +59,38 @@ def save_model(filename, **layer_dict):
 rng = np.random.RandomState(65432)
 batch_size = 6
 # data_chunk_size = 50 #Non so ancora cosa sia minibatch?
-nkerns = (70, 70, 70, 64) # n felter for each layer
+nkerns = (70, 70, 70, 64, 64, 64) # n felter for each layer
 
 print 'defining input'
 
-index = T.lscalar()
+index = T.lscalar('index')
 X_occ = T.fmatrix('X_occ')
 y = T.fvector('y')
-# 3 è il numero di canali, 1 gray scale 3 rgb, 127 dimensione voxel controlla
-input_occ_batch = X_occ.reshape((batch_size, 3, 127, 127, 127)) #127 voxel dimension
+# 3 e' il numero di canali, 1 gray scale 3 rgb, 127 dimensione voxel controlla
+input_occ_batch = X_occ.reshape((batch_size, 3, 64, 64, 64)) #64 voxel dimension
 
 print 'defining architecture'
 
 ''' image_shape is (num_imgs, num_channels, img_height, img_width, img_length)
 	filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)
 	size(image_shape[num_channels]) == size(filter_shape[num_channels]) '''
-
+#(64-7+1)/poolsize
 conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 3, 7, 7, 7), 
-	image_shape=(batch_size, 3, 127, 127,127), poolsize=(3,3,3))
-conv2 = Conv3DLayer(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 7, 7, 7), 
- 	image_shape=(batch_size, nkerns[0], 95,95,95), poolsize=(3,3,3))
-conv3 = Conv3DLayer(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 7, 7, 7), 
- 	image_shape=(batch_size, nkerns[1], 75, 75, 75), poolsize=(3,3,3))
-conv4 = Conv3DLayer(rng, input=conv3.output, filter_shape=(nkerns[3], nkerns[2], 5, 5, 5), 
-	image_shape=(batch_size, nkerns[2], 55, 55, 55), poolsize=(2,2,2))
-conv5 = Conv3DLayer(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 5, 5, 5), 
-	image_shape=(batch_size, nkerns[3], 35, 35, 35), poolsize=(1,1,1))
-conv6 = Conv3DLayer(rng, input=conv5.output, filter_shape=(nkerns[4], nkerns[3], 5, 5, 5), 
-	image_shape=(batch_size, nkerns[3], 10, 10, 10), poolsize=(1,1,1))
+	image_shape=(batch_size, 3, 64, 64,64), poolsize=(1,1,1))
+conv2 = Conv3D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 3, 3, 3), 
+ 	image_shape=(batch_size, nkerns[0], 58,58,58), poolsize=(2,2,2))
+conv3 = Conv3D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 2, 2, 2), 
+ 	image_shape=(batch_size, nkerns[1], 28, 28, 28), poolsize=(1,1,1))
+conv4 = Conv3D(rng, input=conv3.output, filter_shape=(nkerns[3], nkerns[2], 3, 3, 3), 
+	image_shape=(batch_size, nkerns[2], 27, 27, 27), poolsize=(2,2,2))
+conv5 = Conv3D(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 5, 5, 5), 
+	image_shape=(batch_size, nkerns[3], 12, 12, 12), poolsize=(1,1,1))
+conv6 = Conv3D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 3, 3, 3), 
+	image_shape=(batch_size, nkerns[4], 8, 8, 8), poolsize=(1,1,1))
 
 
-fc_input = conv5.output.flatten(2) # out is 8 x 8 x 4 Guarda l'uscita e mettila di sotto
-fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=8*8*4*nkerns[4], n_out=5500)
+fc_input = conv6.output.flatten(2)
+fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=6*6*6*nkerns[5], n_out=5500)
 #output is a vector of 12 elements
 fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=1000)
 fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=1000, n_out=12)
@@ -72,13 +105,19 @@ all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.
 	conv6.params + fc1.params + fc2.params +fc3.params+ output.params)
 
   # compute the gradient of cost
+# embed()
 all_grads = T.grad(cost, all_params)
-
+print "grad"
 
 print 'defining train model'
 
 # train_set_X_occ, _, train_set_y = feeder.next_training_set_shared() #TO change
+Dataset_dany =  Input_output()
+train_set_y, train_set_X_occ = shared_dataset(Dataset_dany[2])
+valid_set_y, valid_set_x = shared_dataset(Dataset_dany[1])
+test_set_y, train_set_X_occ = shared_dataset(Dataset_dany[0])
 
+print"input dopo", len(train_set_X_occ)
 
 # Adam Optimizer Update
 updates = []
@@ -105,14 +144,12 @@ for p, g in zip(all_params, all_grads):
     defined in `updates '''
 train_model = theano.function( [index], cost, updates=updates, 
 	givens={
-		X_occ: train_set_X_occ[index * batch_size: (index + 1) * batch_size],
+		X_occ: train_set_X_occ[(index * batch_size): ((index + 1) * batch_size)],
 		y: train_set_y[index * batch_size: (index + 1) * batch_size]
 	}
 )
 
 print 'defining test model'
-# test_set_X_occ, _, test_set_y = feeder.test_set_shared() #TO change
-
 test_model = theano.function(
 	[index],
 	cost,
@@ -124,9 +161,6 @@ test_model = theano.function(
 
 
 print 'defining valid model'
-# valid_set_x, _, valid_set_y = feeder.test_set_shared() #TO change
-
-
 validate_model = theano.function(
 	inputs=[index],
 	outputs= cost,
