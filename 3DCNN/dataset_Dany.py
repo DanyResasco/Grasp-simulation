@@ -60,7 +60,7 @@ def Set_vector(object_name, vector_set,input_set):
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
                     Matrix_ = so3.matrix(row)
-                    T = row[8:10]
+                    T = row[7:10]
                     row_t = (so3.rpy(row),T)
                     vector_set.append(np.array(row_t))
                     Set_input(object_name,input_set)
@@ -97,8 +97,10 @@ def shared_dataset(data_xy, borrow=True):
         #                          borrow=borrow)
         'data must be an numpy array'
 
+        # print data_y
         shared_x = theano.shared(np.array(data_x, theano.config.floatX))
         shared_y = theano.shared(np.array(data_y, theano.config.floatX))
+        
 
         return shared_x, T.cast(shared_y, 'int32')
 
