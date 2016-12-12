@@ -1,4 +1,5 @@
 import numpy as np
+from klampt.math import se3
 '''Write two output dataset:
     1) is composed by: obj_name, n_simulation_total, n_simulation_succesfull, Percentage
     2) is composed by: obj_name, each pose succesfull founded
@@ -29,6 +30,17 @@ class DataAnalysis():
         self.grasp_status = ''
         self.kindness = []
         self.poses = []
+        self.count = 0
+
+    def Write_Poses(self,dataset,parameter):
+        '''Write the dataset'''
+        import csv
+        f = open(dataset, 'w')
+        for i in range(0,len(self.poses)):
+            f.write(','.join([str(v) for v in self.poses[i]]))
+            f.write('\n')
+        f.close()
+
 
     def Write_Results(self,dataset,parameter):
         '''Write the dataset'''
@@ -39,6 +51,7 @@ class DataAnalysis():
                 writer.writerow([i])
             csvfilereader.close()
 
+
     def Save_parameter(self):
         '''Save the parameters in the vector and if the grasp is true in csv file for neural networks set'''
 
@@ -47,14 +60,17 @@ class DataAnalysis():
 
         if self.grasp_succesful > 0:
             data_set = '3DCNN/NNSet/Pose/%s.csv'%self.Nome_finito
-            self.Write_Results(data_set,self.poses)
+            self.Write_Poses(data_set,self.poses)
         # del self.poses[:]
             if (self.grasp_succesful / float(self.n_simulation_obj))*100 > 50.0:
                 data_set = '3DCNN/NNSet/Percentage/%s.csv'%self.Nome_finito
             else:
                 data_set = '3DCNN/NNSet/Nsuccessfull/%s.csv'%self.Nome_finito
-            self.Write_Results(data_set,self.poses)
+            self.Write_Poses(data_set,self.poses)
             del self.poses[:]
+        else:
+            # print "No grasp_succesful in ",self.Nome_finito
+            self.count +=1
 
 
     def Set_Name(self, obj_name):
@@ -84,7 +100,8 @@ class DataAnalysis():
             self.Get_Pose(poses)
 
     def Get_Pose(self,pose):
-        self.poses.append(pose)
+        pose_temp = [float(v) for v in pose]
+        self.poses.append(pose_temp)
 
 
 import csv
@@ -101,9 +118,10 @@ with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
         # Draw_Grasph(analysis.kindness)
     analysis.Save_parameter()
     analysis.Write_Results(res_dataset,analysis.Mesh_data)
-    analysis.Write_Results('3DCNN/NNSet/Pose/%s.csv'% analysis.Nome_finito,analysis.poses)
+    analysis.Write_Poses('3DCNN/NNSet/Pose/%s.csv'% analysis.Nome_finito,analysis.poses)
     if (analysis.grasp_succesful / float(analysis.n_simulation_obj))*100 > 50.0:
         data_set = '3DCNN/NNSet/Percentage/%s.csv'%analysis.Nome_finito
     else:
         data_set = '3DCNN/NNSet/Nsuccessfull/%s.csv'%analysis.Nome_finito
-    analysis.Write_Results(data_set,analysis.poses)
+    analysis.Write_Poses(data_set,analysis.poses)
+    print "Number of object with zeros poses ", analysis.count
