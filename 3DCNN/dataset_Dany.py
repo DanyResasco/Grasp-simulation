@@ -5,23 +5,27 @@ import numpy as np
 import os, sys, theano, traceback
 import theano.tensor as T
 import matplotlib.pyplot as plt
-from read_as_coord_array import read_as_coord_array
+from read_as_coord_array import read_as_coord_array,read_as_3d_array
 import csv
 import sys
 import random
 import math
+from klampt.math import so3
 
 objects = {}
 objects['Percentage'] = [f for f in os.listdir('NNSet/Percentage')]
 objects['Nsuccessfull'] = [f for f in os.listdir('NNSet/Nsuccessfull')]
 
-prev_obj = {}
-prev_obj['ycb'] = [f for f in os.listdir('../data/objects/ycb')]
-prev_obj['apc2015'] = [f for f in os.listdir('../data/objects/apc2015')]
-prev_obj['princeton'] = [f for f in os.listdir('../data/objects/princeton')]
+# prev_obj = {}
+# prev_obj['ycb'] = [f for f in os.listdir('../data/objects/ycb')]
+# prev_obj['apc2015'] = [f for f in os.listdir('../data/objects/apc2015')]
+# prev_obj['princeton'] = [f for f in os.listdir('../data/objects/princeton')]
 
 
-Input_name = [f for f in os.listdir('NNSet/binvox')]
+Input_name = [f for f in os.listdir('NNSet/binvox/Binvox')] #all binvox in binvox format
+Output = {}
+Output['Pose'] = [f for f in os.listdir('NNSet/Pose')]
+
 Input_training = []
 Training_y = []
 Input_validate = []
@@ -30,70 +34,46 @@ Test_y = []
 Input_test = []
 binvox = {}
 
+def Save_binvox(nome):
+    objpath = 'NNSet/binvox/Binvox/%s'%nome
+    try:
+        with open(objpath, 'rb') as f:
+            # data = read_as_coord_array(f) # dimension not matched. are different for each objects
+            data = read_as_3d_array(f)
+            binvox[nome] = data[0]
+    except:
+        print "No binvox in file %s "%(objpath)
+
+
 
 def Set_input(objectName,vector_set):
-    # for objectName in object_list:
-
-        objectName = os.path.splitext(objectName)[0]DataFeeder
-        for object_set, objects_in_set in prev_obj.items():
-            if objectName in objects_in_set: 
-                if object_set == 'princeton':
-                    objpath = '../data/objects/princeton/%s/tsdf_mesh.binvox'%objectName
-                elif object_set == 'apc2015':
-                    objpath = '../data/objects/apc2015/%s/meshes/poisson.binvox'%(objectName)
-                else:
-                    objpath = '../data/objects/ycb/%s/meshes/poisson_mesh.binvox'%(objectName)
-                try:
-                    with open(objpath, 'rb') as f:
-                        data = read_as_coord_array(f)
-                        vector_set.append(data[0])
-                except:
-                    print "No binvox in file %s "%(objpath)
-
-        # try:
-        #     with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
-        #         file_reader = csv.reader(csvfile, delimiter=',')
-        #         temp_vecto = []
-        #         for row in file_reader:
-        #             temp_vecto.append(row)
-        #         vector_set.append(temp_vecto)
-        # except:
-        #     print "No binvox in file", obj_dataset
+        vector_set.append(binvox[objectName])
 
 
 
 def Set_vector(object_name, vector_set,input_set):
     '''Read the poses and store it into a vector'''
-    # for object_name in nome_obj:
-    row_count =0
-    for object_set, objects_in_set in objects.items():
+    for object_set, objects_in_set in Output.items():
         if object_name in objects_in_set:
-            obj_dataset = 'NNSet/%s/%s'%(object_set,object_name)
+            obj_dataset = 'NNSet/Pose/%s'%(object_name)
             with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
-                    row_temp = []
-                    # for i in range(2,len(row)):
-                    #     # print row[i].split(',')
-                    #     row_temp = float(row[i].split(','))
-                    #     # row_temp2 = [float(n) for n in r]
-                    vector_set.append(row_temp)
-                    # print len(vector_set)
+                    Matrix_ = so3.matrix(row)
+                    T = row[8:10]
+                    row_t = (so3.rpy(row),T)
+                    vector_set.append(np.array(row_t))
                     Set_input(object_name,input_set)
-
-
-def Save_binvox(nome):
-
-
-
 
 def Find_binvox(all_obj):
     '''Remove all objects that doesn't has a binvox'''
     vector = []
     for object_name in all_obj:
+        # object_name = os.path.splitext(object_name)[0] + '.binvox'
+        # print object_name
         if object_name in Input_name: #binvox exist!
             vector.append(object_name) #save obj
-            Save_binvx(object_name)
+            Save_binvox(object_name)
     return vector
 
 
@@ -107,29 +87,19 @@ def shared_dataset(data_xy, borrow=True):
         is needed (the default behaviour if the data is not in a shared
         variable) would lead to a large decrease in performance.
         """
-        data_x, data_y = data_xy
+        data_y, data_x = data_xy
+
         # shared_x = theano.shared(np.asarray(data_x,
         #                                        dtype=theano.config.floatX),
         #                          borrow=borrow)
         # shared_y = theano.shared(np.asarray(data_y,
         #                                        dtype=theano.config.floatX),
         #                          borrow=borrow)
-
-
-    # train_set_x = [train_set[i][0] for i in range(len(train_set))]
-
-
-
         'data must be an numpy array'
+
         shared_x = theano.shared(np.array(data_x, theano.config.floatX))
         shared_y = theano.shared(np.array(data_y, theano.config.floatX))
-        # When storing data on the GPU it has to be stored as floats
-        # therefore we will store the labels as ``floatX`` as well
-        # (``shared_y`` does exactly that). But during our computations
-        # we need them as ints (we use labels as index, and if they are
-        # floats it doesn't make sense) therefore instead of returning
-        # ``shared_y`` we will have to cast it to int. This little hack
-        # lets ous get around this issue
+
         return shared_x, T.cast(shared_y, 'int32')
 
 
@@ -139,17 +109,19 @@ def shared_dataset(data_xy, borrow=True):
 
 def Input_output():
     all_obj_tmp = []
-    for objects_name in objects.values():
+    for objects_name in Output.values():
         all_obj_tmp += objects_name
 
     #Sicuro ce' un metodo piu' intelligente
     all_obj = Find_binvox(all_obj_tmp)
 
     random.shuffle(all_obj)
+    #Temporaly vector. I store the file not the pose!! 
     Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
     Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.85 and i <len(all_obj)*.95]
     Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.95 and i<len(all_obj)*1]
 
+    #Open the respectively file and take all poses
     for object_name in Training_label_set:
         Set_vector(object_name, Training_y,Input_training)
 

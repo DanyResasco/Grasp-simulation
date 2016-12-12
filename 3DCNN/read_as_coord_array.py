@@ -62,6 +62,46 @@ def read_as_coord_array(fp, fix_coords=True):
         data = np.vstack((x, z, y))
         axis_order = 'xzy'
 
+    print len(data[0]) ,len(data[1]), len(data[2])
     #return Voxels(data, dims, translate, scale, axis_order)
     # return np.ascontiguousarray(data), dims, translate, scale, axis_order
+    return np.array(data), dims, translate, scale, axis_order
+
+
+def read_as_3d_array(fp, fix_coords=True):
+    """ Read binary binvox format as array.
+    Returns the model with accompanying metadata.
+    Voxels are stored in a three-dimensional numpy array, which is simple and
+    direct, but may use a lot of memory for large models. (Storage requirements
+    are 8*(d^3) bytes, where d is the dimensions of the binvox model. Numpy
+    boolean arrays use a byte per element).
+    Doesn't do any checks on input except for the '#binvox' line.
+    """
+    dims, translate, scale = read_header(fp)
+
+    raw_data = np.frombuffer(fp.read(), dtype=np.uint8)
+    # if just using reshape() on the raw data:
+    # indexing the array as array[i,j,k], the indices map into the
+    # coords as:
+    # i -> x
+    # j -> z
+    # k -> y
+    # if fix_coords is true, then data is rearranged so that
+    # mapping is
+    # i -> x
+    # j -> y
+    # k -> z
+    values, counts = raw_data[::2], raw_data[1::2]
+    data = np.repeat(values, counts).astype(np.float64)
+
+
+    data = data.reshape(dims)
+    if fix_coords:
+        # xzy to xyz TODO the right thing
+        data = np.transpose(data, (0, 2, 1))
+        axis_order = 'xyz'
+    else:
+        axis_order = 'xzy'
+    # print len(data[0]),len(data[1]),len(data[2])
+    # print data.dtype
     return np.array(data), dims, translate, scale, axis_order
