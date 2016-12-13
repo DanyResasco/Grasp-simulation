@@ -1,5 +1,6 @@
 
 from __future__ import division
+import timeit
 
 import numpy as np
 import theano, random
@@ -24,7 +25,7 @@ def save_model(filename, **layer_dict):
 
 '''param rng: a random number generator used to initialize weights'''
 rng = np.random.RandomState(65432)
-batch_size = 6
+batch_size = 2
 # data_chunk_size = 50 #Non so ancora cosa sia minibatch?
 nkerns = (70, 70, 70, 64, 64, 64) # n felter for each layer
 
@@ -34,7 +35,7 @@ index = T.lscalar('index')
 X_occ = T.fmatrix('X_occ')
 y = T.fvector('y')
 # 3 e' il numero di canali, 1 gray scale 3 rgb, 127 dimensione voxel controlla
-input_occ_batch = X_occ.reshape((batch_size, 3, 64, 64, 64)) #64 voxel dimension
+input_occ_batch = X_occ.reshape((batch_size, 2, 64, 64, 64)) #64 voxel dimension
 
 print 'defining architecture'
 
@@ -42,8 +43,8 @@ print 'defining architecture'
 	filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)
 	size(image_shape[num_channels]) == size(filter_shape[num_channels]) '''
 #(64-7+1)/poolsize
-conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 3, 7, 7, 7), 
-	image_shape=(batch_size, 3, 64, 64,64), poolsize=(1,1,1))
+conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 2, 7, 7, 7), 
+	image_shape=(batch_size, 2, 64, 64,64), poolsize=(1,1,1))
 conv2 = Conv3D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 3, 3, 3), 
  	image_shape=(batch_size, nkerns[0], 58,58,58), poolsize=(2,2,2))
 conv3 = Conv3D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 2, 2, 2), 
@@ -80,14 +81,17 @@ print 'defining train model'
 
 # train_set_X_occ, _, train_set_y = feeder.next_training_set_shared() #TO change
 Dataset_dany =  Input_output()
-train_set_y, train_set_X_occ = Dataset_dany[0]
-valid_set_y, valid_set_x = Dataset_dany[1]
-test_set_y, train_set_X_occ = Dataset_dany[2]
+train_set_X_occ, train_set_y = Dataset_dany[0]
+valid_set_x, valid_set_y = Dataset_dany[1]
+test_set_X_occ, test_set_y = Dataset_dany[2]
+# embed()
+
 
 print train_set_y.type
 print y.type
 print train_set_X_occ.type
 print X_occ.type
+print 'Adam Optimizer Update'
 # Adam Optimizer Update
 updates = []
 one = np.float32(1)
@@ -111,7 +115,8 @@ for p, g in zip(all_params, all_grads):
 ''' compiling a Theano function `train_model` that returns the cost, but
     in the same time updates the parameter of the model based on the rules
     defined in `updates '''
-train_model = theano.function( [index], cost, updates=updates, 
+print 'defining train model'
+train_model = theano.function( [index], cost, updates=updates,
 	givens={
 		X_occ: train_set_X_occ[(index * batch_size): ((index + 1) * batch_size)],
 		y: train_set_y[index * batch_size: (index + 1) * batch_size]
@@ -119,9 +124,7 @@ train_model = theano.function( [index], cost, updates=updates,
 )
 
 print 'defining test model'
-test_model = theano.function(
-	[index],
-	cost,
+test_model = theano.function(	[index],	cost,
 	givens={
 		X_occ: test_set_X_occ[index * batch_size: (index + 1) * batch_size], #Scorre la matrice? 
 		y: test_set_y[index * batch_size: (index + 1) * batch_size]
@@ -134,7 +137,7 @@ validate_model = theano.function(
 	inputs=[index],
 	outputs= cost,
 	givens={
-		x: valid_set_x[index * batch_size:(index + 1) * batch_size],
+		X_occ: valid_set_x[index * batch_size:(index + 1) * batch_size],
 		y: valid_set_y[index * batch_size:(index + 1) * batch_size]
 	}
 )
@@ -163,14 +166,14 @@ validate_model = theano.function(
 # 			conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
 # 		print 'saved successfully to %s'%res_name
 
-# print 'done'
-
-
+print 'minibatches'
+if theano.config.mode != "FAST_COMPILE":
+    mode = "FAST_COMPILE"
 
 # compute number of minibatches for training, validation and testing
-n_train_batches = train_set_x.get_value(borrow=True).shape[0] // batch_size
+n_train_batches = train_set_X_occ.get_value(borrow=True).shape[0] // batch_size
 n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
-n_test_batches = test_set_x.get_value(borrow=True).shape[0] // batch_size
+n_test_batches = test_set_X_occ.get_value(borrow=True).shape[0] // batch_size
 
 # early-stopping parameters
 patience = 10000  # look as this many examples regardless
@@ -184,17 +187,20 @@ validation_frequency = min(n_train_batches, patience // 2)
                               # on the validation set; in this case we
                               # check every epoch
 
-best_validation_loss = numpy.inf
+best_validation_loss = np.inf
 best_iter = 0
 test_score = 0.
 start_time = timeit.default_timer()
 
 epoch = 0
 done_looping = False
+n_epochs =1000
+print 'prima del while'
 
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
     for minibatch_index in range(n_train_batches): #loop on train examples
+        print minibatch_index
         train_model(minibatch_index)
         # iteration number
         iter = (epoch - 1) * n_train_batches + minibatch_index
@@ -202,10 +208,11 @@ while (epoch < n_epochs) and (not done_looping):
             # compute zero-one loss on validation set
             validation_losses = [validate_model(i) for i
                                  in range(n_valid_batches)]
-            this_validation_loss = numpy.mean(validation_losses)
+            this_validation_loss = np.mean(validation_losses)
 
             # if we got the best validation score until now
             if this_validation_loss < best_validation_loss:
+                print 'validation'
                 #improve patience if loss improvement is good enough
                 if (this_validation_loss < best_validation_loss * improvement_threshold):
                     patience = max(patience, iter * patience_increase)
@@ -215,9 +222,10 @@ while (epoch < n_epochs) and (not done_looping):
 
                 # test it on the test set
                 test_losses = [test_model(i) for i in range(n_test_batches)]
-                test_score = numpy.mean(test_losses)
+                test_score = np.mean(test_losses)
 
         if patience <= iter:
+            print 'save'
             done_looping = True
             res_name = 'weights_%i_iter.npz'%chunk_file_idx
             save_model(ckpt_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,

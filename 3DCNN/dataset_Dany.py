@@ -69,8 +69,6 @@ def Find_binvox(all_obj):
     '''Remove all objects that doesn't has a binvox'''
     vector = []
     for object_name in all_obj:
-        # object_name = os.path.splitext(object_name)[0] + '.binvox'
-        # print object_name
         if object_name in Input_name: #binvox exist!
             vector.append(object_name) #save obj
             Save_binvox(object_name)
@@ -96,10 +94,16 @@ def shared_dataset(data_xy, borrow=True):
         #                                        dtype=theano.config.floatX),
         #                          borrow=True)
         'data must be an numpy array'
-
+        #convert 4d to matrix
+        data_x = np.ndarray.astype(np.array(data_x),dtype='float32')
+        data_x = data_x.reshape(data_x.shape[0], -1) 
         shared_x = theano.shared(np.array(data_x, theano.config.floatX))
-
+        
+        #convert matrix to vector
+        data_y = np.ndarray.astype(np.array(data_y),dtype='float32')
+        data_y = data_y.reshape(-1) 
         shared_y = theano.shared(np.array(data_y, theano.config.floatX))
+        # print shared_y.type
         # shared_x = theano.shared(data_x,borrow=True)
         # shared_y = theano.shared(data_y,borrow=True)
 
@@ -154,15 +158,18 @@ def Input_output():
 
     # print shared_dataset(Training_)[0]
 
-    # return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
+    return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
 
 
-    return Training_, Validate_ ,Test_
+    # return Training_, Validate_ ,Test_
 
 
 if __name__ == '__main__':
     T,V,TT = Input_output()
-
+    # print "t[0]", T[0].get_value()
+    # print "t[0].type", T[0].type
+    # print 't[1]',T[1].get_value()
+    # print 't[1].type', T[1].type
 
 
 

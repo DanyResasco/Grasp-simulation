@@ -55,14 +55,16 @@ def read_as_coord_array(fp, fix_coords=True):
     zwpy = nz_voxels % (dims[0]*dims[1]) # z*w + y
     z = zwpy / dims[0]
     y = zwpy % dims[0]
+
     if fix_coords:
         data = np.vstack((x, y, z))
         axis_order = 'xyz'
     else:
         data = np.vstack((x, z, y))
         axis_order = 'xzy'
-
+   
     print len(data[0]) ,len(data[1]), len(data[2])
+    print data
     #return Voxels(data, dims, translate, scale, axis_order)
     # return np.ascontiguousarray(data), dims, translate, scale, axis_order
     return np.array(data), dims, translate, scale, axis_order
@@ -92,6 +94,8 @@ def read_as_3d_array(fp, fix_coords=True):
     # j -> y
     # k -> z
     values, counts = raw_data[::2], raw_data[1::2]
+    # print values
+    # print counts
     data = np.repeat(values, counts).astype(np.float64)
 
 
@@ -103,5 +107,5 @@ def read_as_3d_array(fp, fix_coords=True):
     else:
         axis_order = 'xzy'
     # print len(data[0]),len(data[1]),len(data[2])
-    # print data.dtype
+
     return np.array(data), dims, translate, scale, axis_order
