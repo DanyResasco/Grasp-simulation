@@ -106,6 +106,7 @@ def read_as_3d_array(fp, fix_coords=True):
         axis_order = 'xyz'
     else:
         axis_order = 'xzy'
+        # print 
     # print len(data[0]),len(data[1]),len(data[2])
-
-    return np.array(data), dims, translate, scale, axis_order
+    return  np.array(data)
+    # return np.array(data), dims, translate, scale, axis_order
