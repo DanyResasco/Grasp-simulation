@@ -29,37 +29,37 @@ Output['Pose'] = [f for f in os.listdir('NNSet/Pose')]
 
 
 
-#Mi da errore qui.. mi dice che non riesce a convertire il tipo di dato,
-def shared_dataset(data_xy, borrow=True):
-    """ Function that loads the dataset into shared variables """
-    data_y, data_x = data_xy
+# #Mi da errore qui.. mi dice che non riesce a convertire il tipo di dato,
+# def shared_dataset(data_xy, borrow=True):
+#     """ Function that loads the dataset into shared variables """
+#     data_y, data_x = data_xy
 
-    'data must be an numpy array'
-    #convert 4d to matrix
-    # data_x = np.ndarray.astype(np.array(data_x),dtype='float32')
-    # data_x = data_x.reshape(data_x.shape[0], -1) 
+#     'data must be an numpy array'
+#     #convert 4d to matrix
+#     # data_x = np.ndarray.astype(np.array(data_x),dtype='float32')
+#     # data_x = data_x.reshape(data_x.shape[0], -1) 
 
-    data_temp = []
-    print'len(data_x)', len(data_x)
-    for i in range(0,len(data_x)):
-        data_temp.append(data_x[i].reshape(64,64,64))
+#     data_temp = []
+#     print'len(data_x)', len(data_x)
+#     for i in range(0,len(data_x)):
+#         data_temp.append(data_x[i].reshape(64,64,64))
 
-    print len(data_temp)
-    shared_x = theano.shared(np.array(data_temp, theano.config.floatX), borrow=True)
-    # embed()
-    #convert matrix to vector
-    # data_y = np.ndarray.astype(np.array(data_y),dtype='float32')
-    data_y_temp = []
-    print'len(data_y)', len(data_y)
-    for i in range(0,len(data_y)):
-        data_y_temp.append(data_y[i].reshape(-1) )
+#     print len(data_temp)
+#     shared_x = theano.shared(np.array(data_temp, theano.config.floatX), borrow=True)
+#     # embed()
+#     #convert matrix to vector
+#     # data_y = np.ndarray.astype(np.array(data_y),dtype='float32')
+#     data_y_temp = []
+#     print'len(data_y)', len(data_y)
+#     for i in range(0,len(data_y)):
+#         data_y_temp.append(data_y[i].reshape(-1) )
 
-    # print data_y_temp
-    # data_y = data_y.reshape(-1) 
-    shared_y = theano.shared(np.array(data_y_temp, theano.config.floatX), borrow=True)
-    # print shared_y.type
-    # print shared_y.get_value()
-    return shared_x, shared_y
+#     # print data_y_temp
+#     # data_y = data_y.reshape(-1) 
+#     shared_y = theano.shared(np.array(data_y_temp, theano.config.floatX), borrow=True)
+#     # print shared_y.type
+#     # print shared_y.get_value()
+#     return shared_x, shared_y
 
 
 class DanyDataset():
@@ -101,7 +101,7 @@ class DanyDataset():
                         T = row[7:10]
                         row_t = (list(so3.rpy(row)) + list(T))
                         vector_set.append(np.array(row_t))
-                        input_set.append(self.binvox[object_name])
+                        input_set.append(self.binvox[object_name].reshape(( 1, 64, 64, 64)))
 
 
     def Find_binvox(self,all_obj):
@@ -166,7 +166,7 @@ class DanyDataset():
         # dx = T.tensor4('dx')
         # data_temp = dx.reshape((1, 1, 64, 64, 64))
 
-        data_temp = (self.Input_training[self.init_idx]).reshape(( 1, 64, 64, 64))
+        data_temp = (self.Input_training[self.init_idx])
         # print data_temp.shape
         # data_temp.append(self.Input_training[self.init_idx].reshape(64,64,64))
         shared_x = theano.shared(np.array(data_temp, theano.config.floatX), borrow=True)

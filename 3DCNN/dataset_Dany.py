@@ -59,7 +59,7 @@ def Set_vector(object_name, vector_set,input_set):
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
                     Matrix_ = so3.matrix(row)
-                    T = row[7:10]
+                    T = row[9:]
                     row_t = (list(so3.rpy(row)) + list(T))
                     vector_set.append(np.array(row_t))
                     Set_input(object_name,input_set)
@@ -101,7 +101,7 @@ def shared_dataset(data_xy, borrow=True):
 
     # print data_y_temp
     # data_y = data_y.reshape(-1) 
-    shared_y = theano.shared(np.array(data_y_temp, theano.config.floatX), borrow=True)
+    shared_y = theano.shared(np.array(np.array(data_y_temp).reshape(-1), theano.config.floatX), borrow=True)
     # print shared_y.type
     # print shared_y.get_value()
     return shared_x, shared_y
@@ -120,6 +120,12 @@ def Input_output():
     Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
     Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.85 and i <len(all_obj)*.95]
     Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.95 and i<len(all_obj)*1]
+
+    # Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.50 ]
+    # Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.50 and i <len(all_obj)*.60]
+    # Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.60 and i<len(all_obj)*65]
+
+
 
     #Open the respectively file and take all poses
     for object_name in Training_label_set:

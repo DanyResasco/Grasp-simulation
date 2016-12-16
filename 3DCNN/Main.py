@@ -11,7 +11,7 @@ from cont_output_layer import ContOutputLayer
 from IPython import embed
 from dataset_Dany import Input_output 
 import matplotlib.pyplot as plt
-from test_dataset_split_dany import DanyDataset
+# from test_dataset_split_dany import DanyDataset
 
 
 def save_model(filename, **layer_dict):
@@ -26,7 +26,7 @@ def save_model(filename, **layer_dict):
 	np.savez_compressed(filename, **np_dict)
 
 '''param rng: a random number generator used to initialize weights'''
-DanyDataset = DanyDataset()
+# DanyDataset = DanyDataset()
 np.random.seed(0)
 rng = np.random.RandomState(65432)
 batch_size = 1
@@ -88,10 +88,17 @@ all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.
 all_grads = T.grad(cost[0], all_params)
 print "grad"
 
-# Dataset_dany =  Input_output()
-train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
-valid_set_x, valid_set_y = DanyDataset.Take_one_element_Validation()
-test_set_X_occ, test_set_y = DanyDataset.Take_one_element_test()
+Dataset_dany =  Input_output()
+train_set_X_occ, train_set_y = Dataset_dany[0]
+valid_set_x, valid_set_y = Dataset_dany[1]
+test_set_X_occ, test_set_y  = Dataset_dany[2]
+
+
+
+
+# train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
+# valid_set_x, valid_set_y = DanyDataset.Take_one_element_Validation()
+# test_set_X_occ, test_set_y = DanyDataset.Take_one_element_test()
 
 print'train_set_y.type' ,train_set_y.type
 print' y.type', y.type
@@ -238,20 +245,24 @@ def Draw_Grasph(truth,prediction):
 
 
     # plt.show()
-
-
-
+# for i in range(0,2):
+#     train_model(i)
+#     print i
+#     train_x, train_y = DanyDataset.Take_one_element_training()
+#     train_set_X_occ.set_value(train_x,borrow=True)
+#     train_set_y.set_value(train_y,borrow=True)
 # learn
 chunk_file_idx = 600
 while True: # loop through chunk training files
   for i in xrange(50): # loop through mini-batch
     print train_model(i)
+    train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
   for i in xrange(50):
     print train_model(i)
   print 'test error %f'%test_model(random.randint(0, 49))
-  train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
-  valid_set_x, valid_set_y = DanyDataset.Take_one_element_Validation()
-  test_set_X_occ, test_set_y = DanyDataset.Take_one_element_test()
+  # train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
+  # valid_set_x, valid_set_y = DanyDataset.Take_one_element_Validation()
+  # test_set_X_occ, test_set_y = DanyDataset.Take_one_element_test()
   if X_occ is None:
     print 'done with all chunk files'
     break

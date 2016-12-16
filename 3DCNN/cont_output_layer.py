@@ -1,6 +1,6 @@
 
 
-from __future__ import print_function, division
+from __future__ import division
 
 import numpy as np
 
@@ -44,12 +44,14 @@ class ContOutputLayer(object):
 			self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)
 
 		self.y_pred = T.dot(input, self.W) + self.b
-
 		# parameters of the model
 		self.params = [self.W, self.b]
 
 		# keep track of model input
 		self.input = input
+
+
+
 
 	def cost(self, y, y_flag=None): # balanced penalization
 		"""
@@ -63,7 +65,7 @@ class ContOutputLayer(object):
 			return valid_sum / valid_num
 		else:
 			assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
-			return T.mean(T.pow(y-self.y_pred, 2))
+			return T.mean(T.pow(y-self.y_pred, 2)),y,self.y_pred
 
 	def cost2(self, y):
 		diff = y - self.y_pred
