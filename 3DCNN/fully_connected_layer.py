@@ -7,9 +7,11 @@ from math import sqrt
 import theano
 import theano.tensor as T
 from theano.tensor.nnet import relu
+from theano.tensor.nnet import sigmoid
+# from theano.tensor.nnet import tanh
 
 class FullyConnectedLayer(object):
-	def __init__(self, rng, input, n_in, n_out, activation=T.tanh, W=None, b=None):
+	def __init__(self, rng, input, n_in, n_out, activation=sigmoid, W=None, b=None):
 		"""
 		Typical hidden layer of a MLP: units are fully-connected and have
 		sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -58,6 +60,8 @@ class FullyConnectedLayer(object):
 
 		if W is None:
 			W_bound = np.sqrt(6. / (n_in + n_out))
+			if activation is sigmoid:
+				W_bound = W_bound*4
 			self.W = theano.shared(
 				value=rng.uniform(low=-W_bound, high=W_bound, size=(n_in, n_out)).astype(theano.config.floatX),
 				borrow=True

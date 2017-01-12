@@ -65,7 +65,7 @@ class ContOutputLayer(object):
 			return valid_sum / valid_num
 		else:
 			assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
-			return T.mean(T.pow(y-self.y_pred, 2)),y,self.y_pred
+			return T.mean(T.pow(y-self.y_pred, 2))
 
 	def cost2(self, y):
 		diff = y - self.y_pred
@@ -84,3 +84,7 @@ class ContOutputLayer(object):
 				('y', y.type, 'y_pred', self.y_pred.type)
 			)
 		return T.mean(T.pow(y-self.y_pred, 2))
+
+	# def negative_log_likelihood(self, y):
+
+	# 	return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])

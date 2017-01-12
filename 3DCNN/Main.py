@@ -29,10 +29,9 @@ def save_model(filename, **layer_dict):
 # DanyDataset = DanyDataset()
 np.random.seed(0)
 rng = np.random.RandomState(65432)
-batch_size = 1
+batch_size = 5
 # data_chunk_size = 50 #Non so ancora cosa sia minibatch?
-# nkerns = (70, 70, 70, 64, 64, 64) # n felter for each layer
-nkerns = (80, 80, 80, 80, 80, 80) # n felter for each layer
+nkerns = (10,10,10,10,10,10) # n filter for each layer
 
 print 'defining input'
 
@@ -41,7 +40,7 @@ index = T.lscalar('index')
 X_occ = T.tensor4('X_occ') 
 y = T.fvector('y')
 
-# 3 e' il numero di canali, 1 gray scale 3 rgb, 127 dimensione voxel controlla
+# 3 e' il numero di canali, 1 gray scale 3 rgb, 64 dimensione voxel 
 input_occ_batch = X_occ.reshape((batch_size, 1, 64, 64, 64)) #64 voxel dimension
 
 print 'defining architecture'
@@ -50,25 +49,59 @@ print 'defining architecture'
 	filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)
 	size(image_shape[num_channels]) == size(filter_shape[num_channels]) '''
 #(64-7+1)/poolsize
-conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 1, 7, 7, 7), 
-	image_shape=(batch_size, 1, 64, 64,64), poolsize=(1,1,1))
+# conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 1, 7, 7, 7), 
+# 	image_shape=(batch_size, 1, 64, 64,64), poolsize=(1,1,1))
+# conv2 = Conv3D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 3, 3, 3), 
+#  	image_shape=(batch_size, nkerns[0], 58,58,58), poolsize=(2,2,2))
+# conv3 = Conv3D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 2, 2, 2), 
+#  	image_shape=(batch_size, nkerns[1], 28, 28, 28), poolsize=(1,1,1))
+# conv4 = Conv3D(rng, input=conv3.output, filter_shape=(nkerns[3], nkerns[2], 3, 3, 3), 
+# 	image_shape=(batch_size, nkerns[2], 27, 27, 27), poolsize=(2,2,2))
+# conv5 = Conv3D(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 5, 5, 5), 
+# 	image_shape=(batch_size, nkerns[3], 12, 12, 12), poolsize=(1,1,1))
+# conv6 = Conv3D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 3, 3, 3), 
+# 	image_shape=(batch_size, nkerns[4], 8, 8, 8), poolsize=(1,1,1))
+
+
+# fc_input = conv6.output.flatten(2)
+# fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=6*6*6*nkerns[5], n_out=5500)
+# #output is a vector of 6 elements
+# fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=3000)
+# fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=3000, n_out=6)
+
+conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 1, 3, 3, 3), 
+  image_shape=(batch_size, 1, 64, 64,64), poolsize=(1,1,1))
 conv2 = Conv3D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 3, 3, 3), 
- 	image_shape=(batch_size, nkerns[0], 58,58,58), poolsize=(2,2,2))
-conv3 = Conv3D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 2, 2, 2), 
- 	image_shape=(batch_size, nkerns[1], 28, 28, 28), poolsize=(1,1,1))
+  image_shape=(batch_size, nkerns[0], 62,62,62), poolsize=(2,2,2))
+conv3 = Conv3D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 3, 3, 3), 
+  image_shape=(batch_size, nkerns[1], 30, 30, 30), poolsize=(1,1,1))
 conv4 = Conv3D(rng, input=conv3.output, filter_shape=(nkerns[3], nkerns[2], 3, 3, 3), 
-	image_shape=(batch_size, nkerns[2], 27, 27, 27), poolsize=(2,2,2))
-conv5 = Conv3D(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 5, 5, 5), 
-	image_shape=(batch_size, nkerns[3], 12, 12, 12), poolsize=(1,1,1))
-conv6 = Conv3D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 3, 3, 3), 
-	image_shape=(batch_size, nkerns[4], 8, 8, 8), poolsize=(1,1,1))
+  image_shape=(batch_size, nkerns[2], 28, 28, 28), poolsize=(2,2,2))
+conv5 = Conv3D(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 2, 2, 2), 
+  image_shape=(batch_size, nkerns[3], 13, 13, 13), poolsize=(1,1,1))
+conv6 = Conv3D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 2, 2, 2), 
+  image_shape=(batch_size, nkerns[4], 12, 12, 12), poolsize=(1,1,1))
+conv7 = Conv3D(rng, input=conv6.output, filter_shape=(nkerns[5], nkerns[4], 2, 2, 2), 
+  image_shape=(batch_size, nkerns[4], 11, 11, 11), poolsize=(2,2,2))
+
+fc_input = conv7.output.flatten(2)
+fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=5*5*5*nkerns[5], n_out=500)
+#output is a vector of 6 elements
+fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=500, n_out=250)
+fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=6)
 
 
-fc_input = conv6.output.flatten(2)
-fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=6*6*6*nkerns[5], n_out=5500)
-#output is a vector of 12 elements
-fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=1000)
-fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=1000, n_out=6)
+
+
+
+
+
+
+
+
+
+
+
 
 
 output = ContOutputLayer(input=fc3.output, n_in=6)
@@ -76,16 +109,16 @@ output = ContOutputLayer(input=fc3.output, n_in=6)
 print 'defining cost'
 
 cost = output.cost(y, y_flag=None)
-
+# cost = output.negative_log_likelihood(y)
 # embed()
 
 
 all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
-	conv6.params + fc1.params + fc2.params +fc3.params+ output.params)
+	conv6.params + conv7.params + fc1.params + fc2.params +fc3.params+ output.params)
 
-  # compute the gradient of cost
+# compute the gradient of cost
 # embed()
-all_grads = T.grad(cost[0], all_params)
+all_grads = T.grad(cost, all_params)
 print "grad"
 
 Dataset_dany =  Input_output()
@@ -93,31 +126,23 @@ train_set_X_occ, train_set_y = Dataset_dany[0]
 valid_set_x, valid_set_y = Dataset_dany[1]
 test_set_X_occ, test_set_y  = Dataset_dany[2]
 
-
-
-
-# train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
-# valid_set_x, valid_set_y = DanyDataset.Take_one_element_Validation()
-# test_set_X_occ, test_set_y = DanyDataset.Take_one_element_test()
-
-print'train_set_y.type' ,train_set_y.type
-print' y.type', y.type
-print'valid_set_y',valid_set_y.type
-print 'test_set_y',test_set_y.type
-print'train_set_X_occ.type' ,train_set_X_occ.type
-print 'X_occ.type',X_occ.type
-print 'test_set_X_occ',test_set_X_occ.type
-print'valid_set_x',valid_set_x.type
-
-
-
+# print'train_set_y.type' ,train_set_y.type
+# print' y.type', y.type
+# print'valid_set_y',valid_set_y.type
+# print 'test_set_y',test_set_y.type
+# print'train_set_X_occ.type' ,train_set_X_occ.type
+# print 'X_occ.type',X_occ.type
+# print 'test_set_X_occ',test_set_X_occ.type
+# print'valid_set_x',valid_set_x.type
 
 print 'Adam Optimizer Update'
 # Adam Optimizer Update
 updates = []
 one = np.float32(1)
 zero = np.float32(0)
-adam_a=np.float32(0.0001); adam_b1=np.float32(0.1); adam_b2=np.float32(0.001); adam_e=np.float32(1e-8)
+# adam_a=np.float32(0.0001); adam_b1=np.float32(0.1); adam_b2=np.float32(0.001); adam_e=np.float32(1e-8)
+adam_a=np.float32(0.001); adam_b1=np.float32(0.9); adam_b2=np.float32(0.99); adam_e=np.float32(1e-8) #from article
+
 adam_i = theano.shared(zero.astype(theano.config.floatX)) # iteration
 adam_i_new = adam_i + one # iteration update
 updates.append((adam_i, adam_i_new))
@@ -174,7 +199,7 @@ n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
 n_test_batches = test_set_X_occ.get_value(borrow=True).shape[0] // batch_size
 
 # early-stopping parameters
-patience = 10000  # look as this many examples regardless
+patience = 5000  # look as this many examples regardless
 patience_increase = 2  # wait this much longer when a new best is
                        # found
 improvement_threshold = 0.995  # a relative improvement of this much is
@@ -182,8 +207,7 @@ improvement_threshold = 0.995  # a relative improvement of this much is
 validation_frequency = min(n_train_batches, patience // 2)
                               # go through this many
                               # minibatche before checking the network
-                              # on the validation set; in this case we
-                              # check every epoch
+                              # on the validation set;
 
 best_validation_loss = np.inf
 best_iter = 0
@@ -194,170 +218,153 @@ epoch = 0
 done_looping = False
 n_epochs =1000
 print 'prima del while'
+# test_error = []
 
-
-
-def Draw_Grasph(truth,prediction):
-    print "disegno"
-    import matplotlib.pyplot as plt
-    plt.figure(figsize=(8,6))
-    print truth
-    print 'prediction', prediction
-    #   plt.plot(truth[i][0], label='Truth values')
-    #   plt.scatter(prediction[1][0],marker='x', color='r', label='Prediction values')
-    #   plt.xlabel('Poses x', fontsize=9)
-    #   plt.ylabel('Cost x', fontsize=9)
-    #   plt.figure(figsize=(8,6))
-    # # for i in truth.values():
-    #   plt.plot(truth[i][1], label='Truth values')
-    #   plt.scatter(prediction[i][1],marker='x', color='r', label='Prediction values')
-    #   plt.xlabel('Poses y', fontsize=9)
-    #   plt.ylabel('Cost y', fontsize=9)
-    #   plt.figure(figsize=(8,6))
-    # # for i in truth.values():
-    #   plt.plot(truth[i][2], label='Truth values')
-    #   plt.scatter(prediction[i][2],marker='x', color='r', label='Prediction values')
-    #   plt.xlabel('Poses z', fontsize=9)
-    #   plt.ylabel('Cost z', fontsize=9)
-
-    # # for i in truth.values():
-    #   plt.plot(truth[i][3], label='Truth values')
-    #   plt.scatter(prediction[i][3],marker='x', color='r', label='Prediction values')
-    #   plt.xlabel('Translation x', fontsize=9)
-    #   plt.ylabel('Cost x', fontsize=9)
-    #   plt.figure(figsize=(8,6))
-    #   # for i in truth.values():
-    #   plt.plot(truth[i][4], label='Truth values')
-    #   plt.scatter(prediction[i][4],marker='x', color='r', label='Prediction values')
-    #   plt.xlabel('Translation y', fontsize=9)
-    #   plt.ylabel('Cost y', fontsize=9)
-    #   plt.figure(figsize=(8,6))
-    #   # for i in truth.values():
-    #   plt.plot(truth[i][5], label='Truth values')
-    #   plt.scatter(prediction[i][5],marker='x', color='r', label='Prediction values')
-    #   plt.xlabel('Translation z', fontsize=9)
-    #   plt.ylabel('Cost z', fontsize=9)
-
-
-
-
-
-
-
-    # plt.show()
-# for i in range(0,2):
-#     train_model(i)
-#     print i
-#     train_x, train_y = DanyDataset.Take_one_element_training()
-#     train_set_X_occ.set_value(train_x,borrow=True)
-#     train_set_y.set_value(train_y,borrow=True)
-# learn
-chunk_file_idx = 600
-while True: # loop through chunk training files
-  for i in xrange(50): # loop through mini-batch
-    print train_model(i)
-    train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
-  for i in xrange(50):
-    print train_model(i)
-  print 'test error %f'%test_model(random.randint(0, 49))
-  # train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
-  # valid_set_x, valid_set_y = DanyDataset.Take_one_element_Validation()
-  # test_set_X_occ, test_set_y = DanyDataset.Take_one_element_test()
-  if X_occ is None:
-    print 'done with all chunk files'
-    break
-  # train_set_X_occ.set_value(X_occ_data, borrow=True)
-  # train_set_y.set_value(y_data, borrow=True)
-  # train_set_y_flag.set_value(y_flag_data, borrow=True)
+# chunk_file_idx = 0
+# while True: # loop through chunk training files
+#   for i in xrange(int(n_train_batches)): # loop through mini-batch
+#      train_model(i)
+#   for i in xrange(int(n_train_batches)):
+#      train_model(i)
+#   if chunk_file_idx%10==0:
+#     # test_error.append(test_model(random.randint(0, n_test_batches)))
+#     test_losses = [test_model(i)
+#                    for i in range(n_test_batches)]
+#     # for i in range(n_test_batches):
+#     #       test_losses = test_model(i)
+#     test_score = np.mean(test_losses)
+#     # print 'test error %f',test_error
+#   # X_occ_data, _, y_data = feeder.next_training_set_raw()
+#   if X_occ is None:
+#     print 'done with all chunk files'
+#     break
+#   # train_set_X_occ.set_value(X_occ_data, borrow=True)
+#   # train_set_y.set_value(y_data, borrow=True)
   
-  chunk_file_idx += 1
+#   chunk_file_idx += 1
 
-  if chunk_file_idx%100==0:
-    ckpt_name = 'ckpt_baseline/weights_%i_iter.npz'%chunk_file_idx
-    save_model(ckpt_name, conv1=conv1, conv2=conv2, conv3=conv3, fc1=fc1, fc2=fc2, output=output)
-    print 'saved successfully to %s'%ckpt_name
+#   if chunk_file_idx%100==0:
+#     ckpt_name = 'weights_%i_iter.npz'%chunk_file_idx
+#     save_model(ckpt_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+#             conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
+#     print 'saved successfully to %s'%ckpt_name
+#     print test_score
+#     break
 
-print 'done'
-
-
-
+# print 'done'
 
 
 # Truth = []
 # pred = []
 # count_dany = 0
-# while (epoch < n_epochs) and (not done_looping):
-#     epoch = epoch + 1
-#     for minibatch_index in range(n_train_batches): #loop on train examples
-#         # print minibatch_index
-#         train_model(minibatch_index)
-#         # iteration number
-#     for minibatch_index in range(n_train_batches): #loop on train examples
-#         train_model(minibatch_index)
-#         iter = (epoch - 1) * n_train_batches + minibatch_index
-#         if (iter + 1) % validation_frequency == 0:
-#             # compute zero-one loss on validation set
-#             validation_losses = [validate_model(i) for i
-#                                  in range(n_valid_batches)]
-#             this_validation_loss = np.mean(validation_losses)
+while (epoch < n_epochs) and (not done_looping):
+    epoch = epoch + 1
+    # for minibatch_index in range(n_train_batches): #loop on train examples
+    #     # print minibatch_index
+    #     train_model(minibatch_index)
+    #     # iteration number
+    for minibatch_index in range(n_train_batches): #loop on train examples
+        train_model(minibatch_index)
+        iter = (epoch - 1) * n_train_batches + minibatch_index
+        if (iter + 1) % validation_frequency == 0:
+            # compute zero-one loss on validation set
+            validation_losses = [validate_model(i) for i
+                                 in range(n_valid_batches)]
+            this_validation_loss = np.mean(validation_losses)
 
-#             print("Epoch %i, Minibatch %i/%i, Validation Error %f " 
-#                     % (epoch,
-#                         minibatch_index + 1,
-#                         n_train_batches,
-#                         this_validation_loss 
-#                       )
-#                   )
+            print("Epoch %i, Minibatch %i/%i, Validation Error %f " 
+                    % (epoch,
+                        minibatch_index + 1,
+                        n_train_batches,
+                        this_validation_loss 
+                      )
+                  )
 
-#             # if we got the best validation score until now
-#             if this_validation_loss < best_validation_loss:
-#                 print 'validation'
-#                 #improve patience if loss improvement is good enough
-#                 if (this_validation_loss < best_validation_loss * improvement_threshold):
-#                     patience = max(patience, iter * patience_increase)
+            # if we got the best validation score until now
+            if this_validation_loss < best_validation_loss:
+                print 'validation'
+                #improve patience if loss improvement is good enough
+                if (this_validation_loss < best_validation_loss * improvement_threshold):
+                    patience = max(patience, iter * patience_increase)
 
-#                 best_validation_loss = this_validation_loss
-#                 best_iter = iter
+                best_validation_loss = this_validation_loss
+                best_iter = iter
 
-#                 # test it on the test set
-#                 print 'test'
-#                 for i in range(n_test_batches):
-#                       test_losses = test_model(i)
-#                       test_score = np.mean(test_losses[0])
-#                       Truth.append(list(test_losses[1]))
-#                       pred.append(list(test_losses[2]))
+                # test it on the test set
+                print 'test'
+                test_losses = [test_model(i)
+                                   for i in range(n_test_batches)]
+                # for i in range(n_test_batches):
+                #       test_losses = test_model(i)
+                test_score = np.mean(test_losses)
+                #       Truth.append(list(test_losses[1]))
+                #       pred.append(list(test_losses[2]))
 
-#                 # test_losses = [test_model(i) for i in range(n_test_batches)]
-#                 # test_score = np.mean(test_losses[0])
-#                 # Truth[count_dany] = (test_losses[1])
-#                 # pred[count_dany] =(test_losses[2])
-#                 count_dany +=1
-#                 print(("Epoch %i, Minibatch %i/%i, Test error of"" best model %f ") 
-#                       % (   epoch,
-#                             minibatch_index + 1,
-#                             n_train_batches,
-#                             test_score 
-#                         )
-#                     )
+                # count_dany +=1
+                print(("Epoch %i, Minibatch %i/%i, Test error of"" best model %f ") 
+                      % (   epoch,
+                            minibatch_index + 1,
+                            n_train_batches,
+                            test_score 
+                        )
+                    )
 
-#                 train_set_X_occ, train_set_y = DanyDataset.Take_one_element_training()
-#                 valid_set_x, valid_set_y = DanyDataset.Take_one_element_Validation()
-#                 test_set_X_occ, test_set_y = DanyDataset.Take_one_element_test()
+        if patience <= iter:
+            print 'save'
+            done_looping = True
+            res_name = '3d6Cnn3fcl_changeadamparameters.npz'
+            save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+            conv5=conv5,conv6=conv6,conv7=conv7, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
+            break
 
-#         if patience <= iter:
-#             print 'save'
-#             done_looping = True
-#             res_name = '3d6Cnn3fcl_5000p.npz'
-#             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-#             conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
-#             break
-
-# end_time = timeit.default_timer()
-# print(('Optimization complete. Best validation score of %f '
-# 	'obtained at iteration %i, with test performance %f ') %
-# 	(best_validation_loss , best_iter + 1, test_score ))
-# # for i in Truth.value
-# Draw_Grasph(Truth,pred)
-#   # (best_validation_loss , best_iter + 1, test_score ))
+end_time = timeit.default_timer()
+print(('Optimization complete. Best validation score of %f '
+	'obtained at iteration %i, with test performance %f ') %
+	(best_validation_loss , best_iter + 1, test_score ))
+# for i in Truth.value
+# Draw_Grasph(output.input,output.y_pred)
+  # (best_validation_loss , best_iter + 1, test_score ))
 
 
+# def Draw_Grasph(truth,prediction):
+#     print "disegno"
+#     import matplotlib.pyplot as plt
+#     plt.figure(figsize=(8,6))
+#     print truth
+#     print 'prediction', prediction
+#     plt.plot(prediction,marker='x', color='r', label='Prediction values')
+#     plt.plot(truth)
+#   plt.plot(truth[i][0], label='Truth values')
+#   plt.scatter(prediction[1][0],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Poses x', fontsize=9)
+#   plt.ylabel('Cost x', fontsize=9)
+#   plt.figure(figsize=(8,6))
+# # for i in truth.values():
+#   plt.plot(truth[i][1], label='Truth values')
+#   plt.scatter(prediction[i][1],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Poses y', fontsize=9)
+#   plt.ylabel('Cost y', fontsize=9)
+#   plt.figure(figsize=(8,6))
+# # for i in truth.values():
+#   plt.plot(truth[i][2], label='Truth values')
+#   plt.scatter(prediction[i][2],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Poses z', fontsize=9)
+#   plt.ylabel('Cost z', fontsize=9)
+
+# # for i in truth.values():
+#   plt.plot(truth[i][3], label='Truth values')
+#   plt.scatter(prediction[i][3],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Translation x', fontsize=9)
+#   plt.ylabel('Cost x', fontsize=9)
+#   plt.figure(figsize=(8,6))
+#   # for i in truth.values():
+#   plt.plot(truth[i][4], label='Truth values')
+#   plt.scatter(prediction[i][4],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Translation y', fontsize=9)
+#   plt.ylabel('Cost y', fontsize=9)
+#   plt.figure(figsize=(8,6))
+#   # for i in truth.values():
+#   plt.plot(truth[i][5], label='Truth values')
+#   plt.scatter(prediction[i][5],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Translation z', fontsize=9)
+#   plt.ylabel('Cost z', fontsize=9)
