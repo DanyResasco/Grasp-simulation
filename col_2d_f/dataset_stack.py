@@ -1,0 +1,67 @@
+
+from __future__ import division
+import numpy as np
+import os, sys, theano, traceback
+import theano.tensor as T
+import matplotlib.pyplot as plt
+
+class DataFeeder:
+	def __init__(self, init_idx=1, test_idx=0):
+		self.init_idx = init_idx
+		self.cur_idx = init_idx
+		self.test_idx = test_idx
+
+	def next_training_set_shared(self):
+		try:
+			data = np.load('data/%i.npz'%self.cur_idx)
+		except IOError:
+			traceback.print_exc()
+			print 'done all chunk files at %i'%self.cur_idx
+			self.cur_idx = self.init_idx
+		data = np.load('data/%i.npz'%self.cur_idx)
+		Xy = data['Xy'].astype(theano.config.floatX)
+		X_loc = Xy[:, 0:2].repeat(10000, axis=1)
+		X_occ = Xy[:, 2:10002]
+		X_occ = np.hstack((X_occ, X_loc))
+		y = Xy[:, 10002]
+		y_flag = Xy[:, 10003]
+		X_occ_shared = theano.shared(X_occ, borrow=True)
+		y_shared = theano.shared(y, borrow=True)
+		y_flag_shared = theano.shared(y_flag, borrow=True)
+		self.cur_idx += 1
+		return X_occ_shared, y_shared, y_flag_shared
+	
+	def next_training_set_raw(self):
+		try:
+			data = np.load('data/%i.npz'%self.cur_idx)
+		except IOError:
+			traceback.print_exc()
+			print 'done all chunk files at %i'%self.cur_idx
+			self.cur_idx = self.init_idx
+		if self.cur_idx%100==0:
+			print 'using dataset %i'%self.cur_idx
+		data = np.load('data/%i.npz'%self.cur_idx)
+		Xy = data['Xy'].astype(theano.config.floatX)
+		X_loc = Xy[:, 0:2].repeat(10000, axis=1)
+		X_occ = Xy[:, 2:10002]
+		X_occ = np.hstack((X_occ, X_loc))
+		y = Xy[:, 10002]
+		y_flag = Xy[:, 10003]
+		self.cur_idx += 1
+		return X_occ, y, y_flag
+	
+	def test_set_shared(self):
+		data = np.load('data/%i.npz'%self.test_idx)
+		Xy = data['Xy'][:2000].astype(theano.config.floatX)
+		X_loc = Xy[:, 0:2].repeat(10000, axis=1)
+		X_occ = Xy[:, 2:10002]
+		X_occ = np.hstack((X_occ, X_loc))
+		y = Xy[:, 10002]
+		y_flag = Xy[:, 10003]
+		X_occ_shared = theano.shared(X_occ, borrow=True)
+		y_shared = theano.shared(y, borrow=True)
+		y_flag_shared = theano.shared(y_flag, borrow=True)
+		X_occ_shared = theano.shared(X_occ, borrow=True)
+		y_shared = theano.shared(y, borrow=True)
+		y_flag_shared = theano.shared(y_flag, borrow=True)
+		return X_occ_shared, y_shared, y_flag_shared

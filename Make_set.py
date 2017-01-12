@@ -113,8 +113,8 @@ with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
     analysis = DataAnalysis()
     for row in file_reader:
         analysis.Set_Name(row[0])
-        analysis.Get_Grasp_Status(row[13], row[1:12])
-        analysis.Get_Kindness(row[14])
+        analysis.Get_Grasp_Status(row[13], row[1:13])
+        analysis.Get_Kindness(row[13])
         # Draw_Grasph(analysis.kindness)
     analysis.Save_parameter()
     analysis.Write_Results(res_dataset,analysis.Mesh_data)
