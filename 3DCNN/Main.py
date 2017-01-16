@@ -24,14 +24,14 @@ def Draw_Grasph(truth,prediction):
     for j in range(0,len(truth)):
       for i in range(0,2):
         plt.plot(truth[j][i], label='Truth values')
-        plt.scatter(prediction[j][i],marker='x', color='r', label='Prediction values')
+        plt.plot(prediction[j][i],marker='x', color='r', label='Prediction values')
         plt.xlabel('True orientation', fontsize=9)
         plt.ylabel('Prediction orientatio', fontsize=9)
       # plt.figure(figsize=(8,6))
       plt.figure(2)
       for i in range(3,5):
         plt.plot(truth[j][i], label='Truth values')
-        plt.scatter(prediction[j][i],marker='x', color='r', label='Prediction values')
+        plt.plot(prediction[j][i],marker='x', color='r', label='Prediction values')
         plt.xlabel('true translation', fontsize=9)
         plt.ylabel('Cost y', fontsize=9)
       # plt.figure(figsize=(8,6))
@@ -74,9 +74,9 @@ def save_model(filename, **layer_dict):
 # DanyDataset = DanyDataset()
 np.random.seed(0)
 rng = np.random.RandomState(65432)
-batch_size = 5
+batch_size = 10
 # data_chunk_size = 50 #Non so ancora cosa sia minibatch?
-nkerns = (10,10,10,10,10,10) # n filter for each layer
+nkerns = (5,5,5,5,5,5) # n filter for each layer
 
 print 'defining input'
 
@@ -335,7 +335,7 @@ while (epoch < n_epochs) and (not done_looping):
                 print 'test'
                 test_losses = [test_model(i)
                                    for i in range(n_test_batches)]
-                                   
+
                 Truth = [test_losses[i][1] for i
                                  in range(0,len(test_losses))]
                 pred = [test_losses[i][2] for i
@@ -362,7 +362,7 @@ while (epoch < n_epochs) and (not done_looping):
         if patience <= iter:
             print 'save'
             done_looping = True
-            res_name = '10X10FILTER/3d7Cnn4fcl_RELU_norma.npz'
+            res_name = 'BATCHSIZE10/10X10FILTER/3d7Cnn4fcl_RELU_norma.npz'
             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
