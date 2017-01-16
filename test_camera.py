@@ -55,16 +55,6 @@ robot_files = {
 }
 
 
-def move_reflex(robot):
-	q = robot.getConfig()
-	q[0] = 0.05
-	q[1] = 0.01
-	q[2] = 0.18
-	q[3] = 0 #yaw
-	q[4] = 0#pitch
-	q[5] = math.radians(180) #roll
-	robot.setConfig(q)
-	print("******* Robot dove sono **********"), robot.getConfig()
 
 class PoseVisualizer(GLNavigationProgram):
     def __init__(self, obj,world):
@@ -97,8 +87,11 @@ def MainDany(object_list):
     world = WorldModel()
     world.loadElement("data/terrains/plane.env")
     robot = make_moving_base_robot(robotname, world)
-    xform = resource.get("default_initial_%s.xform" % robotname, description="Initial hand transform",default=se3.identity(), world=world, doedit=False)
-    # pose_se3= ([0.983972802704,-0.0441290216922,0.172771968165,0.177866245396,0.173919267423,-0.968563723855,0.0126933954459,0.983770663246,0.178980892412],[0.234435798004,0.0102866113634,0.0952616290142])
+    xform = resource.get("default_initial_%s.xform" % robotname, description="Initial hand transform",
+        default=se3.identity(), world=world, doedit=False)
+    # pose_se3= ([0.983972802704,-0.0441290216922,0.172771968165,0.177866245396,0.173919267423,
+        # -0.968563723855,0.0126933954459,0.983770663246,0.178980892412],[0.234435798004,0.0102866113634,
+        # 0.0952616290142])
     set_moving_base_xform(robot,xform[0],xform[1])
     # set_moving_base_xform(robot, pose_se3[0], pose_se3[1])
     for object_name in object_list:
@@ -121,12 +114,12 @@ def MainDany(object_list):
 	# set_moving_base_xform(robot, pose_se3[0], pose_se3[1])
 	#now the simulation is launched
     program = GLSimulationProgram(world)
-    vis.setPlugin(PoseVisualizer(obj,world))
+    # vis.setPlugin(PoseVisualizer(obj,world))
     sim = program.sim
     # sim = SimpleSimulator(world)
     sim.simulate(0)
-
-    camera = (sim.controller(0).sensor('rgbd_camera')).getMeasurements()
+    # f3_distal_takktile_5 = (sim.controller(0).sensor('f3_distal_takktile_5')).getMeasurements()
+    # camera = (sim.controller(0).sensor('rgbd_camera')).getMeasurements()
     sim.updateWorld()
     embed()
     
@@ -170,10 +163,8 @@ if __name__ == '__main__':
 
     try:
         objname = sys.argv[1]
-        # launch_test_mvbb_filtered("soft_hand", [objname], 100)
         MainDany([objname])
     except:
-        # launch_test_mvbb_filtered("soft_hand", all_objects, 100)
         MainDany(all_objects)
 
 
