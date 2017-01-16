@@ -9,13 +9,14 @@ import theano.tensor as T
 
 from maxpool3d import max_pool_3d
 from theano.tensor.nnet import relu
+from theano.tensor.nnet import sigmoid
 from theano.tensor.nnet.conv3d2d import conv3d
 
 class Conv3D(object):
 	"""Pool Layer of a convolutional network """
 
 	def __init__(self, rng, input, image_shape, filter_shape, poolsize, 
-		activation=T.tanh, W=None, b=None):
+		activation=relu, W=None, b=None):
 		"""
 		image_shape is (num_imgs, num_channels, img_height, img_width, img_length)
 		filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)
@@ -41,6 +42,8 @@ class Conv3D(object):
 
 		if W is None:
 			W_bound = np.sqrt(6. / (fan_in + fan_out)) #regola se usi tanh come activation function
+			if activation is sigmoid:
+				W_bound = W_bound*4
 			self.W = theano.shared(
 				value=rng.uniform(low=-W_bound, high=W_bound, size=filter_shape).astype(theano.config.floatX), 
 				borrow=True
