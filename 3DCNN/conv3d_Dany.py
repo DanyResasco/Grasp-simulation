@@ -16,7 +16,7 @@ class Conv3D(object):
 	"""Pool Layer of a convolutional network """
 
 	def __init__(self, rng, input, image_shape, filter_shape, poolsize, 
-		activation=sigmoid, W=None, b=None):
+		activation=relu, W=None, b=None):
 		"""
 		image_shape is (num_imgs, num_channels, img_height, img_width, img_length)
 		filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)
@@ -41,7 +41,9 @@ class Conv3D(object):
 		filter_shape = (num_kernels, kernel_length, num_channels, kernel_height, kernel_width)
 
 		if W is None:
-			W_bound = 4*np.sqrt(6. / (fan_in + fan_out)) #regola se usi tanh come activation function
+			W_bound = np.sqrt(6. / (fan_in + fan_out)) #regola se usi tanh come activation function
+			if activation is sigmoid:
+				W_bound = W_bound*4
 			self.W = theano.shared(
 				value=rng.uniform(low=-W_bound, high=W_bound, size=filter_shape).astype(theano.config.floatX), 
 				borrow=True

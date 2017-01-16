@@ -6,7 +6,7 @@ import numpy as np
 
 import theano
 import theano.tensor as T
-
+from IPython import embed
 
 class ContOutputLayer(object):
 	"""
@@ -51,6 +51,33 @@ class ContOutputLayer(object):
 		self.input = input
 
 
+	def RMSQ(self,y,y_pred):
+		assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
+		return sqrt(costs(y,y_pred))
+
+
+	def mse(self, y, y_flag=None): # balanced penalization
+		"""
+		mean square-root error
+		"""
+		# check if y has same dimension of y_pred
+		if y_flag is not None:
+			assert y.ndim == self.y_pred.ndim and y_flag.ndim == self.y_pred.ndim, 'Dimension mismatch'
+			valid_sum = T.sum(T.pow(y - self.y_pred, 2) * y_flag)
+			valid_num = T.sum(y_flag)
+			return valid_sum / valid_num
+		else:
+			assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
+
+			# rot_e =  (T.pow(y[:3]-self.y_pred[:3], 2)) // T.sqrt(T.sum(T.pow(y[:3]-self.y_pred[:3], 2)))
+			# tra_e = (T.pow(y[3:]-self.y_pred[3:], 2)) // T.sqrt(T.sum(T.pow(y[3:]-self.y_pred[3:], 2)))
+			# # embed()
+			# E = T.mean((T.pow(y-self.y_pred, 2)) / T.sqrt(T.sum((T.pow(y-self.y_pred, 2)))) )
+			NORMA = np.linalg.norm([y-self.y_pred], 2)
+			# embed()
+			return  T.mean(NORMA),y,self.y_pred
+
+
 
 
 	def cost(self, y, y_flag=None): # balanced penalization
@@ -66,6 +93,7 @@ class ContOutputLayer(object):
 		else:
 			assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
 			return T.mean(T.pow(y-self.y_pred, 2))
+
 
 	def cost2(self, y):
 		diff = y - self.y_pred

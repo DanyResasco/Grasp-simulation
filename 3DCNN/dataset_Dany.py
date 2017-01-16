@@ -59,9 +59,13 @@ def Set_vector(object_name, vector_set,input_set):
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
                     # Matrix_ = so3.matrix(row)
+                    # print 'object_name',object_name
                     T = row[9:]
+                    # print 't',T
                     # print list(so3.rpy(row))
                     row_t = list(so3.rpy(row)) + list(T)
+                    # print 'row_t',row_t
+                    # embed()
                     # row_t = (list(so3.rpy(row)) + list(T))
                     vector_set.append(np.array(row_t))
                     input_set.append(binvox[object_name])
@@ -87,7 +91,7 @@ def shared_dataset(data_xy, borrow=True):
     # data_x = data_x.reshape(data_x.shape[0], -1) 
 
     data_temp = []
-    print'len(data_x)', len(data_x)
+    # print'len(data_x)', len(data_x)
     for i in range(0,len(data_x)):
         data_temp.append(data_x[i].reshape(64,64,64))
 

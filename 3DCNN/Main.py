@@ -13,6 +13,51 @@ from dataset_Dany import Input_output
 import matplotlib.pyplot as plt
 # from test_dataset_split_dany import DanyDataset
 
+def Draw_Grasph(truth,prediction):
+    print "disegno"
+    import matplotlib.pyplot as plt
+    plt.figure(1)
+#     print truth
+#     print 'prediction', prediction
+    # plt.plot(prediction,marker='x', color='r', label='Prediction values')
+    # plt.plot(truth)
+    for j in range(0,len(truth)):
+      for i in range(0,2):
+        plt.plot(truth[j][i], label='Truth values')
+        plt.scatter(prediction[j][i],marker='x', color='r', label='Prediction values')
+        plt.xlabel('True orientation', fontsize=9)
+        plt.ylabel('Prediction orientatio', fontsize=9)
+      # plt.figure(figsize=(8,6))
+      plt.figure(2)
+      for i in range(3,5):
+        plt.plot(truth[j][i], label='Truth values')
+        plt.scatter(prediction[j][i],marker='x', color='r', label='Prediction values')
+        plt.xlabel('true translation', fontsize=9)
+        plt.ylabel('Cost y', fontsize=9)
+      # plt.figure(figsize=(8,6))
+  # for i in truth.values():
+    # plt.plot(truth[i][2], label='Truth values')
+    # plt.scatter(prediction[i][2],marker='x', color='r', label='Prediction values')
+    # plt.xlabel('Poses z', fontsize=9)
+    # plt.ylabel('Cost z', fontsize=9)
+
+# # for i in truth.values():
+#   plt.plot(truth[i][3], label='Truth values')
+#   plt.scatter(prediction[i][3],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Translation x', fontsize=9)
+#   plt.ylabel('Cost x', fontsize=9)
+#   plt.figure(figsize=(8,6))
+#   # for i in truth.values():
+#   plt.plot(truth[i][4], label='Truth values')
+#   plt.scatter(prediction[i][4],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Translation y', fontsize=9)
+#   plt.ylabel('Cost y', fontsize=9)
+#   plt.figure(figsize=(8,6))
+#   # for i in truth.values():
+#   plt.plot(truth[i][5], label='Truth values')
+#   plt.scatter(prediction[i][5],marker='x', color='r', label='Prediction values')
+#   plt.xlabel('Translation z', fontsize=9)
+#   plt.ylabel('Cost z', fontsize=9)
 
 def save_model(filename, **layer_dict):
 	'''
@@ -65,9 +110,10 @@ print 'defining architecture'
 
 # fc_input = conv6.output.flatten(2)
 # fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=6*6*6*nkerns[5], n_out=5500)
-# #output is a vector of 6 elements
+# # #output is a vector of 6 elements
 # fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=3000)
 # fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=3000, n_out=6)
+# output = ContOutputLayer(input=fc3.output, n_in=6)
 
 conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 1, 3, 3, 3), 
   image_shape=(batch_size, 1, 64, 64,64), poolsize=(1,1,1))
@@ -86,39 +132,29 @@ conv7 = Conv3D(rng, input=conv6.output, filter_shape=(nkerns[5], nkerns[4], 2, 2
 
 fc_input = conv7.output.flatten(2)
 fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=5*5*5*nkerns[5], n_out=500)
-#output is a vector of 6 elements
+# output is a vector of 6 elements
 fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=500, n_out=250)
-fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=6)
+fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=50)
+fc4 = FullyConnectedLayer(rng, input=fc3.output, n_in=50, n_out=6)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-output = ContOutputLayer(input=fc3.output, n_in=6)
+output = ContOutputLayer(input=fc4.output, n_in=6)
 
 print 'defining cost'
 
-cost = output.cost(y, y_flag=None)
-# cost = output.negative_log_likelihood(y)
-# embed()
+# cost = output.cost(y, y_flag=None)
+cost = output.mse(y, y_flag=None)
 
+
+# all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
+# 	conv6.params +  fc1.params + fc2.params +fc3.params+ output.params)
 
 all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
-	conv6.params + conv7.params + fc1.params + fc2.params +fc3.params+ output.params)
+  conv6.params + conv7.params +  fc1.params + fc2.params +fc3.params+fc4.params+ output.params)
 
 # compute the gradient of cost
 # embed()
-all_grads = T.grad(cost, all_params)
+all_grads = T.grad(cost[0], all_params)
 print "grad"
 
 Dataset_dany =  Input_output()
@@ -140,8 +176,8 @@ print 'Adam Optimizer Update'
 updates = []
 one = np.float32(1)
 zero = np.float32(0)
-# adam_a=np.float32(0.0001); adam_b1=np.float32(0.1); adam_b2=np.float32(0.001); adam_e=np.float32(1e-8)
-adam_a=np.float32(0.001); adam_b1=np.float32(0.9); adam_b2=np.float32(0.99); adam_e=np.float32(1e-8) #from article
+adam_a=np.float32(0.0001); adam_b1=np.float32(0.1); adam_b2=np.float32(0.001); adam_e=np.float32(1e-8)
+# adam_a=np.float32(0.001); adam_b1=np.float32(0.9); adam_b2=np.float32(0.99); adam_e=np.float32(1e-8) #from article
 
 adam_i = theano.shared(zero.astype(theano.config.floatX)) # iteration
 adam_i_new = adam_i + one # iteration update
@@ -254,8 +290,8 @@ print 'prima del while'
 # print 'done'
 
 
-# Truth = []
-# pred = []
+Truth = []
+pred = []
 # count_dany = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
@@ -270,7 +306,12 @@ while (epoch < n_epochs) and (not done_looping):
             # compute zero-one loss on validation set
             validation_losses = [validate_model(i) for i
                                  in range(n_valid_batches)]
-            this_validation_loss = np.mean(validation_losses)
+            
+            validation_m = [validation_losses[i][0] for i
+                                 in range(0,len(validation_losses))]
+
+
+            this_validation_loss = np.mean(validation_m)
 
             print("Epoch %i, Minibatch %i/%i, Validation Error %f " 
                     % (epoch,
@@ -294,9 +335,18 @@ while (epoch < n_epochs) and (not done_looping):
                 print 'test'
                 test_losses = [test_model(i)
                                    for i in range(n_test_batches)]
+                                   
+                Truth = [test_losses[i][1] for i
+                                 in range(0,len(test_losses))]
+                pred = [test_losses[i][2] for i
+                                 in range(0,len(test_losses))]
                 # for i in range(n_test_batches):
                 #       test_losses = test_model(i)
-                test_score = np.mean(test_losses)
+                test_m = [test_losses[i][0] for i
+                                 in range(0,len(test_losses))]
+
+                test_score = np.mean(test_m)
+
                 #       Truth.append(list(test_losses[1]))
                 #       pred.append(list(test_losses[2]))
 
@@ -312,9 +362,11 @@ while (epoch < n_epochs) and (not done_looping):
         if patience <= iter:
             print 'save'
             done_looping = True
-            res_name = '3d6Cnn3fcl_changeadamparameters.npz'
+            res_name = '10X10FILTER/3d7Cnn4fcl_RELU_norma.npz'
+            # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+            # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-            conv5=conv5,conv6=conv6,conv7=conv7, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
+            conv5=conv5,conv6=conv6,conv7=conv7, fc1=fc1, fc2=fc2,fc3=fc3,fc4=fc4, output=output)
             break
 
 end_time = timeit.default_timer()
@@ -322,49 +374,8 @@ print(('Optimization complete. Best validation score of %f '
 	'obtained at iteration %i, with test performance %f ') %
 	(best_validation_loss , best_iter + 1, test_score ))
 # for i in Truth.value
-# Draw_Grasph(output.input,output.y_pred)
+Draw_Grasph(Truth,pred)
   # (best_validation_loss , best_iter + 1, test_score ))
 
 
-# def Draw_Grasph(truth,prediction):
-#     print "disegno"
-#     import matplotlib.pyplot as plt
-#     plt.figure(figsize=(8,6))
-#     print truth
-#     print 'prediction', prediction
-#     plt.plot(prediction,marker='x', color='r', label='Prediction values')
-#     plt.plot(truth)
-#   plt.plot(truth[i][0], label='Truth values')
-#   plt.scatter(prediction[1][0],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Poses x', fontsize=9)
-#   plt.ylabel('Cost x', fontsize=9)
-#   plt.figure(figsize=(8,6))
-# # for i in truth.values():
-#   plt.plot(truth[i][1], label='Truth values')
-#   plt.scatter(prediction[i][1],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Poses y', fontsize=9)
-#   plt.ylabel('Cost y', fontsize=9)
-#   plt.figure(figsize=(8,6))
-# # for i in truth.values():
-#   plt.plot(truth[i][2], label='Truth values')
-#   plt.scatter(prediction[i][2],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Poses z', fontsize=9)
-#   plt.ylabel('Cost z', fontsize=9)
 
-# # for i in truth.values():
-#   plt.plot(truth[i][3], label='Truth values')
-#   plt.scatter(prediction[i][3],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Translation x', fontsize=9)
-#   plt.ylabel('Cost x', fontsize=9)
-#   plt.figure(figsize=(8,6))
-#   # for i in truth.values():
-#   plt.plot(truth[i][4], label='Truth values')
-#   plt.scatter(prediction[i][4],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Translation y', fontsize=9)
-#   plt.ylabel('Cost y', fontsize=9)
-#   plt.figure(figsize=(8,6))
-#   # for i in truth.values():
-#   plt.plot(truth[i][5], label='Truth values')
-#   plt.scatter(prediction[i][5],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Translation z', fontsize=9)
-#   plt.ylabel('Cost z', fontsize=9)
