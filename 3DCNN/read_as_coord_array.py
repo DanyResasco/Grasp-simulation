@@ -1,19 +1,27 @@
 import numpy as np
 import theano
-
+from IPython import embed
 
 def read_header(fp):
     """ Read binvox header. Mostly meant for internal use.
     """
+    # line = fp.readline().strip()
+    # if not line.startswith('#binvox'):
+    #     raise IOError('Not a binvox file')
+    # dims = list(map(int, fp.readline().strip().split(b' ')[1:]))
+    # translate = list(map(float, fp.readline().strip().split(b' ')[1:]))
+    # scale = list(map(float, fp.readline().strip().split(b' ')[1:]))[0]
+    # line = fp.readline()
+    # return dims, translate, scale
+
     line = fp.readline().strip()
-    if not line.startswith(b'#binvox'):
+    if not line.startswith('#binvox'):
         raise IOError('Not a binvox file')
-    dims = list(map(int, fp.readline().strip().split(b' ')[1:]))
-    translate = list(map(float, fp.readline().strip().split(b' ')[1:]))
-    scale = list(map(float, fp.readline().strip().split(b' ')[1:]))[0]
+    dims = map(int, fp.readline().strip().split(' ')[1:])
+    translate = map(float, fp.readline().strip().split(' ')[1:])
+    scale = map(float, fp.readline().strip().split(' ')[1:])[0]
     line = fp.readline()
     return dims, translate, scale
-
 
 
 
@@ -82,6 +90,7 @@ def read_as_3d_array(fp, fix_coords=True):
     dims, translate, scale = read_header(fp)
 
     raw_data = np.frombuffer(fp.read(), dtype=np.uint8)
+    # embed()
     # if just using reshape() on the raw data:
     # indexing the array as array[i,j,k], the indices map into the
     # coords as:
@@ -96,17 +105,30 @@ def read_as_3d_array(fp, fix_coords=True):
     values, counts = raw_data[::2], raw_data[1::2]
     # print values
     # print counts
-    data = np.repeat(values, counts).astype(np.float64)
+    data = np.repeat(values, counts).astype(np.bool)
 
 
-    data = data.reshape(dims)
-    if fix_coords:
-        # xzy to xyz TODO the right thing
-        data = np.transpose(data, (0, 2, 1))
-        axis_order = 'xyz'
-    else:
-        axis_order = 'xzy'
+    # data = data.reshape(dims)
+    # embed()
+    # if fix_coords:
+    #     # xzy to xyz TODO the right thing
+    #     data = np.transpose(data, (0, 2, 1))
+    #     axis_order = 'xyz'
+    # else:
+    #     axis_order = 'xzy'
         # print 
     # print len(data[0]),len(data[1]),len(data[2])
     return  np.array(data)
     # return np.array(data), dims, translate, scale, axis_order
+
+
+    # values, counts = raw_data[::2], raw_data[1::2]
+    # data = np.repeat(values, counts).astype(np.bool)
+    # data = data.reshape(dims)
+    # if fix_coords:
+    #     # xzy to xyz TODO the right thing
+    #     data = np.transpose(data, (0, 2, 1))
+    #     axis_order = 'xyz'
+    # else:
+    #     axis_order = 'xzy'
+    # return Voxels(data, dims, translate, scale, axis_order)

@@ -44,6 +44,7 @@ class ContOutputLayer(object):
 			self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)
 
 		self.y_pred = T.dot(input, self.W) + self.b
+		
 		# parameters of the model
 		self.params = [self.W, self.b]
 
@@ -67,12 +68,13 @@ class ContOutputLayer(object):
 			valid_num = T.sum(y_flag)
 			return valid_sum / valid_num
 		else:
-			assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
+			# assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
 
 			# rot_e =  (T.pow(y[:3]-self.y_pred[:3], 2)) // T.sqrt(T.sum(T.pow(y[:3]-self.y_pred[:3], 2)))
 			# tra_e = (T.pow(y[3:]-self.y_pred[3:], 2)) // T.sqrt(T.sum(T.pow(y[3:]-self.y_pred[3:], 2)))
 			# # embed()
 			# E = T.mean((T.pow(y-self.y_pred, 2)) / T.sqrt(T.sum((T.pow(y-self.y_pred, 2)))) )
+			# NORMA = np.add(np.linalg.norm([y[:3]-self.y_pred[:3]], 2) , np.linalg.norm([y[3:]-self.y_pred[3:]], 2))
 			NORMA = np.linalg.norm([y-self.y_pred], 2)
 			# embed()
 			return  T.mean(NORMA),y,self.y_pred

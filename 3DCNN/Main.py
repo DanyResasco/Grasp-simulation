@@ -11,53 +11,40 @@ from cont_output_layer import ContOutputLayer
 from IPython import embed
 from dataset_Dany import Input_output 
 import matplotlib.pyplot as plt
-# from test_dataset_split_dany import DanyDataset
+import matplotlib as mpl
+from mpl_toolkits.mplot3d import Axes3D# from test_dataset_split_dany import DanyDataset
 
 def Draw_Grasph(truth,prediction):
     print "disegno"
     import matplotlib.pyplot as plt
-    plt.figure(1)
-#     print truth
-#     print 'prediction', prediction
+    # plt.figure(1)
+    #     print truth
+    #     print 'prediction', prediction
     # plt.plot(prediction,marker='x', color='r', label='Prediction values')
     # plt.plot(truth)
+    fig1 = plt.figure(1)
+    ax = fig1.gca(projection='3d')
+    fig2 = plt.figure(2)
+    ax2 = fig2.gca(projection='3d')
+    # embed()
+    rot_y = []
+    tra_y = []
+    rot_yp = []
+    tra_yp= []
     for j in range(0,len(truth)):
-      for i in range(0,2):
-        plt.plot(truth[j][i], label='Truth values')
-        plt.plot(prediction[j][i],marker='x', color='r', label='Prediction values')
-        plt.xlabel('True orientation', fontsize=9)
-        plt.ylabel('Prediction orientatio', fontsize=9)
-      # plt.figure(figsize=(8,6))
-      plt.figure(2)
-      for i in range(3,5):
-        plt.plot(truth[j][i], label='Truth values')
-        plt.plot(prediction[j][i],marker='x', color='r', label='Prediction values')
-        plt.xlabel('true translation', fontsize=9)
-        plt.ylabel('Cost y', fontsize=9)
-      # plt.figure(figsize=(8,6))
-  # for i in truth.values():
-    # plt.plot(truth[i][2], label='Truth values')
-    # plt.scatter(prediction[i][2],marker='x', color='r', label='Prediction values')
-    # plt.xlabel('Poses z', fontsize=9)
-    # plt.ylabel('Cost z', fontsize=9)
+      rot_y.append([truth[j][0],truth[j][1],truth[j][2]])
+      tra_y.append([truth[j][3],truth[j][4],truth[j][5]])
+      rot_yp.append([prediction[j][0],prediction[j][1],prediction[j][2]])
+      tra_yp.append([prediction[j][3],prediction[j][4],prediction[j][5]])
+    print 'truth',truth
+    print 'prediction',prediction
+    print 'len(truth)',len(truth)
+    print 'len(prediction)',len(prediction)
+    ax.plot(rot_y,rot_yp,'r^')
+    ax2.plot(tra_y,tra_yp,'r^')
 
-# # for i in truth.values():
-#   plt.plot(truth[i][3], label='Truth values')
-#   plt.scatter(prediction[i][3],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Translation x', fontsize=9)
-#   plt.ylabel('Cost x', fontsize=9)
-#   plt.figure(figsize=(8,6))
-#   # for i in truth.values():
-#   plt.plot(truth[i][4], label='Truth values')
-#   plt.scatter(prediction[i][4],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Translation y', fontsize=9)
-#   plt.ylabel('Cost y', fontsize=9)
-#   plt.figure(figsize=(8,6))
-#   # for i in truth.values():
-#   plt.plot(truth[i][5], label='Truth values')
-#   plt.scatter(prediction[i][5],marker='x', color='r', label='Prediction values')
-#   plt.xlabel('Translation z', fontsize=9)
-#   plt.ylabel('Cost z', fontsize=9)
+    plt.show()
+
 
 def save_model(filename, **layer_dict):
 	'''
@@ -74,17 +61,18 @@ def save_model(filename, **layer_dict):
 # DanyDataset = DanyDataset()
 np.random.seed(0)
 rng = np.random.RandomState(65432)
-batch_size = 10
+batch_size = 6
 # data_chunk_size = 50 #Non so ancora cosa sia minibatch?
 nkerns = (5,5,5,5,5,5) # n filter for each layer
 
 print 'defining input'
 
 index = T.lscalar('index')
-# X_occ = T.fmatrix('X_occ')
-X_occ = T.tensor4('X_occ') 
+X_occ = T.fmatrix('X_occ')
+# X_occ = T.tensor4('X_occ') 
 y = T.fvector('y')
-
+# y = T.fmatrix('y')
+# embed()
 # 3 e' il numero di canali, 1 gray scale 3 rgb, 64 dimensione voxel 
 input_occ_batch = X_occ.reshape((batch_size, 1, 64, 64, 64)) #64 voxel dimension
 
@@ -161,15 +149,18 @@ Dataset_dany =  Input_output()
 train_set_X_occ, train_set_y = Dataset_dany[0]
 valid_set_x, valid_set_y = Dataset_dany[1]
 test_set_X_occ, test_set_y  = Dataset_dany[2]
+embed()
 
-# print'train_set_y.type' ,train_set_y.type
-# print' y.type', y.type
-# print'valid_set_y',valid_set_y.type
-# print 'test_set_y',test_set_y.type
-# print'train_set_X_occ.type' ,train_set_X_occ.type
-# print 'X_occ.type',X_occ.type
-# print 'test_set_X_occ',test_set_X_occ.type
-# print'valid_set_x',valid_set_x.type
+# train_set_y.get_value()
+# embed()
+print'train_set_y.type' ,train_set_y.type
+print' y.type', y.type
+print'valid_set_y',valid_set_y.type
+print 'test_set_y',test_set_y.type
+print'train_set_X_occ.type' ,train_set_X_occ.type
+print 'X_occ.type',X_occ.type
+print 'test_set_X_occ',test_set_X_occ.type
+print'valid_set_x',valid_set_x.type
 
 print 'Adam Optimizer Update'
 # Adam Optimizer Update
@@ -201,7 +192,7 @@ print 'defining train model'
 train_model = theano.function( [index], cost, updates=updates,
 	givens={
 		X_occ: train_set_X_occ[(index * batch_size): ((index + 1) * batch_size)],
-		y: train_set_y[index * batch_size: (index + 1) * batch_size]
+		y: train_set_y[index * batch_size: (index + 1) * batch_size ]
 	}
 )
 
@@ -254,6 +245,99 @@ epoch = 0
 done_looping = False
 n_epochs =1000
 print 'prima del while'
+
+
+Truth = []
+pred = []
+# count_dany = 0
+while (epoch < n_epochs) and (not done_looping):
+    epoch = epoch + 1
+    # for minibatch_index in range(n_train_batches): #loop on train examples
+    #     # print minibatch_index
+    #     train_model(minibatch_index)
+    #     # iteration number
+    for minibatch_index in range(n_train_batches): #loop on train examples
+        train_model(minibatch_index)
+        iter = (epoch - 1) * n_train_batches + minibatch_index
+        if (iter + 1) % validation_frequency == 0:
+            # compute zero-one loss on validation set
+            validation_losses = [validate_model(i) for i in range(n_valid_batches)]
+            
+            validation_m = [validation_losses[i][0] for i
+                                 in range(0,len(validation_losses))]
+
+
+            this_validation_loss = np.mean(validation_m)
+
+            print("Epoch %i, Minibatch %i/%i, Validation Error %f " 
+                    % (epoch,
+                        minibatch_index + 1,
+                        n_train_batches,
+                        this_validation_loss 
+                      )
+                  )
+
+            # if we got the best validation score until now
+            if this_validation_loss < best_validation_loss:
+                print 'validation'
+                #improve patience if loss improvement is good enough
+                if (this_validation_loss < best_validation_loss * improvement_threshold):
+                    patience = max(patience, iter * patience_increase)
+
+                best_validation_loss = this_validation_loss
+                best_iter = iter
+
+                # test it on the test set
+                print 'test'
+                test_losses = [test_model(i)
+                                   for i in range(n_test_batches)]
+
+                # test_losses, Truth, pred = [test_model(i) for i in range(n_test_batches)]
+
+                Truth = [test_losses[i][1] for i
+                                 in range(0,len(test_losses))]
+                pred = [test_losses[i][2] for i
+                                 in range(0,len(test_losses))]
+                # for i in range(n_test_batches):
+                #       test_losses = test_model(i)
+                test_m = [test_losses[i][0] for i
+                                 in range(0,len(test_losses))]
+
+                test_score = np.mean(test_m)
+
+                #       Truth.append(list(test_losses[1]))
+                #       pred.append(list(test_losses[2]))
+
+                # count_dany +=1
+                print(("Epoch %i, Minibatch %i/%i, Test error of"" best model %f ") 
+                      % (   epoch,
+                            minibatch_index + 1,
+                            n_train_batches,
+                            test_score 
+                        )
+                    )
+
+        if patience <= iter:
+            print 'save'
+            done_looping = True
+            res_name = 'BATCHSIZE6/6X5FILTER/3d7Cnn4fcl_sigmoid_norma.npz'
+            # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+            # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
+            save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+            conv5=conv5,conv6=conv6,conv7=conv7, fc1=fc1, fc2=fc2,fc3=fc3,fc4=fc4, output=output)
+            break
+
+end_time = timeit.default_timer()
+print(('Optimization complete. Best validation score of %f '
+	'obtained at iteration %i, with test performance %f ') %
+	(best_validation_loss , best_iter + 1, test_score ))
+# for i in Truth.value
+Draw_Grasph(Truth,pred)
+  # (best_validation_loss , best_iter + 1, test_score ))
+
+
+
+
 # test_error = []
 
 # chunk_file_idx = 0
@@ -288,94 +372,3 @@ print 'prima del while'
 #     break
 
 # print 'done'
-
-
-Truth = []
-pred = []
-# count_dany = 0
-while (epoch < n_epochs) and (not done_looping):
-    epoch = epoch + 1
-    # for minibatch_index in range(n_train_batches): #loop on train examples
-    #     # print minibatch_index
-    #     train_model(minibatch_index)
-    #     # iteration number
-    for minibatch_index in range(n_train_batches): #loop on train examples
-        train_model(minibatch_index)
-        iter = (epoch - 1) * n_train_batches + minibatch_index
-        if (iter + 1) % validation_frequency == 0:
-            # compute zero-one loss on validation set
-            validation_losses = [validate_model(i) for i
-                                 in range(n_valid_batches)]
-            
-            validation_m = [validation_losses[i][0] for i
-                                 in range(0,len(validation_losses))]
-
-
-            this_validation_loss = np.mean(validation_m)
-
-            print("Epoch %i, Minibatch %i/%i, Validation Error %f " 
-                    % (epoch,
-                        minibatch_index + 1,
-                        n_train_batches,
-                        this_validation_loss 
-                      )
-                  )
-
-            # if we got the best validation score until now
-            if this_validation_loss < best_validation_loss:
-                print 'validation'
-                #improve patience if loss improvement is good enough
-                if (this_validation_loss < best_validation_loss * improvement_threshold):
-                    patience = max(patience, iter * patience_increase)
-
-                best_validation_loss = this_validation_loss
-                best_iter = iter
-
-                # test it on the test set
-                print 'test'
-                test_losses = [test_model(i)
-                                   for i in range(n_test_batches)]
-
-                Truth = [test_losses[i][1] for i
-                                 in range(0,len(test_losses))]
-                pred = [test_losses[i][2] for i
-                                 in range(0,len(test_losses))]
-                # for i in range(n_test_batches):
-                #       test_losses = test_model(i)
-                test_m = [test_losses[i][0] for i
-                                 in range(0,len(test_losses))]
-
-                test_score = np.mean(test_m)
-
-                #       Truth.append(list(test_losses[1]))
-                #       pred.append(list(test_losses[2]))
-
-                # count_dany +=1
-                print(("Epoch %i, Minibatch %i/%i, Test error of"" best model %f ") 
-                      % (   epoch,
-                            minibatch_index + 1,
-                            n_train_batches,
-                            test_score 
-                        )
-                    )
-
-        if patience <= iter:
-            print 'save'
-            done_looping = True
-            res_name = 'BATCHSIZE10/10X10FILTER/3d7Cnn4fcl_RELU_norma.npz'
-            # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-            # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
-            save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-            conv5=conv5,conv6=conv6,conv7=conv7, fc1=fc1, fc2=fc2,fc3=fc3,fc4=fc4, output=output)
-            break
-
-end_time = timeit.default_timer()
-print(('Optimization complete. Best validation score of %f '
-	'obtained at iteration %i, with test performance %f ') %
-	(best_validation_loss , best_iter + 1, test_score ))
-# for i in Truth.value
-Draw_Grasph(Truth,pred)
-  # (best_validation_loss , best_iter + 1, test_score ))
-
-
-

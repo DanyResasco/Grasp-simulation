@@ -1,4 +1,3 @@
-
 # root = ~/usr/local/cuda-7.0
 from __future__ import division
 import numpy as np
@@ -15,17 +14,17 @@ from IPython import embed
 objects = {}
 objects['Percentage'] = [f for f in os.listdir('NNSet/Percentage')]
 objects['Nsuccessfull'] = [f for f in os.listdir('NNSet/Nsuccessfull')]
-
+ 
 # prev_obj = {}
 # prev_obj['ycb'] = [f for f in os.listdir('../data/objects/ycb')]
 # prev_obj['apc2015'] = [f for f in os.listdir('../data/objects/apc2015')]
 # prev_obj['princeton'] = [f for f in os.listdir('../data/objects/princeton')]
-
-
+ 
+ 
 Input_name = [f for f in os.listdir('NNSet/binvox/Binvox')] #all binvox in binvox format
 Output = {}
 Output['Pose'] = [f for f in os.listdir('NNSet/Pose')]
-
+ 
 Input_training = []
 Training_y = []
 Input_validate = []
@@ -33,7 +32,7 @@ Validate_y = []
 Test_y = []
 Input_test = []
 binvox = {}
-
+ 
 def Save_binvox(nome):
     objpath = 'NNSet/binvox/Binvox/%s'%nome
     try:
@@ -43,15 +42,16 @@ def Save_binvox(nome):
             binvox[nome] = data
     except:
         print "No binvox in file %s "%(objpath)
-
-
-
+ 
+ 
+ 
 def Set_input(objectName,vector_set):
         vector_set.append(binvox[objectName])
-
-
+ 
+ 
 def Set_vector(object_name, vector_set,input_set):
     '''Read the poses and store it as rpy into a vector'''
+    time_first = 0
     for object_set, objects_in_set in Output.items():
         if object_name in objects_in_set:
             obj_dataset = 'NNSet/Pose/%s'%(object_name)
@@ -69,8 +69,14 @@ def Set_vector(object_name, vector_set,input_set):
                     # row_t = (list(so3.rpy(row)) + list(T))
                     vector_set.append(np.array(row_t))
                     input_set.append(binvox[object_name])
+                    # if time_first is 0:
+                    #     input_set = binvox[object_name]
+                    #     time_first = 1
+                    # else:
+                    #     input_set = np.concatenate((input_set,binvox[object_name]))
                     # Set_input(object_name,input_set)
-
+    time_first = 0
+ 
 def Find_binvox(all_obj):
     '''Remove all objects that doesn't have a binvox'''
     vector = []
@@ -79,91 +85,99 @@ def Find_binvox(all_obj):
             vector.append(object_name) #save obj
             Save_binvox(object_name)
     return vector
-
-
+ 
+ 
 def shared_dataset(data_xy, borrow=True):
     """ Function that loads the dataset into shared variables """
     data_y, data_x = data_xy
-
+ 
     'data must be an numpy array'
     #convert 4d to matrix
     # data_x = np.ndarray.astype(np.array(data_x),dtype='float32')
     # data_x = data_x.reshape(data_x.shape[0], -1) 
-
-    data_temp = []
+ 
+    # data_temp = np.array((len(data_x),2))
     # print'len(data_x)', len(data_x)
-    for i in range(0,len(data_x)):
-        data_temp.append(data_x[i].reshape(64,64,64))
-
+    # for i in range(0,len(data_x)):
+    #     # data_temp.append(data_x[i].reshape(64,64,64))
+    #     if i is 0:
+    #         data_temp = data_x[i]
+    #     else:
+    #         data_temp = np.concatenate((data_temp[0:i],data_x[i]))
+    
+    # embed()
     # print len(data_temp)
-    shared_x = theano.shared(np.array(data_temp, theano.config.floatX), borrow=True)
+    shared_x = theano.shared(np.array(data_x, theano.config.floatX), borrow=True)
     # embed()
     #convert matrix to vector
     # data_y = np.ndarray.astype(np.array(data_y),dtype='float32')
-    
+     
     # data_y_temp = []
     # print'len(data_y)', len(data_y)
     # for i in range(0,len(data_y)):
     #     data_y_temp.append(data_y[i])
-
+ 
     # print data_y_temp
     # data_y = data_y.reshape(-1) 
     shared_y = theano.shared(np.array(np.array(data_y).reshape(-1), theano.config.floatX), borrow=True)
+    # shared_y = theano.shared(np.array(data_y, theano.config.floatX), borrow=True)
+    # embed()
     # print shared_y.type
     # print shared_y.get_value()
     return shared_x, shared_y
-
+ 
 def Input_output():
     all_obj_tmp = []
     for objects_name in Output.values():
         all_obj_tmp += objects_name
-
+ 
     #Sicuro ce' un metodo piu' intelligente
     all_obj = Find_binvox(all_obj_tmp)
-
+ 
     random.seed(0)
     random.shuffle(all_obj)
     #Temporaly vector. I store the file not the pose!! 
     Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
     Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.85 and i <len(all_obj)*.90]
     Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.90 and i<len(all_obj)*1]
-
-
+ 
+ 
     #Open the respectively file and take all poses
     for object_name in Training_label_set:
         Set_vector(object_name, Training_y,Input_training)
+    # embed()
 
+ 
     for object_name in Validate_label_set:
         Set_vector(object_name, Validate_y,Input_validate)
-
+ 
     for object_name in Test_label_set:
         Set_vector(object_name, Test_y,Input_test)
-
+ 
     print "label", len(Training_y) + len(Validate_y) + len(Test_y)
     print 'input',len(Input_training) + len(Input_validate)+ len(Input_test)
-
+ 
     Training_ = [Training_y, Input_training]
     Validate_ = [Validate_y,Input_validate ]
     Test_ = [Test_y,Input_test ]
-
+ 
     # print "Input_training", len(Input_training)
     # print "Training_y",len(Training_y)
-
-
+ 
+ 
     # print "Input_validate", len(Input_validate)
     # print "Validate_y",len(Validate_y)
-
+ 
     # print "Input_test", len(Input_test)
     # print "Test_label_set",len(Input_test)
-
+ 
     # print shared_dataset(Training_)[0]
-
+ 
     return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
-
-
+ 
+ 
     # return Training_, Validate_ ,Test_
-
-
+ 
+ 
 if __name__ == '__main__':
     T,V,TT = Input_output()
-   

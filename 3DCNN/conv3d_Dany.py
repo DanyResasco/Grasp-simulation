@@ -16,7 +16,7 @@ class Conv3D(object):
 	"""Pool Layer of a convolutional network """
 
 	def __init__(self, rng, input, image_shape, filter_shape, poolsize, 
-		activation=relu, W=None, b=None):
+		activation=sigmoid, W=None, b=None):
 		"""
 		image_shape is (num_imgs, num_channels, img_height, img_width, img_length)
 		filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)

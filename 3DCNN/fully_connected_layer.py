@@ -11,7 +11,7 @@ from theano.tensor.nnet import sigmoid
 # from theano.tensor.nnet import tanh
 
 class FullyConnectedLayer(object):
-	def __init__(self, rng, input, n_in, n_out, activation=relu, W=None, b=None):
+	def __init__(self, rng, input, n_in, n_out, activation=sigmoid, W=None, b=None):
 		"""
 		Typical hidden layer of a MLP: units are fully-connected and have
 		sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
