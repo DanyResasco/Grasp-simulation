@@ -70,8 +70,8 @@ print 'defining input'
 index = T.lscalar('index')
 X_occ = T.fmatrix('X_occ')
 # X_occ = T.tensor4('X_occ') 
-y = T.fvector('y')
-# y = T.fmatrix('y')
+# y = T.fvector('y')
+y = T.fmatrix('y')
 # embed()
 # 3 e' il numero di canali, 1 gray scale 3 rgb, 64 dimensione voxel 
 input_occ_batch = X_occ.reshape((batch_size, 1, 64, 64, 64)) #64 voxel dimension
@@ -252,12 +252,13 @@ pred = []
 # count_dany = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
-    # for minibatch_index in range(n_train_batches): #loop on train examples
-    #     # print minibatch_index
-    #     train_model(minibatch_index)
+    for minibatch_index in range(n_train_batches): #loop on train examples
+        # print minibatch_index
+        train_model(minibatch_index)
     #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
-        train_model(minibatch_index)
+        c,o,op = train_model(minibatch_index)
+        print op
         iter = (epoch - 1) * n_train_batches + minibatch_index
         if (iter + 1) % validation_frequency == 0:
             # compute zero-one loss on validation set
