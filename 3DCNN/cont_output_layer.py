@@ -65,13 +65,29 @@ class ContOutputLayer(object):
 		"""
 		mean square-root error
 		"""
-		# NORMA = np.linalg.norm([y-self.y_pred], 2)
-		NORMA = np.add(np.linalg.norm([y[0:3]-self.y_pred[0:3]], 2),np.linalg.norm([y[3:]-self.y_pred[3:]], 2)) 
+		NORMA = np.add(np.linalg.norm([y[0:3]-self.y_pred[0:3]],2)*0.087,0.005*np.linalg.norm([y[3:]-self.y_pred[3:]],2)) 
 
 		# embed()
 		return  T.mean(NORMA),y,self.y_pred
 
+	def dany_error(self,y):
+		import math
+		pi = math.pi
+		# embed()
+		dx = T.min([abs(y[0]-self.y_pred[0]),(2*pi - abs(y[0]-self.y_pred[0]))])
+		dy = T.min([abs(y[1]-self.y_pred[1]),(2*pi - abs(y[1]-self.y_pred[1]))])
+		dz = T.min([abs(y[2]-self.y_pred[2]),(2*pi - abs(y[2]-self.y_pred[2]))])
+		d_o = np.sqrt(np.add( np.add(T.pow(dx, 2),T.pow(dy, 2)),T.pow(dz, 2)))
 
+		# tx = np.linalg.norm([y[3]-self.y_pred[3]])
+		# ty = np.linalg.norm([y[4]-self.y_pred[4]])
+		# tz = np.linalg.norm([y[5]-self.y_pred[5]])
+		# t_o = np.add(np.add(tx,ty),tz)
+
+		NORMA = np.add(d_o,np.linalg.norm([y[3:]-self.y_pred[3:]],2))
+		print NORMA
+		# embed()
+		return T.mean(NORMA),y,self.y_pred
 
 
 	def cost(self, y, y_flag=None): # balanced penalization

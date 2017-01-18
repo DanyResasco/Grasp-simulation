@@ -31,20 +31,20 @@ def Draw_Grasph(truth,prediction):
     tra_y = []
     rot_yp = []
     tra_yp= []
-    for j in range(0,len(truth)):
-      rot_y.append([truth[j][0],truth[j][1],truth[j][2]])
-      tra_y.append([truth[j][3],truth[j][4],truth[j][5]])
-      rot_yp.append([prediction[j][0],prediction[j][1],prediction[j][2]])
-      tra_yp.append([prediction[j][3],prediction[j][4],prediction[j][5]])
+    # for j in range(0,len(truth)):
+    #   rot_y.append([truth[j][0],truth[j][1],truth[j][2]])
+    #   tra_y.append([truth[j][3],truth[j][4],truth[j][5]])
+    #   rot_yp.append([prediction[j][0],prediction[j][1],prediction[j][2]])
+    #   tra_yp.append([prediction[j][3],prediction[j][4],prediction[j][5]])
     print 'truth',truth
     print 'prediction',prediction
     print 'len(truth)',len(truth)
     print 'len(prediction)',len(prediction)
     embed()
-    ax.plot(rot_y,rot_yp,'r^')
-    ax2.plot(tra_y,tra_yp,'r^')
+    # ax.plot(rot_y,rot_yp,'r^')
+    # ax2.plot(tra_y,tra_yp,'r^')
 
-    plt.show()
+    # plt.show()
 
 
 def save_model(filename, **layer_dict):
@@ -133,6 +133,7 @@ print 'defining cost'
 
 # cost = output.cost(y, y_flag=None)
 cost = output.mse(y)
+# cost = output.dany_error(y)
 
 
 # all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
@@ -253,9 +254,9 @@ pred = []
 # count_dany = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
-    # for minibatch_index in range(n_train_batches): #loop on train examples
-    #     # print minibatch_index
-    #     train_model(minibatch_index)
+    for minibatch_index in range(n_train_batches): #loop on train examples
+        # print minibatch_index
+        train_model(minibatch_index)
     #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
         c,o,op = train_model(minibatch_index)
@@ -322,7 +323,7 @@ while (epoch < n_epochs) and (not done_looping):
         if patience <= iter:
             print 'save'
             done_looping = True
-            res_name = 'BATCHSIZE6/6X5FILTER/3d7Cnn3fcl_sigmoid_cost.npz'
+            res_name = 'BATCHSIZE6/6X5FILTER/3d7Cnn3fcl_sigmoid_norma_pesata.npz'
             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
