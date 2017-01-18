@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/env python
 
 import pkg_resources
@@ -18,35 +17,11 @@ import string
 import sys
 import time
 import pickle
-
 from create_mvbb import MVBBVisualizer, compute_poses, skip_decimate_or_return
 from create_mvbb_filtered import FilteredMVBBVisualizer
 from klampt.math import so3, se3
 import pydany_bb
-=======
-from klampt import *
-#Klampt v0.6.x
-#from klampt import visualization as vis
-# from klampt import resource
-#from klampt import robotcollide as collide
-#from klampt.simulation import *
-#from klampt.glrobotprogram import *
-#Klampt v0.7.x
-from klampt import vis 
-from klampt.vis.glrobotprogram import *	#Per il simulatore
-# from klampt.math import *
-from klampt.model import collide
-# from klampt.io import resource
-from klampt.sim import *
-# # from moving_base_control import *
-import importlib
-import os
-# import time
-import sys
-# import grasp_chose
-#import an object dataset
-from klampt.math import so3
->>>>>>> a3743db3fa35f9d9c863edeeeae885b7546f04c8
+from mvbb.ScalaReduce import DanyReduceScale
 import numpy as np
 from IPython import embed
 from mvbb.graspvariation import PoseVariation
@@ -57,7 +32,6 @@ from mvbb.CollisionCheck import CheckCollision, CollisionTestInterpolate, Collis
 from mvbb.db import MVBBLoader
 from mvbb.kindness import Differential,RelativePosition
 from mvbb.GetForces import get_contact_forces_and_jacobians
-<<<<<<< HEAD
 
 
 objects = {}
@@ -66,40 +40,6 @@ objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 robots = ['reflex_col', 'soft_hand', 'reflex']
-
-def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
-    """Launches a very simple program that spawns an object from one of the
-    databases.
-    It launches a visualization of the mvbb decomposition of the object, and corresponding generated poses.
-    It then spawns a hand and tries all different poses to check for collision
-    """
-
-    world = WorldModel()
-    world.readFile('sensortest.xml')
-    # world.loadElement("data/terrains/plane.env")
-    robot = make_moving_base_robot(robotname, world)
-    xform = resource.get("default_initial_%s.xform" % robotname, description="Initial hand transform",
-                         default=se3.identity(), world=world, doedit=False)
-
-=======
-from mvbb.ScalaReduce import DanyReduceScale
-
-from klampt.io import resource
-from klampt.sim import *
-from moving_base_control import *
-#Declare all variables
-
-
-# set di oggetti
-object_template_fn = 'object_template.obj'	
-objects = {}
-objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
-objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
-# objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
-objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
-# robots = ['reflex_col', 'soft_hand', 'reflex']
-
-
 moving_base_template_fn = 'moving_base_template.rob'
 robotname = "reflex_col"
 robot_files = {
@@ -107,16 +47,6 @@ robot_files = {
 }
 
 
-def move_reflex(robot):
-	q = robot.getConfig()
-	q[0] = 0.05
-	q[1] = 0.01
-	q[2] = 0.18
-	q[3] = 0 #yaw
-	q[4] = 0#pitch
-	q[5] = math.radians(180) #roll
-	robot.setConfig(q)
-	print("******* Robot dove sono **********"), robot.getConfig()
 
 class PoseVisualizer(GLNavigationProgram):
     def __init__(self, obj,world):
@@ -153,7 +83,7 @@ def MainDany(object_list):
     # pose_se3= ([0.983972802704,-0.0441290216922,0.172771968165,0.177866245396,0.173919267423,-0.968563723855,0.0126933954459,0.983770663246,0.178980892412],[0.234435798004,0.0102866113634,0.0952616290142])
     set_moving_base_xform(robot,xform[0],xform[1])
     # set_moving_base_xform(robot, pose_se3[0], pose_se3[1])
->>>>>>> a3743db3fa35f9d9c863edeeeae885b7546f04c8
+
     for object_name in object_list:
         obj = None
         for object_set, objects_in_set in objects.items():
@@ -161,36 +91,19 @@ def MainDany(object_list):
                 if world.numRigidObjects() > 0:
                     world.remove(world.rigidObject(0))
                 if object_name in objects['princeton']:
-<<<<<<< HEAD
                     print "*************Dentro princeton********************" #need to scale the obj size
                     objfilename = 'data/objects/'+ object_set +'/'+ object_name + '/'+ object_name  +'.obj'
                     print"objfilename", objfilename
                     obj = DanyReduceScale(object_name, world,objfilename,object_set)
-                else:    
-=======
-                    # print "*************Dentro princeton********************" #need to scale the obj size
-                    objfilename = 'data/objects/template_obj_scale_princeton.obj'
-                    # print"objfilename", objfilename
-                    obj = DanyReduceScale(object_name, world,objfilename,object_set)
                 else:
->>>>>>> a3743db3fa35f9d9c863edeeeae885b7546f04c8
                     obj = make_object(object_set, object_name, world)
         if obj is None:
             print "Could not find object", object_name
             continue
-<<<<<<< HEAD
-
-
         R,t = obj.getTransform()
         # obj.setTransform(R, [t[0], t[1], t[2]]) #[0,0,0] or t?
         obj.setTransform(R, [0,0,0]) #[0,0,0] or t?
 
-        #Try
-        CameraSensor.get_measurement() 
-
-
-
-=======
 	#Simulation 
 	# set_moving_base_xform(robot, pose_se3[0], pose_se3[1])
 	#now the simulation is launched
@@ -198,11 +111,12 @@ def MainDany(object_list):
     vis.setPlugin(PoseVisualizer(obj,world))
     sim = program.sim
     # sim = SimpleSimulator(world)
-    sim.simulate(0)
+    sim.simulate(0.001)
 
     camera = (sim.controller(0).sensor('rgbd_camera')).getMeasurements()
+    print camera
     sim.updateWorld()
-    embed()
+    # embed()
     
 
 
@@ -224,30 +138,18 @@ def MainDany(object_list):
 
 
 #Main
->>>>>>> a3743db3fa35f9d9c863edeeeae885b7546f04c8
 if __name__ == '__main__':
     all_objects = []
     for dataset in objects.values():
         all_objects += dataset
 
-
-<<<<<<< HEAD
     to_check = []
     done =[]
     to_filter=[]
     to_do=[]
 
     for obj_name in to_filter + to_do + done + to_check:
-    	all_objects.pop(all_objects.index(obj_name))
-=======
-    to_filter = []
-    done = []
-    to_check = []
-
-
-    for obj_name in to_filter +  done + to_check:
         all_objects.pop(all_objects.index(obj_name))
->>>>>>> a3743db3fa35f9d9c863edeeeae885b7546f04c8
 
     print "-------------"
     print all_objects
@@ -255,17 +157,10 @@ if __name__ == '__main__':
 
     try:
         objname = sys.argv[1]
-        # launch_test_mvbb_filtered("soft_hand", [objname], 100)
-<<<<<<< HEAD
-        launch_test_mvbb_filtered("reflex_col", [objname], 100)
-    except:
-        # launch_test_mvbb_filtered("soft_hand", all_objects, 100)
-        launch_test_mvbb_filtered("reflex_col", all_objects, 100)
-=======
         MainDany([objname])
     except:
         # launch_test_mvbb_filtered("soft_hand", all_objects, 100)
         MainDany(all_objects)
 
 
->>>>>>> a3743db3fa35f9d9c863edeeeae885b7546f04c8
+
