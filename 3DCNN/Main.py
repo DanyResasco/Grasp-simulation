@@ -40,6 +40,7 @@ def Draw_Grasph(truth,prediction):
     print 'prediction',prediction
     print 'len(truth)',len(truth)
     print 'len(prediction)',len(prediction)
+    embed()
     ax.plot(rot_y,rot_yp,'r^')
     ax2.plot(tra_y,tra_yp,'r^')
 
@@ -119,26 +120,26 @@ conv7 = Conv3D(rng, input=conv6.output, filter_shape=(nkerns[5], nkerns[4], 2, 2
   image_shape=(batch_size, nkerns[4], 11, 11, 11), poolsize=(2,2,2))
 
 fc_input = conv7.output.flatten(2)
-fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=5*5*5*nkerns[5], n_out=500)
+fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=5*5*5*nkerns[5], n_out=550)
 # output is a vector of 6 elements
-fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=500, n_out=250)
-fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=50)
-fc4 = FullyConnectedLayer(rng, input=fc3.output, n_in=50, n_out=6)
+fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=550, n_out=250)
+fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=150)
+# fc4 = FullyConnectedLayer(rng, input=fc3.output, n_in=50, n_out=6)
 
 
-output = ContOutputLayer(input=fc4.output, n_in=6)
+output = ContOutputLayer(input=fc3.output, n_in =150 ,n_out=6)
 
 print 'defining cost'
 
 # cost = output.cost(y, y_flag=None)
-cost = output.mse(y, y_flag=None)
+cost = output.mse(y)
 
 
 # all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
 # 	conv6.params +  fc1.params + fc2.params +fc3.params+ output.params)
 
 all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
-  conv6.params + conv7.params +  fc1.params + fc2.params +fc3.params+fc4.params+ output.params)
+  conv6.params + conv7.params +  fc1.params + fc2.params +fc3.params+ output.params)
 
 # compute the gradient of cost
 # embed()
@@ -252,13 +253,13 @@ pred = []
 # count_dany = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
-    for minibatch_index in range(n_train_batches): #loop on train examples
-        # print minibatch_index
-        train_model(minibatch_index)
+    # for minibatch_index in range(n_train_batches): #loop on train examples
+    #     # print minibatch_index
+    #     train_model(minibatch_index)
     #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
         c,o,op = train_model(minibatch_index)
-        print op
+        # print op
         iter = (epoch - 1) * n_train_batches + minibatch_index
         if (iter + 1) % validation_frequency == 0:
             # compute zero-one loss on validation set
@@ -321,11 +322,11 @@ while (epoch < n_epochs) and (not done_looping):
         if patience <= iter:
             print 'save'
             done_looping = True
-            res_name = 'BATCHSIZE6/6X5FILTER/3d7Cnn4fcl_sigmoid_norma.npz'
+            res_name = 'BATCHSIZE6/6X5FILTER/3d7Cnn3fcl_sigmoid_cost.npz'
             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-            conv5=conv5,conv6=conv6,conv7=conv7, fc1=fc1, fc2=fc2,fc3=fc3,fc4=fc4, output=output)
+            conv5=conv5,conv6=conv6,conv7=conv7, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             break
 
 end_time = timeit.default_timer()

@@ -37,8 +37,8 @@ def Save_binvox(nome):
     objpath = 'NNSet/binvox/Binvox/%s'%nome
     try:
         with open(objpath, 'rb') as f:
-            data = read_as_coord_array(f) # dimension not matched. are different for each objects
-            embed()
+            # data = read_as_coord_array(f) # dimension not matched. are different for each objects
+            # embed()
             data = read_as_3d_array(f)
             binvox[nome] = data
     except:
@@ -111,7 +111,7 @@ def shared_dataset(data_xy, borrow=True):
     # embed()
     # print len(data_temp)
     shared_x = theano.shared(np.array(data_x, theano.config.floatX), borrow=True)
-    embed()
+    # embed()
     #convert matrix to vector
     # data_y = np.ndarray.astype(np.array(data_y),dtype='float32')
      

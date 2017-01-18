@@ -13,7 +13,7 @@ class ContOutputLayer(object):
 	Continuous Regression Class
 	"""
 
-	def __init__(self, input, n_in, W=None, b=None):
+	def __init__(self, input, n_in,n_out, W=None, b=None):
 		""" Initialize the parameters of the logistic regression
 
 		:type input: theano.tensor.TensorType
@@ -30,21 +30,25 @@ class ContOutputLayer(object):
 		"""
 		# start-snippet-1
 
-		if W is None:
-			self.W = theano.shared(value=np.zeros(n_in, dtype=theano.config.floatX), name='W', borrow=True)
-		else:
-			assert isinstance(W, np.ndarray), 'W must be an numpy array'
-			self.W = theano.shared(value=W.astype(theano.config.floatX), borrow=True)
-
+		self.W = theano.shared(value=np.zeros((n_in, n_out), dtype=theano.config.floatX ), name='W', borrow=True )
 		# initialize the biases b as a vector of n_out 0s
-		if b is None:
-			self.b = theano.shared(value=np.array(0, dtype=theano.config.floatX), name='b', borrow=True)
-		else:
-			assert isinstance(b, np.ndarray), 'b must be an numpy array'
-			self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)
+		self.b = theano.shared( value=np.zeros( n_out, dtype=theano.config.floatX ),name='b', borrow=True)
+
+		# if W is None:
+		# 	self.W = theano.shared(value=np.zeros(n_in, dtype=theano.config.floatX), name='W', borrow=True)
+		# else:
+		# 	assert isinstance(W, np.ndarray), 'W must be an numpy array'
+		# 	self.W = theano.shared(value=W.astype(theano.config.floatX), borrow=True)
+
+		# # initialize the biases b as a vector of n_out 0s
+		# if b is None:
+		# 	self.b = theano.shared(value=np.array(0, dtype=theano.config.floatX), name='b', borrow=True)
+		# else:
+		# 	assert isinstance(b, np.ndarray), 'b must be an numpy array'
+		# 	self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)
 
 		self.y_pred = T.dot(input, self.W) + self.b
-		
+
 		# parameters of the model
 		self.params = [self.W, self.b]
 
@@ -57,27 +61,15 @@ class ContOutputLayer(object):
 		return sqrt(costs(y,y_pred))
 
 
-	def mse(self, y, y_flag=None): # balanced penalization
+	def mse(self, y): # balanced penalization
 		"""
 		mean square-root error
 		"""
-		# check if y has same dimension of y_pred
-		if y_flag is not None:
-			assert y.ndim == self.y_pred.ndim and y_flag.ndim == self.y_pred.ndim, 'Dimension mismatch'
-			valid_sum = T.sum(T.pow(y - self.y_pred, 2) * y_flag)
-			valid_num = T.sum(y_flag)
-			return valid_sum / valid_num
-		else:
-			# assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
+		# NORMA = np.linalg.norm([y-self.y_pred], 2)
+		NORMA = np.add(np.linalg.norm([y[0:3]-self.y_pred[0:3]], 2),np.linalg.norm([y[3:]-self.y_pred[3:]], 2)) 
 
-			# rot_e =  (T.pow(y[:3]-self.y_pred[:3], 2)) // T.sqrt(T.sum(T.pow(y[:3]-self.y_pred[:3], 2)))
-			# tra_e = (T.pow(y[3:]-self.y_pred[3:], 2)) // T.sqrt(T.sum(T.pow(y[3:]-self.y_pred[3:], 2)))
-			# # embed()
-			# E = T.mean((T.pow(y-self.y_pred, 2)) / T.sqrt(T.sum((T.pow(y-self.y_pred, 2)))) )
-			# NORMA = np.add(np.linalg.norm([y[:3]-self.y_pred[:3]], 2) , np.linalg.norm([y[3:]-self.y_pred[3:]], 2))
-			NORMA = np.linalg.norm([y-self.y_pred], 2)
-			# embed()
-			return  T.mean(NORMA),y,self.y_pred
+		# embed()
+		return  T.mean(NORMA),y,self.y_pred
 
 
 
@@ -94,7 +86,7 @@ class ContOutputLayer(object):
 			return valid_sum / valid_num
 		else:
 			assert y.ndim == self.y_pred.ndim, 'Dimension mismatch'
-			return T.mean(T.pow(y-self.y_pred, 2))
+			return T.mean(T.pow(y-self.y_pred, 2)),y,self.y_pred
 
 
 	def cost2(self, y):
