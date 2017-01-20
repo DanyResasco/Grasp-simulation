@@ -94,39 +94,17 @@ def shared_dataset(data_xy, borrow=True):
     data_y, data_x = data_xy
  
     'data must be an numpy array'
-    #convert 4d to matrix
-    # data_x = np.ndarray.astype(np.array(data_x),dtype='float32')
-    # data_x = data_x.reshape(data_x.shape[0], -1) 
- 
-    # data_temp = np.array((len(data_x),2))
-    # print'len(data_x)', len(data_x)
-    # data_temp=[]
-    # for i in range(0,len(data_x)):
-    #     data_temp.append(data_x[i].reshape(64,64,64))
-    #     if i is 0:
-    #         data_temp = data_x[i]
-    #     else:
-    #         data_temp = np.concatenate((data_temp[0:i],data_x[i]))
     
     # embed()
     # print len(data_temp)
     shared_x = theano.shared(np.array(data_x, theano.config.floatX), borrow=True)
     # embed()
-    #convert matrix to vector
-    # data_y = np.ndarray.astype(np.array(data_y),dtype='float32')
-     
-    # data_y_temp = []
-    # print'len(data_y)', len(data_y)
-    # for i in range(0,len(data_y)):
-    #     data_y_temp.append(data_y[i])
- 
-    # print data_y_temp
-    # data_y = data_y.reshape(-1) 
-    # shared_y = theano.shared(np.array(np.array(data_y).reshape(-1), theano.config.floatX), borrow=True)
+
     shared_y = theano.shared(np.array(data_y, theano.config.floatX), borrow=True)
+    # shared_y = theano.shared(data_y, borrow=True)
+    # print shared_x.type()
     # embed()
-    # print shared_y.type
-    # print shared_y.get_value()
+
     return shared_x, shared_y
  
 def Input_output():

@@ -36,10 +36,10 @@ def Draw_Grasph(truth,prediction):
     #   tra_y.append([truth[j][3],truth[j][4],truth[j][5]])
     #   rot_yp.append([prediction[j][0],prediction[j][1],prediction[j][2]])
     #   tra_yp.append([prediction[j][3],prediction[j][4],prediction[j][5]])
-    print 'truth',truth
-    print 'prediction',prediction
-    print 'len(truth)',len(truth)
-    print 'len(prediction)',len(prediction)
+    # print 'truth',truth
+    # print 'prediction',prediction
+    # print 'len(truth)',len(truth)
+    # print 'len(prediction)',len(prediction)
     embed()
     # ax.plot(rot_y,rot_yp,'r^')
     # ax2.plot(tra_y,tra_yp,'r^')
@@ -132,8 +132,9 @@ output = ContOutputLayer(input=fc3.output, n_in =150 ,n_out=6)
 print 'defining cost'
 
 # cost = output.cost(y, y_flag=None)
-cost = output.mse(y)
-# cost = output.dany_error(y)
+# cost = output.mse(y,batch_size)
+# embed()
+cost = output.dany_error(y,batch_size)
 
 
 # all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
@@ -151,7 +152,7 @@ Dataset_dany =  Input_output()
 train_set_X_occ, train_set_y = Dataset_dany[0]
 valid_set_x, valid_set_y = Dataset_dany[1]
 test_set_X_occ, test_set_y  = Dataset_dany[2]
-embed()
+# embed()
 
 # train_set_y.get_value()
 # embed()
@@ -323,7 +324,7 @@ while (epoch < n_epochs) and (not done_looping):
         if patience <= iter:
             print 'save'
             done_looping = True
-            res_name = 'BATCHSIZE6/6X5FILTER/3d7Cnn3fcl_sigmoid_norma_pesata.npz'
+            res_name = 'BATCHSIZE6/6X5FILTER/3d7Cnn3fcl_sigmoid_cost.npz'
             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
