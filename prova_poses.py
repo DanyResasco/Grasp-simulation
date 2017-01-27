@@ -37,7 +37,7 @@ from dany_make_rotate_voxel import make_objectRotate
 
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/voxelrotate/ycb')]
-objects['apc2015'] = [f for f in os.listdir('data/objects/voxelrotate/apc2015')]
+# objects['apc2015'] = [f for f in os.listdir('data/objects/voxelrotate/apc2015')]
 # objects['newObjdany'] = [f for f in os.listdir('data/objects/voxelrotate/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/voxelrotate/princeton')]
 robots = ['reflex_col', 'soft_hand', 'reflex']
@@ -45,6 +45,14 @@ robots = ['reflex_col', 'soft_hand', 'reflex']
 # New_item['ycb'] = []
 # New_item['princeton'] = []
 # New_item['apc2015'] = []
+
+
+done = ['morton_salt_shaker_rotate_1','champion_sports_official_softball_rotate_1',
+    'melissa_doug_farm_fresh_fruit_banana_rotate_1','champion_sports_official_softball_rotate_1',]
+
+
+
+
 
 class TesterGrab(GLRealtimeProgram):
     def __init__(self, poses, world,p_T_h,R,T, PoseDanyDiff,module):
@@ -99,10 +107,10 @@ class TesterGrab(GLRealtimeProgram):
                 T = se3.from_homogeneous(self.curr_pose)
                 draw_GL_frame(T)
 
-            # hand_xform = get_moving_base_xform(self.robot)
-            # w_T_p_np = np.array(se3.homogeneous(hand_xform)).dot(self.h_T_p)
-            # w_T_p = se3.from_homogeneous(w_T_p_np)
-            # draw_GL_frame(w_T_p)
+            hand_xform = get_moving_base_xform(self.robot)
+            w_T_p_np = np.array(se3.homogeneous(hand_xform)).dot(self.h_T_p)
+            w_T_p = se3.from_homogeneous(w_T_p_np)
+            draw_GL_frame(w_T_p)
 
     def idle(self):
         if not self.running:
@@ -116,7 +124,7 @@ class TesterGrab(GLRealtimeProgram):
         if not self.is_simulating:
             if len(self.poses) > 0:
                 self.curr_pose = np.array(se3.homogeneous(self.poses.pop(0)))
-                vis.show(hidden=False)
+                # vis.show(hidden=False)
                 # print "Simulating Next Pose Grasp"
                 # print self.curr_pose
             else:
@@ -241,7 +249,7 @@ class TesterGrab(GLRealtimeProgram):
                     state = open('state.dump','w')
                     pickle.dump(self.crashing_states, state)
                     state.close()
-                vis.show(hidden=True)
+                # vis.show(hidden=True)
                 self.is_simulating = False
                 self.sim = None
                 self.HandClose = False
@@ -285,90 +293,95 @@ def launch_test_mvbb_filtered(robotname, object_list):
             if object_name in objects_in_set:
                 # if world.numRigidObjects() > 0:
                 #     world.remove(world.rigidObject(0))
-
                 # count the number of mesh in the folder
                 directory = 'data/objects/voxelrotate/%s/%s'%(object_set,object_name)
                 list_temp = os.listdir(directory) # dir is your directory path
                 number_files = len(list_temp)
                 # embed()
                 #take the relative pose and mesh to simualte it
-                for i in range(0,number_files):
-                    
-                    if world.numRigidObjects() > 0:
-                        world.remove(world.rigidObject(0))
-                    
-                    poses = []
-                    Read_Poses(object_name,i,poses)
-                    
-                    obj = make_objectRotate(object_set,object_name, world,i)
-                    if obj is None:
-                        continue
-                    # print "onj not none"
-                    # embed()
-                    R,t = obj.getTransform()
-                    # obj.setTransform(R, [t[0], t[1], t[2]]) #[0,0,0] or t?
-                    obj.setTransform(R, [0,0,0]) #[0,0,0] or t?
-                    w_T_o = np.array(se3.homogeneous((R,[0,0,0]))) # object is at origin
+                if number_files > 2:
+                    for i in range(1,2):
+                        nome = object_name + '_rotate_' +str(i)
+                        if nome in done :
+                            continue
+                        if world.numRigidObjects() > 0:
+                            world.remove(world.rigidObject(0))
+                        
+                        poses = []
+                        Read_Poses(object_name,i,poses)
+                        
+                        obj = make_objectRotate(object_set,object_name, world,i)
+                        
+                        if obj is None:
+                            continue
+                        # print "onj not none"
+                        # embed()
+                        R,t = obj.getTransform()
+                        # obj.setTransform(R, [t[0], t[1], t[2]]) #[0,0,0] or t?
+                        obj.setTransform(R, [0,0,0]) #[0,0,0] or t?
+                        w_T_o = np.array(se3.homogeneous((R,[0,0,0]))) # object is at origin
 
-                    p_T_h = np.array(se3.homogeneous(xform))
+                        p_T_h = np.array(se3.homogeneous(xform))
 
-                    poses_h = []
+                        poses_h = []
 
-                    for j in range(len(poses)):
-                        poses_h.append((w_T_o.dot(np.array(se3.homogeneous(poses[j]))).dot(p_T_h)))
+                        for j in range(len(poses)):
+                            poses_h.append((w_T_o.dot(np.array(se3.homogeneous(poses[j]))).dot(p_T_h)))
 
-                    
-                    # print "-------Filtering poses:"
-                    filtered_poses = []
-                    for j in range(len(poses_h)):
-                        if not CollisionTestPose(world, robot, obj, poses_h[j]):
-                            # if not  CompenetrateCheckFinger(robot, obj,poses_h[i]):
-                            # print "No collision wit obj. check the finger. first check"
-                            if not CollisionCheckWordFinger(robot, poses_h[j]):
-                                # print "no collision with finger. first check"
-                                filtered_poses.append(poses[j])
-                    # embed()
-                    if len(filtered_poses) == 0:
-                        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                        print "Filtering returned 0 feasible poses"
-                        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                        print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-                        continue
+                        
+                        # print "-------Filtering poses:"
+                        filtered_poses = []
+                        for j in range(len(poses_h)):
+                            if not CollisionTestPose(world, robot, obj, poses_h[j]):
+                                # if not  CompenetrateCheckFinger(robot, obj,poses_h[i]):
+                                # print "No collision wit obj. check the finger. first check"
+                                if not CollisionCheckWordFinger(robot, poses_h[j]):
+                                    # print "no collision with finger. first check"
+                                    filtered_poses.append(poses[j])
+                        # embed()
+                        if len(filtered_poses) == 0:
+                            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                            print "Filtering returned 0 feasible poses"
+                            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                            continue
 
-                    # create a hand emulator from the given robot name
-                    module = importlib.import_module('plugins.' + robotname)
-                    R,t = obj.getTransform()
-                    # emulator takes the robot index (0), start link index (6), and start driver index (6)
-                    PoseDanyDiff = RelativePosition(robot,obj)
-                    program = TesterGrab(filtered_poses,
-                                                           world,
-                                                           p_T_h,
-                                                           R,
-                                                           t,
-                                                           PoseDanyDiff,
-                                                           module)
-                    vis.setPlugin(None)
-                    vis.setPlugin(program)
-                    program.reshape(800, 600)
-                    # vis.lock()
-                    vis.show()
-                    # vis.unlock()
-                    # this code manually updates the visualization
-                    t0= time.time()
-                    while vis.shown():
-                        # time.sleep(0.1)
-                        t1 = time.time()
-                        time.sleep(max(0.01-(t1-t0),0.001))
-                        t0 = t1
+                        # create a hand emulator from the given robot name
+                        module = importlib.import_module('plugins.' + robotname)
+                        R,t = obj.getTransform()
+                        # emulator takes the robot index (0), start link index (6), and start driver index (6)
+                        PoseDanyDiff = RelativePosition(robot,obj)
+                        program = TesterGrab(filtered_poses,
+                                                               world,
+                                                               p_T_h,
+                                                               R,
+                                                               t,
+                                                               PoseDanyDiff,
+                                                               module)
+                        vis.setPlugin(None)
+                        vis.setPlugin(program)
+                        program.reshape(800, 600)
+                        # vis.lock()
+                        vis.show()
+                        # vis.unlock()
+                        # this code manually updates the visualization
+                        t0= time.time()
+                        while vis.shown():
+                            # time.sleep(0.1)
+                            t1 = time.time()
+                            time.sleep(max(0.01-(t1-t0),0.001))
+                            t0 = t1
     return
 
 if __name__ == '__main__':
     all_objects = []
     for dataset in objects.values():
         all_objects += dataset
+
+
 
     try:
         objname = sys.argv[1]

@@ -45,9 +45,9 @@ import random
 
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
-objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
+# objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 # objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
-objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
+# objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 
 Pose = {}
 Pose['Pose'] = [f for f in os.listdir('3DCNN/NNSet/Pose')]
@@ -105,13 +105,13 @@ def main(object_list):
                         respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.off'%(object_set,object_name,object_name,i)
                     elif object_set == 'apc2015':
                         objpath = 'data/objects/apc2015/%s/meshes/poisson.ply'%object_name
-                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.ply'%(object_set,object_name,object_name,i)
+                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
                     # elif object_set == 'newObjdany':
                     #     objpath = 'data/objects/newObjdany/%s/poisson_mesh.ply'%object_name
                     #     respath = 'data/objects/newObjdany/%s/meshes/poisson_rotate_%s.ply'%(object_name,i)
                     else:
-                        objpath = 'data/objects/%s/%s/meshes/tsdf_mesh.stl'%(object_set,object_name)
-                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.ply'%(object_set,object_name,object_name,i)
+                        objpath = 'data/objects/%s/%s/meshes/poisson_mesh.stl'%(object_set,object_name)
+                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
                     # directory = 'data/objects/voxelrotate/%s/%s'%(object_set,object_name)
                     # if not os.path.exists(directory):
                     #     os.makedirs(directory)
@@ -127,6 +127,7 @@ def main(object_list):
                             # print "y"
                         else:
                             axis = [0,0,1]
+
                             # print "z"
                         theta_deg = random.randrange(-5,5)
                         if theta_deg is 0:
@@ -135,6 +136,7 @@ def main(object_list):
                         ROtation_matrix = so3.matrix(so3.from_axis_angle((axis,theta)))
                         temp_vertex = mesh.vertices.dot(ROtation_matrix)
                         new_mesh.vertices = temp_vertex
+                        # embed()
                         mesh_new = pymesh.form_mesh(new_mesh.vertices, mesh.faces, mesh.voxels)
                         try:
                             pymesh.save_mesh(respath, mesh_new)
