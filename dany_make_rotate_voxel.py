@@ -15,10 +15,13 @@ from klampt.model import collide
 from klampt.io import resource
 from klampt.sim import *
 from moving_base_control import *
+from klampt.math import so3,se3
 import importlib
 import os
 from IPython import embed
 import sys
+import csv
+import numpy as np
 
 box_dims = (0.45,0.45,0.25)
 box_dims_shelf = (0.5,0.5,0.3)
@@ -54,6 +57,20 @@ object_masses = {
 
 
 
+def getTransform(nome):
+    obj_dataset = '3DCNN/NNSet/Pose/ObjectsVariation/%s.csv'%nome
+    print obj_dataset
+    with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+        file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
+        for row in file_reader:
+            angle = row[0]
+            axis = row[1:4]
+            R = so3.from_axis_angle((axis,angle))
+            T = [0,0,0]
+            # embed()
+    return np.array((R,T))
+
+
 
 
 def make_objectRotate(object_set,objectname,world,num):
@@ -85,11 +102,14 @@ def make_objectRotate(object_set,objectname,world,num):
             continue
         assert nobjs < world.numRigidObjects(),"Hmm... the object didn't load, but loadElement didn't return -1?"
         obj = world.rigidObject(world.numRigidObjects()-1)
+        
+        objT  = getTransform(nome)
         # embed()
-        # obj.setTransform(*se3.identity())
+        obj.setTransform(objT[0],objT[1])
+        # embed()
         bmin,bmax = obj.geometry().getBB()
         T = obj.getTransform()
-        spacing = 0.006
+        spacing = 0.010
         T = (T[0],vectorops.add(T[1],(-(bmin[0]+bmax[0])*0.5,-(bmin[1]+bmax[1])*0.5,-bmin[2]+spacing)))
         obj.setTransform(*T)
         obj.appearance().setColor(0.2,0.5,0.7,1.0)

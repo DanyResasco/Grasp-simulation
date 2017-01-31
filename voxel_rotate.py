@@ -45,9 +45,9 @@ import random
 
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
-# objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
+objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 # objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
-# objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
+objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 
 Pose = {}
 Pose['Pose'] = [f for f in os.listdir('3DCNN/NNSet/Pose')]
@@ -58,32 +58,40 @@ def Open_pose_file(object_list, vector_set):
     for object_name in object_list:
         # for object_set, objects_in_set in Pose.items():
             obj_dataset = '3DCNN/NNSet/Pose/pose/%s.csv'%(object_name)
+            # embed()
             try:
                 with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
                     file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                     for row in file_reader:
                         T = row[9:]
-                        Matrix_ = so3.matrix(row)
+                        # Matrix_ = so3.matrix(row)
                         pp = row[:9]
-                        P = pp,T
+                        P = np.array(se3.homogeneous((pp,T)))
                         vector_set.append(P)
+                        # embed()
             except:
-                print "problem with csvfile for ", object_name
+                print "No pose in ", object_name
 
 
 def Write_Poses(dataset,poses):
     '''Write the dataset'''
-    # embed()
-    # pose_temp = [float(v) for v in poses]
-    # posa.append(pose_temp)
     f = open(dataset, 'w')
-    # embed()
-    for i in range(0,len(poses)):
-        f.write(','.join([str(v) for v in poses[i]]))
+    temp = se3.from_homogeneous(poses)
+    for i in range(0,len(temp)):
+        f.write(','.join([str(v) for v in temp[i]]))
         f.write(',')
-        # f.write(','.join([str(v) for v in poses[i][1]]))
-        # f.write('\n')
     f.close()
+
+def WriteRotationObj(dataset,angle,Axis):
+    f = open(dataset, 'w')
+    f.write(str(angle))
+
+    # f.write(','.join([str(v) for v in angle]))
+    f.write(',')
+    f.write(','.join([str(v) for v in Axis]))
+    # f.write(Axis)
+    f.close()
+
 
 
 
@@ -95,11 +103,9 @@ def main(object_list):
             if object_name in objects_in_set:
                 pose_original = []
                 Open_pose_file([object_name],pose_original)
-                # num = 0
-                # print len(pose_original)
                 pose_new = []
-                for i in range(0,len(pose_original)):
-                    new_mesh = pymesh.Mesh
+                for i in range(1,len(pose_original)):
+                    # new_mesh = pymesh.Mesh()
                     if object_set == 'princeton':
                         objpath = 'data/objects/princeton/%s/tsdf_mesh.off'%object_name
                         respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.off'%(object_set,object_name,object_name,i)
@@ -134,25 +140,30 @@ def main(object_list):
                             theta_deg = random.randrange(-5,5)
                         theta = math.radians(theta_deg)
                         ROtation_matrix = so3.matrix(so3.from_axis_angle((axis,theta)))
-                        temp_vertex = mesh.vertices.dot(ROtation_matrix)
-                        new_mesh.vertices = temp_vertex
+                        temp_vertex = mesh.vertices.dot(np.array(ROtation_matrix))
+                        # new_mesh.vertices = temp_vertex
                         # embed()
-                        mesh_new = pymesh.form_mesh(new_mesh.vertices, mesh.faces, mesh.voxels)
+                        mesh_new = pymesh.form_mesh(temp_vertex, mesh.faces,mesh.voxels)
                         try:
                             pymesh.save_mesh(respath, mesh_new)
+                            R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
                             # embed()
-                            pose_new = so3.mul(so3.from_axis_angle((axis,theta)),pose_original[i][0]),pose_original[i][1]
-                            # pose_new.append(pose_mod)
+                            pose_new = np.dot(R.transpose(),pose_original[i])
                         except:
                             print "Problem with", object_name, "In", object_set
 
+                        respose = '3DCNN/NNSet/Pose/ObjectsVariation/%s_rotate_%s.csv'%(object_name,str(i))
+                        WriteRotationObj(respose,theta,axis)
+
+
                     else:
-                        print object_name
+                        # print object_name
                         pymesh.save_mesh(respath, mesh)
                         # pose_new.append(pose_original[i])
                         pose_new = pose_original[i]
                     respose = '3DCNN/NNSet/Pose/PoseVariation/%s_rotate_%s.csv'%(object_name,str(i))
                     Write_Poses(respose,pose_new)
+                    
 
 
 

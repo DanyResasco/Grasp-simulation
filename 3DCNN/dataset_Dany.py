@@ -33,8 +33,8 @@ Test_y = []
 Input_test = []
 binvox = {}
  
-def Save_binvox(nome):
-    objpath = 'NNSet/binvox/Binvox/%s'%nome
+def Save_binvox(nome,objpath):
+    # objpath = 'NNSet/binvox/Binvox/%s'%nome
     try:
         with open(objpath, 'rb') as f:
             # data = read_as_coord_array(f) # dimension not matched. are different for each objects
@@ -49,8 +49,23 @@ def Save_binvox(nome):
 def Set_input(objectName,vector_set):
         vector_set.append(binvox[objectName])
  
- 
-def Set_vector(object_name, vector_set,input_set):
+
+def Take_voxel_rotate(objects_name,vector_set,input_set):
+    objpath = 'NNSet/binvox/voxelrotate/%s'%object_name
+    for i in len(list(os.listdir(objpath))):
+        objpath_voxel = 'NNSet/binvox/voxelrotate/%s/%s_rotate_%s'%(object_name,object_name,str(i))
+        Save_binvox(object_name,objpath_voxel)
+        obj_dataset = 'NNSet/Pose/PoseVariation%s'%(object_name)
+        with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+            file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
+            for row in file_reader:
+                T = row[9:]
+                row_t = list(so3.rpy(row)) + list(T)
+                vector_set.append(np.array(row_t))
+                input_set.append(binvox[object_name])
+
+
+def Set_vector(object_name, vector_set,input_set,Tra_value = False):
     '''Read the poses and store it as rpy into a vector'''
     # time_first = 0
     for object_set, objects_in_set in Output.items():
@@ -59,25 +74,13 @@ def Set_vector(object_name, vector_set,input_set):
             with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
-                    # Matrix_ = so3.matrix(row)
-                    # print 'object_name',object_name
                     T = row[9:]
-                    # print 't',T
-                    # print list(so3.rpy(row))
                     row_t = list(so3.rpy(row)) + list(T)
-                    # print 'row_t',row_t
-                    # embed()
-                    # row_t = (list(so3.rpy(row)) + list(T))
                     vector_set.append(np.array(row_t))
                     input_set.append(binvox[object_name])
                     break #train with only one pose
-                    # if time_first is 0:
-                    #     input_set = binvox[object_name]
-                    #     time_first = 1
-                    # else:
-                    #     input_set = np.concatenate((input_set,binvox[object_name]))
-                    # Set_input(object_name,input_set)
-    # time_first = 0
+        if Tra_value is True:
+            Take_voxel_rotate(objects_name,vector_set,input_set)
  
 def Find_binvox(all_obj):
     '''Remove all objects that doesn't have a binvox'''
@@ -85,7 +88,8 @@ def Find_binvox(all_obj):
     for object_name in all_obj:
         if object_name in Input_name: #binvox exist!
             vector.append(object_name) #save obj
-            Save_binvox(object_name)
+            objpath = 'NNSet/binvox/Binvox/%s'%nome
+            Save_binvox(object_name,objpath)
     return vector
  
  

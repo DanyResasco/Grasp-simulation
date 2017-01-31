@@ -2,8 +2,8 @@ import os
 import sys
 
 objects = {}
-# objects['ycb'] = [f for f in os.listdir('data/objects/voxelrotate/ycb')]
-# objects['apc2015'] = [f for f in os.listdir('data/objects/voxelrotate/apc2015')]
+objects['ycb'] = [f for f in os.listdir('data/objects/voxelrotate/ycb')]
+objects['apc2015'] = [f for f in os.listdir('data/objects/voxelrotate/apc2015')]
 objects['princeton'] = [f for f in os.listdir('data/objects/voxelrotate/princeton')]
 # objects['newObjdany'] = [f for f in os.listdir('data/objects/voxelrotate/newObjdany')]
 
@@ -18,10 +18,10 @@ def remove_file(object_list):
                 for i in range(0,len(list(os.listdir(objpath)))):
                     if object_set == 'princeton':
                         respath = 'data/objects/voxelrotate/princeton/%s/%s_rotate%s.off'%(objectName,objectName,str(i))
-                    # elif object_set == 'apc2015':
-                    #     respath = 'data/objects/voxelrotate/apc2015/%s/poisson_rotate_%s.ply'%(objectName,str(i))
-                    # else:
-                    #     respath = 'data/objects/voxelrotate/%s/%s/poisson_rotate_%s.ply'%(object_set,objectName,str(i))
+                    elif object_set == 'apc2015':
+                        respath = 'data/objects/voxelrotate/apc2015/%s/poisson_rotate_%s.stl'%(objectName,str(i))
+                    else:
+                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,objectName,objectName,str(i))
 
                     try:
                         os.remove(respath)
