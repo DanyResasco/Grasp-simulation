@@ -206,17 +206,18 @@ class TesterGrab(GLRealtimeProgram):
         if self.running:
             self.world.drawGL()
 
-            for i in range(len(self.poses)):
-                for pose in self.poses:
-                    draw_GL_frame(pose, color=(0.5,0.5,0.5))
-                if self.curr_pose is not None:
-                    T = se3.from_homogeneous(self.curr_pose)
-                    draw_GL_frame(T)
+            # for i in range(len(self.poses)):
+            for pose in self.poses:
+                T = se3.from_homogeneous(pose)
+                draw_GL_frame(T, color=(0.5,0.5,0.5))
+            if self.curr_pose is not None:
+                T = se3.from_homogeneous(self.curr_pose)
+                draw_GL_frame(T)
 
-                hand_xform = get_moving_base_xform(self.robot)
-                w_T_p_np = np.array(se3.homogeneous(hand_xform)).dot(self.h_T_p)
-                w_T_p = se3.from_homogeneous(w_T_p_np)
-                draw_GL_frame(w_T_p)
+            hand_xform = get_moving_base_xform(self.robot)
+            w_T_p_np = np.array(se3.homogeneous(hand_xform)).dot(self.h_T_p)
+            w_T_p = se3.from_homogeneous(w_T_p_np)
+            draw_GL_frame(w_T_p)
 
     def idle(self):
         if not self.running:

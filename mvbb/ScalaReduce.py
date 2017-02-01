@@ -14,7 +14,13 @@ object_geom_file_patterns = {
     'princeton':['data/objects/princeton/%s/tsdf_mesh.off']
 }
 
-
+default_object_mass = 0.5
+object_masses = {
+    'ycb':dict(),
+    'apc2015':dict(),
+    'princeton':dict(),
+    'newObjdany':dict(),
+}
 
 def DanyReduceScale(objectname, world,objfilename,object_set):
     """Simple function to scale the object in princeton databaset, 
@@ -26,15 +32,16 @@ def DanyReduceScale(objectname, world,objfilename,object_set):
         pattern = ''.join(f.readlines())
         f.close()
         f2 = open("temp.obj",'w')
-        f2.write(pattern % (objfile))
+        objmass = object_masses[object_set].get('mass',default_object_mass)
+        f2.write(pattern % (objfile,objmass))
         f2.close()
         nobjs = world.numRigidObjects()
         if world.loadElement('temp.obj') < 0 :
             continue
         assert nobjs < world.numRigidObjects(),"Hmm... the object didn't load, but loadElement didn't return -1?"
-        print "obj numRigidObjects"
+        # print "obj numRigidObjects"
         obj = world.rigidObject(world.numRigidObjects()-1)
-        print "obj numRigidObjects"
+        # print "obj numRigidObjects"
         obj.setTransform(*se3.identity())
         bmin,bmax = obj.geometry().getBB()
         T = obj.getTransform()
