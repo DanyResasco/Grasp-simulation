@@ -18,9 +18,9 @@ Dependencies
    > - Theano
 
 Datasets:
-    > -apc2015: http://rll.berkeley.edu/amazon_picking_challenge/scripts/downloader.py
-    > -ycb: http://rll.eecs.berkeley.edu/ycb/
-    > -princeton: http://segeval.cs.princeton.edu/
+    > - apc2015: http://rll.berkeley.edu/amazon_picking_challenge/scripts/downloader.py
+    > - ycb: http://rll.eecs.berkeley.edu/ycb/
+    > - princeton: http://segeval.cs.princeton.edu/
 
 
 
