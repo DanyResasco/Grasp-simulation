@@ -47,8 +47,8 @@ from dany_make_rotate_voxel import make_objectRotate
 
 
 objects = {}
-objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
-objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
+# objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
+# objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 # objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 
@@ -117,15 +117,15 @@ def main(object_list):
                     if object_set == 'princeton':
                         objpath = 'data/objects/princeton/%s/tsdf_mesh.off'%object_name
                         respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.off'%(object_set,object_name,object_name,i)
-                    elif object_set == 'apc2015':
-                        objpath = 'data/objects/apc2015/%s/meshes/poisson.ply'%object_name
-                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
+                    # elif object_set == 'apc2015':
+                    #     objpath = 'data/objects/apc2015/%s/meshes/poisson.ply'%object_name
+                    #     respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
                     # elif object_set == 'newObjdany':
                     #     objpath = 'data/objects/newObjdany/%s/tsdf_mesh.stl'%object_name
                     #     respath = 'data/objects/newObjdany/%s/%s_rotate_%s.stl'%(object_name,object_name,i)
-                    else:
-                        objpath = 'data/objects/%s/%s/meshes/poisson_mesh.stl'%(object_set,object_name)
-                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
+                    # else:
+                    #     objpath = 'data/objects/%s/%s/meshes/poisson_mesh.stl'%(object_set,object_name)
+                    #     respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
                     
                     mesh = pymesh.load_mesh(objpath)
                     # embed()

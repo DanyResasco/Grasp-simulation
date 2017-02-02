@@ -31,8 +31,8 @@ shelf_height = 0.5
 moving_base_template_fn = 'data/robots/moving_base_template.rob'
 object_template_fn = 'data/objects/object_template.obj'
 objects = {}
-objects['ycb'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/ycb'))]
-objects['apc2015'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/apc2015'))]
+# objects['ycb'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/ycb'))]
+# objects['apc2015'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/apc2015'))]
 objects['princeton'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/princeton'))]
 # objects['newObjdany'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/newObjdany'))]
 
@@ -41,8 +41,8 @@ objects['princeton'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/p
 robots = ['reflex_col', 'soft_hand', 'reflex']
 
 object_geom_file_patterns = {
-    'ycb':['data/objects/voxelrotate/ycb/%s/%s.stl'],
-    'apc2015':['data/objects/voxelrotate/apc2015/%s/%s.stl'],
+    # 'ycb':['data/objects/voxelrotate/ycb/%s/%s.stl'],
+    # 'apc2015':['data/objects/voxelrotate/apc2015/%s/%s.stl'],
     'princeton':['data/objects/voxelrotate/princeton/%s/%s.off'],
     # 'newObjdany':['data/objects/voxelrotate/newObjdany/%s/%s.stl']
 }
