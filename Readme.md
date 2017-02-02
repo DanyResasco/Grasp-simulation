@@ -1,22 +1,22 @@
 Machine Learning for grasp selection.
 This code is developed in collaboration between Pisa University and Duke University NC.
 
-Author:
-    daniela.resasco@gmail.com
-    rocchi.alessio@gmail.com
-    manuel.bonilla@centropiaggio.unipi.it
+Authors:
+    - Daniela Resasco   daniela.resasco@gmail.com
+    - Alessio Rocchi    rocchi.alessio@gmail.com
+    - Manuel Bonilla    josemanuelbonilla@gmail
 
 The goal of this project is make a deep neural network to allow an underactuate end-effector to learn how to grasp an unknown object. This work is in collaboration between the University of Pisa and Duke University in Durham North Carolina. To choose the desired poses the idea is to decompose the object in Minimum Volume Bounding Box minimizing the volume of the boxes which fit partial point clouds (see https://github.com/manuelbonilla/pacman_bbox).
 For the neural network we utilize the supervised learning method, with deep convolutional neural network.
 
 
-Dependency
+Dependencies
     python v > 2.0, 
     pcl, 
     Klampt v0.7
     Theano
 
-Dataset:
+Datasets:
     apc2015: http://rll.berkeley.edu/amazon_picking_challenge/scripts/downloader.py
     ycb: http://rll.eecs.berkeley.edu/ycb/
     princeton: http://segeval.cs.princeton.edu/
