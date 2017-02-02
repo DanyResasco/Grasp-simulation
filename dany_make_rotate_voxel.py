@@ -34,7 +34,7 @@ objects = {}
 objects['ycb'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/ycb'))]
 objects['apc2015'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/apc2015'))]
 objects['princeton'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/princeton'))]
-objects['newObjdany'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/newObjdany'))]
+# objects['newObjdany'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/newObjdany'))]
 
 
 
@@ -44,7 +44,7 @@ object_geom_file_patterns = {
     'ycb':['data/objects/voxelrotate/ycb/%s/%s.stl'],
     'apc2015':['data/objects/voxelrotate/apc2015/%s/%s.stl'],
     'princeton':['data/objects/voxelrotate/princeton/%s/%s.off'],
-    'newObjdany':['data/objects/voxelrotate/newObjdany/%s/%s.stl']
+    # 'newObjdany':['data/objects/voxelrotate/newObjdany/%s/%s.stl']
 }
 #default mass for objects whose masses are not specified, in kg
 default_object_mass = 0.5
@@ -52,7 +52,7 @@ object_masses = {
     'ycb':dict(),
     'apc2015':dict(),
     'princeton':dict(),
-    'newObjdany':dict(),
+    # 'newObjdany':dict(),
 }
 
 
