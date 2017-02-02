@@ -116,7 +116,7 @@ def main(object_list):
                     pose_new = []
                     if object_set == 'princeton':
                         objpath = 'data/objects/princeton/%s/tsdf_mesh.off'%object_name
-                        respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.off'%(object_set,object_name,object_name,i)
+                        respath = 'data/objects/voxelrotate/princeton/%s/%s_rotate_%s.off'%(object_name,object_name,i)
                     # elif object_set == 'apc2015':
                     #     objpath = 'data/objects/apc2015/%s/meshes/poisson.ply'%object_name
                     #     respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
@@ -144,14 +144,13 @@ def main(object_list):
                     obj = make_objectRotate(object_set,object_name, world,i)
                     if obj is None:
                         continue
+                    R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
+                    w_T_o = np.array(se3.homogeneous((obj.getTransform())))
+                        # embed()
+                    pose_new = np.dot(R, np.dot(w_T_o, o_T_p[i])) #w_T_p_rotate
                     # embed()
                     try:
                         pymesh.save_mesh(respath, mesh_new)
-                        R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
-                        w_T_o = np.array(se3.homogeneous((obj.getTransform())))
-                        # embed()
-                        pose_new = np.dot(R, np.dot(w_T_o, o_T_p[i])) #w_T_h_rotate
-                        # embed()
 
                     except:
                         print "Problem with", object_name, "In", object_set

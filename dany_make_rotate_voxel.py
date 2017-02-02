@@ -78,6 +78,8 @@ def getTransform(nome):
             axis = [0,0,1]
             R = so3.from_axis_angle((axis,angle))
             T = row[4:]
+            # T = [0,0,0]
+            # embed()
             # embed()
     return np.array((R,T))
 
@@ -121,9 +123,13 @@ def make_objectRotate(object_set,objectname,world,num):
         # embed()
         bmin,bmax = obj.geometry().getBB()
         T = obj.getTransform()
-        spacing = 0.006
+        spacing = 0.005
         T = (T[0],vectorops.add(T[1],(-(bmin[0]+bmax[0])*0.5,-(bmin[1]+bmax[1])*0.5,-bmin[2]+spacing)))
         obj.setTransform(*T)
         obj.appearance().setColor(0.2,0.5,0.7,1.0)
         obj.setName(nome)
         return obj
+
+
+
+
