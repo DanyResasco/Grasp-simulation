@@ -242,7 +242,7 @@ class TesterGrab(GLRealtimeProgram):
                 vis.show(hidden=True)
                 return
 
-            self.obj.setTransform(self.R, [0,0,0])
+            self.obj.setTransform(self.R, self.t)
             self.obj.setVelocity([0., 0., 0.],[0., 0., 0.])
             # self.obj.setVelocity([0,0,0,e0])
             self.w_T_o = np.array(se3.homogeneous(self.obj.getTransform()))
@@ -378,7 +378,7 @@ def Read_Poses(object_list,num,vector_set):
         for row in file_reader:
             T = row[9:12]
             pp = row[:9]
-            vector_set.append((pp,T))
+            vector_set.append(np.array(se3.homogeneous((pp,T))))
 
 
 def launch_test_mvbb_filtered(robotname, object_list):
@@ -407,7 +407,7 @@ def launch_test_mvbb_filtered(robotname, object_list):
                 number_files = len(list_temp)
                 # embed()
                 #take the relative pose and mesh to simualte it
-                if number_files > 2:
+                if number_files > 1:
                     for i in range(1,number_files):
                         nome = object_name + '_rotate_' +str(i)
                         if nome in done :
@@ -422,12 +422,28 @@ def launch_test_mvbb_filtered(robotname, object_list):
                         poses = [] #w_T_p_ro
                         Read_Poses(object_name,i,poses)
 
+                        # Ry = np.array(se3.homogeneous((so3.from_axis_angle(((0,1,0), 45.*np.pi/180.)),[0,0,0])))
+                        # Rx = np.array(se3.homogeneous((so3.from_axis_angle(((1,0,0), 45.*np.pi/180.)),[0,0,0])))
+                        # Rz = np.array(se3.homogeneous((so3.from_axis_angle(((0,0,1), 45.*np.pi/180.)),[0,0,0])))
+                        # Tx = np.array(se3.homogeneous((obj.getTransform())))
+                        # T = Tx.dot(Rz).dot(Rx).dot(Rx) # object is at origin)
+                        # T = Rz;
+
+                        # poses_new = []
+
+                        # for pose in poses:
+                        #     # embed()
+                        #     poses_new.append(np.dot(pose,T))
+                        # poses = poses_new
+                        # embed()
+
 
                         if obj is None:
                             continue
                         R,t = obj.getTransform()
+                        # embed()
                         # obj.setTransform(R, [0,0,0]) #[0,0,0] or t?
-                        w_T_o = np.array(se3.homogeneous((R,[0,0,0]))) # object is at origin
+                        w_T_o = np.array(se3.homogeneous((R,t))) # object is at origin
 
                         p_T_h = np.array(se3.homogeneous(xform))
 
@@ -437,9 +453,10 @@ def launch_test_mvbb_filtered(robotname, object_list):
                         #     poses_h.append((w_T_o.dot(np.array(se3.homogeneous(poses[j]))).dot(p_T_h)))
 
                         poses_h = []
-
+                        # embed()
                         for j in range(len(poses)):
-                            poses_h.append((np.array(se3.homogeneous(poses[j]))).dot(p_T_h))
+                        # poses_h=((np.array(se3.homogeneous(poses))).dot(p_T_h))
+                            poses_h.append(np.dot(poses[j],p_T_h))
 
                         # embed()
                         # print "-------Filtering poses:"
@@ -447,7 +464,7 @@ def launch_test_mvbb_filtered(robotname, object_list):
                         for j in range(len(poses)):
                             if not CollisionTestPose(world, robot, obj, poses_h[j]):
                                 if not CollisionCheckWordFinger(robot, poses_h[j]):
-                                    o_T_p= np.dot(np.linalg.inv(w_T_o),np.array(se3.homogeneous(poses[j])))
+                                    o_T_p= np.dot(np.linalg.inv(w_T_o),poses[j])
                                     filtered_poses.append(o_T_p)
 
                         if len(filtered_poses) == 0:
@@ -459,10 +476,10 @@ def launch_test_mvbb_filtered(robotname, object_list):
                             print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                             print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                             continue
-                        embed()
+                        # embed()
                         # create a hand emulator from the given robot name
                         module = importlib.import_module('plugins.' + robotname)
-                        R,t = obj.getTransform()
+                        # R,t = obj.getTransform()
                         # emulator takes the robot index (0), start link index (6), and start driver index (6)
                         PoseDanyDiff = RelativePosition(robot,obj)
                         program = TesterGrab(filtered_poses,
