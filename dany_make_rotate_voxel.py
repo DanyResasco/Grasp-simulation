@@ -34,7 +34,7 @@ objects = {}
 objects['ycb'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/ycb'))]
 objects['apc2015'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/apc2015'))]
 objects['princeton'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/princeton'))]
-# objects['newObjdany'] = [f for f in sorted(os.listdir('data/objects/newObjdany'))]
+objects['newObjdany'] = [f for f in sorted(os.listdir('data/objects/voxelrotate/newObjdany'))]
 
 
 
@@ -44,7 +44,7 @@ object_geom_file_patterns = {
     'ycb':['data/objects/voxelrotate/ycb/%s/%s.stl'],
     'apc2015':['data/objects/voxelrotate/apc2015/%s/%s.stl'],
     'princeton':['data/objects/voxelrotate/princeton/%s/%s.off'],
-    # 'newObjdany':['data/objects/newObjdany/%s']
+    'newObjdany':['data/objects/voxelrotate/newObjdany/%s/%s.stl']
 }
 #default mass for objects whose masses are not specified, in kg
 default_object_mass = 0.5
@@ -52,8 +52,19 @@ object_masses = {
     'ycb':dict(),
     'apc2015':dict(),
     'princeton':dict(),
-    # 'newObjdany':dict(),
+    'newObjdany':dict(),
 }
+
+
+def Write_Poses(dataset,poses):
+    '''Write the dataset'''
+    f = open(dataset, 'w')
+    temp = se3.from_homogeneous(poses)
+    for i in range(0,len(temp)):
+        f.write(','.join([str(v) for v in temp[i]]))
+        f.write(',')
+    f.close()
+
 
 
 
@@ -64,9 +75,9 @@ def getTransform(nome):
         file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
         for row in file_reader:
             angle = row[0]
-            axis = row[1:4]
+            axis = [0,0,1]
             R = so3.from_axis_angle((axis,angle))
-            T = [0,0,0]
+            T = row[4:]
             # embed()
     return np.array((R,T))
 
@@ -76,13 +87,13 @@ def getTransform(nome):
 def make_objectRotate(object_set,objectname,world,num):
     """Adds an object to the world using its geometry / mass properties
     and places it in a default location (x,y)=(0,0) and resting on plane."""
-    print "dentro make_object"
+    # print "dentro make_object"
     # embed()
     for pattern in object_geom_file_patterns[object_set]:
         nome = objectname + '_rotate_' + str(num)
 
         objfile = pattern%(objectname,nome)
-        print "****",objfile
+        # print "****",objfile
         # embed()
         # objfile = pattern%(nome)
         objmass = object_masses[object_set].get('mass',default_object_mass)
@@ -104,12 +115,13 @@ def make_objectRotate(object_set,objectname,world,num):
         obj = world.rigidObject(world.numRigidObjects()-1)
         
         objT  = getTransform(nome)
+
         # embed()
         obj.setTransform(objT[0],objT[1])
         # embed()
         bmin,bmax = obj.geometry().getBB()
         T = obj.getTransform()
-        spacing = 0.010
+        spacing = 0.006
         T = (T[0],vectorops.add(T[1],(-(bmin[0]+bmax[0])*0.5,-(bmin[1]+bmax[1])*0.5,-bmin[2]+spacing)))
         obj.setTransform(*T)
         obj.appearance().setColor(0.2,0.5,0.7,1.0)

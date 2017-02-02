@@ -49,7 +49,7 @@ from dany_make_rotate_voxel import make_objectRotate
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
-# objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
+objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 
 Pose = {}
@@ -86,11 +86,13 @@ def Write_Poses(dataset,poses):
         f.write(',')
     f.close()
 
-def WriteRotationObj(dataset,angle,Axis):
+def WriteRotationObj(dataset,angle,Axis,T):
     f = open(dataset, 'w')
     f.write(str(angle))
     f.write(',')
     f.write(','.join([str(v) for v in Axis]))
+    f.write(',')
+    f.write(','.join([str(v) for v in T]))
     f.close()
 
 
@@ -111,9 +113,6 @@ def main(object_list):
 
                     if world.numRigidObjects() > 0:
                         world.remove(world.rigidObject(0))
-
-
-
                     pose_new = []
                     if object_set == 'princeton':
                         objpath = 'data/objects/princeton/%s/tsdf_mesh.off'%object_name
@@ -121,9 +120,9 @@ def main(object_list):
                     elif object_set == 'apc2015':
                         objpath = 'data/objects/apc2015/%s/meshes/poisson.ply'%object_name
                         respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
-                    # elif object_set == 'newObjdany':
-                    #     objpath = 'data/objects/newObjdany/%s/poisson_mesh.ply'%object_name
-                    #     respath = 'data/objects/newObjdany/%s/meshes/poisson_rotate_%s.ply'%(object_name,i)
+                    elif object_set == 'newObjdany':
+                        objpath = 'data/objects/newObjdany/%s/tsdf_mesh.stl'%object_name
+                        respath = 'data/objects/newObjdany/%s/%s_rotate_%s.stl'%(object_name,object_name,i)
                     else:
                         objpath = 'data/objects/%s/%s/meshes/poisson_mesh.stl'%(object_set,object_name)
                         respath = 'data/objects/voxelrotate/%s/%s/%s_rotate_%s.stl'%(object_set,object_name,object_name,i)
@@ -144,11 +143,12 @@ def main(object_list):
 
                     obj = make_objectRotate(object_set,object_name, world,i)
 
+                    # embed()
                     try:
                         pymesh.save_mesh(respath, mesh_new)
                         R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
                         w_T_o = np.array(se3.homogeneous((obj.getTransform())))
-
+                        # embed()
                         pose_new = np.dot(R, np.dot(w_T_o, o_T_p[i])) #w_T_h_rotate
                         # embed()
 
@@ -156,7 +156,7 @@ def main(object_list):
                         print "Problem with", object_name, "In", object_set
 
                     respose = '3DCNN/NNSet/Pose/ObjectsVariation/%s_rotate_%s.csv'%(object_name,str(i))
-                    WriteRotationObj(respose,theta,axis)
+                    WriteRotationObj(respose,theta,axis,obj.getTransform()[1])
 
                     respose = '3DCNN/NNSet/Pose/PoseVariation/%s_rotate_%s.csv'%(object_name,str(i))
                     Write_Poses(respose,pose_new)

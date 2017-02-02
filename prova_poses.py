@@ -45,7 +45,7 @@ from dany_make_rotate_voxel import make_objectRotate
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/voxelrotate/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/voxelrotate/apc2015')]
-# objects['newObjdany'] = [f for f in os.listdir('data/objects/voxelrotate/newObjdany')]
+objects['newObjdany'] = [f for f in os.listdir('data/objects/voxelrotate/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/voxelrotate/princeton')]
 robots = ['reflex_col']
 
