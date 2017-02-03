@@ -156,9 +156,8 @@ def main(object_list):
                     if obj is None:
                         continue
                     R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
-                    w_T_o = np.array(se3.homogeneous((obj.getTransform()[0],[0,0,0])))
                         # embed()
-                    pose_new = np.dot(R, np.dot(w_T_o, o_T_p[i])) #w_T_p_rotate
+                    pose_new = np.dot(R, o_T_p[i]) #o_T_p_rotate
                     # embed()
                     
 

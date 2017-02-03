@@ -304,8 +304,8 @@ def launch_test_mvbb_filtered(robotname, object_list):
 
                         obj = make_objectRotate(object_set, object_name, world,i)
 
-                        w_T_p = [] 
-                        Read_Poses(object_name,i,w_T_p)
+                        poses = []
+                        Read_Poses(object_name,i,poses)
 
                         if obj is None:
                             continue
@@ -317,17 +317,16 @@ def launch_test_mvbb_filtered(robotname, object_list):
 
                         poses_h = []
                         # embed()
-                        for j in range(len(w_T_p)):
-                            poses_h.append(np.dot(w_T_p[j],p_T_h))
+                        for j in range(len(poses)):
+                            poses_h.append(w_T_o.dot(np.dot(poses[j], p_T_h)))  # w_T_h
 
                         # embed()
                         # print "-------Filtering poses:"
                         filtered_poses = []
-                        for j in range(len(w_T_p)):
+                        for j in range(len(poses_h)):
                             if not CollisionTestPose(world, robot, obj, poses_h[j]):
                                 if not CollisionCheckWordFinger(robot, poses_h[j]):
-                                    o_T_p = np.dot(np.linalg.inv(w_T_o),w_T_p[j])
-                                    filtered_poses.append(o_T_p)
+                                    filtered_poses.append(poses[j])
 
                         if len(filtered_poses) == 0:
                             print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"

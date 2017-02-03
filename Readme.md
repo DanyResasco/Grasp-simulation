@@ -27,18 +27,18 @@ Datasets
 To create a dataset
    > python Main_dany.py
 
-To create a rotate mesh
-   > python mesh_rotate.py Name_mesh
+To create a rotated mesh
+   > python mesh_rotate.py mesh_name
 
-To test a pose of the rotate mesh
-   > python check_poses.py Name_mesh
+To test a pose on the rotated mesh
+   > python check_poses.py mesh_name
    > - es: python check_poses.py xwing
 
-Is possible made a poses for specify object as 
+To generate poses for a specified object
    > python Main_dany.py name_file
 
-To test a desired poses
-   > python check_pose_original.py Name_mesh
+To test poses on the specified object
+   > python check_pose_original.py mesh_name
    > - es: python check_pose_original.py xwing
 
 
@@ -46,6 +46,6 @@ To run the learning algorithm:
     > cd 3DCNN 
     > python Main.py
 
-To make a voxel
+To create a voxel from a mesh
    > ./binvox path_to_file
 
