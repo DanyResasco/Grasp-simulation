@@ -17,26 +17,28 @@ Dependencies
    > - Klampt v0.7,
    > - Theano
 
-Datasets:
+Datasets
     > - apc2015   http://rll.berkeley.edu/amazon_picking_challenge/scripts/downloader.py
     > - ycb       http://rll.eecs.berkeley.edu/ycb/
     > - princeton http://segeval.cs.princeton.edu/
 
 
 
-To create a dataset:
+To create a dataset
    > python Main_dany.py
 
-To create a rotate mesh:
-   > python mesh_rotate.py 
-   > python check_poses.py 
+To create a rotate mesh
+   > python mesh_rotate.py Name_mesh
 
-Is possible made a poses for specify object as: 
+To test a pose of the rotate mesh
+   > python check_poses.py Name_mesh
+
+Is possible made a poses for specify object as 
    > python Main_dany.py name_file
 
 To test a desired poses
-   > python mesh_rotate.py
-   > python check_poses.py 
+   > python check_pose_original.py Name_mesh
+
 
 To run the learning algorithm:
     > cd 3DCNN 
