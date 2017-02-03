@@ -80,10 +80,10 @@ def Write_Poses(dataset,poses):
     '''Write the dataset'''
     f = open(dataset, 'w')
     # embed()
-    temp = se3.from_homogeneous(poses)
-    for i in range(0,len(temp)):
-        f.write(','.join([str(v) for v in temp[i]]))
-        f.write(',')
+    for pose in poses:
+        T = se3.from_homogeneous(pose)
+        f.write(','.join([str(v) for v in T[0]+T[1]]))
+        f.write('\n')
     f.close()
 
 def WriteRotationObj(dataset,angle,Axis,T):
@@ -106,14 +106,14 @@ def main(object_list):
     for object_name in object_list:
         for object_set, objects_in_set in objects.items():
             if object_name in objects_in_set:
-                o_T_p = []
-                Open_pose_file([object_name],o_T_p)
+                poses = []
+                poses_rotated = []
+                Open_pose_file([object_name],poses)
                 # embed()
-                for i in range(1,len(o_T_p)):
+                for i, o_T_p in enumerate(poses):
 
                     if world.numRigidObjects() > 0:
                         world.remove(world.rigidObject(0))
-                    pose_new = []
                     if object_set == 'princeton':
                         objpath = 'data/objects/princeton/%s/tsdf_mesh.off'%object_name
                         respath = 'data/objects/voxelrotate/princeton/%s/%s_rotate_%s.off'%(object_name,object_name,i)
@@ -157,14 +157,14 @@ def main(object_list):
                         continue
                     R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
                         # embed()
-                    pose_new = np.dot(R, o_T_p[i]) #o_T_p_rotate
+                    poses_rotated.append(np.dot(R, o_T_p)) #o_T_p_rotate
                     # embed()
                     
 
 
 
-                    respose = '3DCNN/NNSet/Pose/PoseVariation/%s_rotate_%s.csv'%(object_name,str(i))
-                    Write_Poses(respose,pose_new)
+                respose = '3DCNN/NNSet/Pose/PoseVariation/%s_rotate_%s.csv'%(object_name,str(i))
+                Write_Poses(respose,poses_rotated)
                     
 
 
