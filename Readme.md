@@ -32,12 +32,14 @@ To create a rotate mesh
 
 To test a pose of the rotate mesh
    > python check_poses.py Name_mesh
+   > es: python check_poses.py xwing
 
 Is possible made a poses for specify object as 
    > python Main_dany.py name_file
 
 To test a desired poses
    > python check_pose_original.py Name_mesh
+   > es: python check_pose_original.py xwing
 
 
 To run the learning algorithm:
