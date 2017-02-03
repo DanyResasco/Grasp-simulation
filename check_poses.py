@@ -326,7 +326,7 @@ def launch_test_mvbb_filtered(robotname, object_list):
                         for j in range(len(w_T_p)):
                             if not CollisionTestPose(world, robot, obj, poses_h[j]):
                                 if not CollisionCheckWordFinger(robot, poses_h[j]):
-                                    o_T_p= np.dot(np.linalg.inv(w_T_o),w_T_p[j])
+                                    o_T_p = np.dot(np.linalg.inv(w_T_o),w_T_p[j])
                                     filtered_poses.append(o_T_p)
 
                         if len(filtered_poses) == 0:

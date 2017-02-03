@@ -78,9 +78,7 @@ def getTransform(nome):
             axis = [0,0,1]
             R = so3.from_axis_angle((axis,angle))
             T = row[4:]
-            # T = [0,0,0]
-            # embed()
-            # embed()
+
     return np.array((R,T))
 
 

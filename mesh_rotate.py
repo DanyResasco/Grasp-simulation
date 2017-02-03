@@ -135,28 +135,34 @@ def main(object_list):
                     if theta_deg is 0:
                         theta_deg = random.randrange(-90,90)
                     theta = math.radians(theta_deg)
+                    
                     ROtation_matrix = so3.matrix(so3.from_axis_angle((axis,theta)))
 
                     temp_vertex = mesh.vertices.dot(np.array(ROtation_matrix).transpose())
 
                     mesh_new = pymesh.form_mesh(temp_vertex, mesh.faces,mesh.voxels)
-                    obj = None
-                    obj = make_objectRotate(object_set,object_name, world,i)
-                    if obj is None:
-                        continue
-                    R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
-                    w_T_o = np.array(se3.homogeneous((obj.getTransform())))
-                        # embed()
-                    pose_new = np.dot(R, np.dot(w_T_o, o_T_p[i])) #w_T_p_rotate
-                    # embed()
+                    
                     try:
                         pymesh.save_mesh(respath, mesh_new)
+                        respose = '3DCNN/NNSet/Pose/ObjectsVariation/%s_rotate_%s.csv'%(object_name,str(i))
+                        WriteRotationObj(respose,theta,axis,[0,0,0])
 
                     except:
                         print "Problem with", object_name, "In", object_set
 
-                    respose = '3DCNN/NNSet/Pose/ObjectsVariation/%s_rotate_%s.csv'%(object_name,str(i))
-                    WriteRotationObj(respose,theta,axis,obj.getTransform()[1])
+                    obj = None
+                    obj = make_objectRotate(object_set,object_name, world,i)
+                    # embed()
+                    if obj is None:
+                        continue
+                    R = np.array((se3.homogeneous((so3.from_axis_angle((axis,theta)),[0,0,0]))))
+                    w_T_o = np.array(se3.homogeneous((obj.getTransform()[0],[0,0,0])))
+                        # embed()
+                    pose_new = np.dot(R, np.dot(w_T_o, o_T_p[i])) #w_T_p_rotate
+                    # embed()
+                    
+
+
 
                     respose = '3DCNN/NNSet/Pose/PoseVariation/%s_rotate_%s.csv'%(object_name,str(i))
                     Write_Poses(respose,pose_new)
