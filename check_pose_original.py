@@ -43,9 +43,9 @@ from dany_make_rotate_voxel import make_objectRotate
 
 
 objects = {}
-# objects['ycb'] = [f for f in os.listdir('data/objects/voxelrotate/ycb')]
-# objects['apc2015'] = [f for f in os.listdir('data/objects/voxelrotate/apc2015')]
-# objects['newObjdany'] = [f for f in os.listdir('data/objects/voxelrotate/newObjdany')]
+objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
+objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
+objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 robots = ['reflex_col']
 
@@ -75,7 +75,7 @@ class TesterGrab(GLRealtimeProgram):
         self.module = module
         self.running = True
         self.HandClose = False
-        # self.db = MVBBLoader(suffix='BinvoxVariation2')
+        self.db = MVBBLoader(suffix='test_pose')
         # self.logFile = DanyLog(suffix='logFile')
         self.kindness = None
         self.f1_contact = []
@@ -197,6 +197,7 @@ class TesterGrab(GLRealtimeProgram):
                         self.sim.updateWorld()
                         FC = get_contact_forces_and_jacobians(self.robot,self.world,self.sim)
                         n = len(self.poses)
+                        # print FC
                         # +len(self.poses_variations) - len(self.all_poses)
                         # print"pose", n, "contact forces@t:", self.sim.getTime(), "-", FC
                         if hand_temp[0] <= hand_close[0] and hand_temp[1] <= hand_close[1] and hand_temp[2] <= hand_close[2]:
@@ -240,7 +241,7 @@ class TesterGrab(GLRealtimeProgram):
                     # print "Saving grasp, object fall status:", "fallen" if self.object_fell else "grasped"
                     # print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 
-                    # self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.kindness)
+                    self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.kindness)
                     # self.logFile.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.obj.getVelocity(), self.robot.getVelocity(), self.f1_contact,self.f2_contact,self.f3_contact)
                     if len(self.crashing_states) > 0:
                         self.crashing_states.pop()
@@ -267,7 +268,7 @@ def Read_Poses(nome):
             pp = row[:9]
             # embed()
             vector_set.append(np.array(se3.homogeneous((pp,T))))
-            break
+            # break
     return vector_set
 
 
@@ -361,14 +362,14 @@ def launch_test_mvbb_filtered(robotname, object_list):
     return
 
 if __name__ == '__main__':
-    # all_objects = []
-    # for dataset in objects.values():
-    #     all_objects += dataset
+    all_objects = []
+    for dataset in objects.values():
+        all_objects += dataset
 
 
 
-    # try:
-    objname = sys.argv[1]
-    launch_test_mvbb_filtered("reflex_col", [objname])
-    # except:
-    #     launch_test_mvbb_filtered("reflex_col", all_objects)
+    try:
+        objname = sys.argv[1]
+        launch_test_mvbb_filtered("reflex_col", [objname])
+    except:
+        launch_test_mvbb_filtered("reflex_col", all_objects)
