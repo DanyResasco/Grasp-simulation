@@ -242,7 +242,12 @@ def MainDany(object_list):
                         sim.updateWorld()
                         camera_measure = camera.getMeasurements()
 
-                        rgb = (np.array(camera_measure)[0:len(camera_measure)/2]).reshape(128,128)
+                        abgr = (np.array(camera_measure)[0:len(camera_measure)/2]).reshape(128,128).astype(np.uint32)
+                        rgb = np.zeros((128,128,3),dtype=np.uint8)
+                        rgb[:,:,0] =                np.bitwise_and(abgr,0x000f)
+                        rgb[:,:,1] = np.right_shift(np.bitwise_and(abgr,0x00f0), 8)
+                        rgb[:,:,2] = np.right_shift(np.bitwise_and(abgr,0x0f00), 16)
+
                         scipy.misc.imsave('outfile_%s.jpg'%k, rgb)
                         res_dataset = '2DCNN/NNSet/Image/%s_rotate_%s.csv'% (object_name,k)
                         Write_image(camera_measure,res_dataset)
