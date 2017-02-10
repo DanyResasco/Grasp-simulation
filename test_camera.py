@@ -234,13 +234,6 @@ def MainDany(object_list):
                         for s in o_T_p_r[0]+o_T_p_r[1]:
                             Tsensor += str(s) + ' '
                         
-                        # camera.setSetting("Tsensor",Tsensor)
-                        # vis.add("sensor",camera)
-                        # sim.simulate(0.1)
-                        # sim.updateWorld()
-                        # embed()
-                        # camera_measure = camera.getMeasurements()
-                        # camera.drawGL()
                         vis.setPlugin(program)
                         # vis.setPlugin(PoseVisualizer(obj,world,robot,se3.homogeneous(o_T_p_r),o_T_p[k]))
                         camera.setSetting("Tsensor",Tsensor)
@@ -260,15 +253,8 @@ def MainDany(object_list):
                                 l=0
                             dati[h,l] = camera_measure[i]
 
-                        # for i in range(128*128,32768):
-                        #     if i == 128:
-                        #         h +=1
-                        #         l=0
-                        #     dati[h,l,1] = camera_measure[i]
-
-                        # embed()
-                        dati = np.array(camera_measure).reshape(128*128,2)
-                        # scipy.misc.imsave('outfile_%s.jpg'%k, dati)
+                        # dati = np.array(camera_measure).reshape(128*128,2)
+                        scipy.misc.imsave('outfile_%s.jpg'%k, dati)
                         res_dataset = '2DCNN/NNSet/Image/%s_rotate_%s.csv'% (object_name,k)
                         Write_image(camera_measure,res_dataset)
                         # embed()
