@@ -25,16 +25,14 @@ from mvbb.draw_bbox import draw_GL_frame
 from i16mc import make_object, make_moving_base_robot
 # from mvbb.db import MVBBLoader
 import csv
-import xml.etree.cElementTree as ET
-import StringIO
-import json
+import scipy.misc
 
-
-
+Pose = {}
+Pose['pose'] = [f for f in os.listdir('3DCNN/NNSet/Pose/pose')]
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
-objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
+# objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 robotname = "reflex_col"
 robot_files = {
@@ -67,8 +65,8 @@ class PoseVisualizer(GLNavigationProgram):
         draw_GL_frame(se3.from_homogeneous(self.o_T_p),axis_length = 1)
         # Pc = 
         # [-0.99, 0, -0.0015, 0.0 ,1, 0, 0.0015 ,0,-0.99 ],[ 0.0, 0, 0.5]
-        Pc = [0.99, 0, -0.0015, 0.0 ,1 ,0, 0.0015, 0, 0.99], [0.0 ,0 ,1.5]
-        draw_GL_frame(Pc)
+        # Pc = [0.99, 0, -0.0015, 0.0 ,1 ,0, 0.0015, 0, 0.99], [0.0 ,0 ,1.5]
+        # draw_GL_frame(Pc)
 
 
         #camera -> link = 0
@@ -139,13 +137,9 @@ def  Find_axis_rotation(o_T_p):
         axis = [1,0,0]
         R = so3.from_axis_angle((axis,math.radians(90)))
 
-
     else:
         Normal = np.array([0,0,1]) #z axis
         mini = Fin_min_angle(o_T_p,Normal)
-        
-        # mini = [Dx,Dy,Dz]
-        # angle = min(mini)
         index = mini.index(min(mini))
         print"**************min z*", index
         if index == 0: #x axis
@@ -186,75 +180,106 @@ def MainDany(object_list):
         obj = None
         for object_set, objects_in_set in objects.items():
             if object_name in objects_in_set:
-                if world.numRigidObjects() > 0:
-                    world.remove(world.rigidObject(0))
-                if object_name in objects['princeton']:
-                    print "*************Dentro princeton********************" #need to scale the obj size
-                    objfilename = 'data/objects/template_obj_scale_princeton.obj'
-                    print"objfilename", objfilename
-                    obj = DanyReduceScale(object_name, world,objfilename,object_set)
-                else:
-                    obj = make_object(object_set, object_name, world)
-            if obj is None:
-                print "Could not find object", object_name
-                continue
-        R,t = obj.getTransform()
-        # obj.setTransform(R, [0,0,0]) #[0,0,0] or t?
+                # embed()
+                for i,t in Pose.items():
+                    if (object_name +'.csv') in t:
 
-        # w_T_o = np.array(se3.homogeneous((R,t))) 
-        # p_T_h = np.array(se3.homogeneous(xform))
+                        if world.numRigidObjects() > 0:
+                            world.remove(world.rigidObject(0))
+                        if object_name in objects['princeton']:
+                            print "*************Dentro princeton********************" #need to scale the obj size
+                            objfilename = 'data/objects/template_obj_scale_princeton.obj'
+                            print"objfilename", objfilename
+                            obj = DanyReduceScale(object_name, world,objfilename,object_set)
+                        else:
+                            obj = make_object(object_set, object_name, world)
+                    if obj is None:
+                        print "Could not find object", object_name
+                        continue
+                    R,t = obj.getTransform()
+                    obj.setTransform(R, [0,0,0]) #[0,0,0] or t?
 
-        o_T_p= []
-        Read_Poses(object_name,o_T_p)
+                    # w_T_o = np.array(se3.homogeneous((R,t))) 
+                    # p_T_h = np.array(se3.homogeneous(xform))
 
-        for i in range(0,len(o_T_p)):
-            print "*****",i
-             #now the simulation is launched
-            program = GLSimulationProgram(world)
-            sim = program.sim
-            sim.simulate(0.1)
-            # print R
-            camera = (sim.controller(0).sensor('rgbd_camera'))
-            
-            if i == 0:
-                bmin,bmax = obj.geometry().getBB()
-                centerX = 0.5 * ( bmax[0] - bmin[0] ) +t[0] 
-                centerY = 0.5 * ( bmax[1] - bmin[1] ) + t[1]
-                centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
-                P = np.array(se3.homogeneous((R,[centerX,centerY,centerZ])))
-                R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(90))),[0,0,0] )))
-                o_T_p_r = se3.from_homogeneous(np.dot(P,R))
-            else:
-                R = np.array(se3.homogeneous((Find_axis_rotation(o_T_p[i]), [0,0,0])))
-                o_T_p_r = se3.from_homogeneous(( np.dot(o_T_p[i],R )))
-            
-            o_T_p_r[1][1] = o_T_p_r[1][1] - 0.5 #move along object y frame
-            Tsensor = ''
-            for k in o_T_p_r[0]+o_T_p_r[1]:
-                Tsensor += str(k) + ' '
+                    o_T_p= []
+                    Read_Poses(object_name,o_T_p)
+                    print object_name
+                    #now the simulation is launched
+                    program = GLSimulationProgram(world)
+                    sim = program.sim
+                    camera = (sim.controller(0).sensor('rgbd_camera'))
+                    
+                    
+                    
+                    for k in range(0,len(o_T_p)):
+                        
+                        R,t = obj.getTransform()
+                        if k == 0:
+                            bmin,bmax = obj.geometry().getBB()
+                            centerX = 0.5 * ( bmax[0] - bmin[0] ) +t[0] 
+                            centerY = 0.5 * ( bmax[1] - bmin[1] ) + t[1]
+                            centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
+                            P = np.array(se3.homogeneous((R,[centerX,centerY,centerZ])))
+                            R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(90))),[0,0,0] )))
+                            o_T_p_r = se3.from_homogeneous(np.dot(P,R))
+                        else:
+                            R = np.array(se3.homogeneous((Find_axis_rotation(o_T_p[k]), [0,0,0])))
+                            o_T_p_r = se3.from_homogeneous(( np.dot(o_T_p[k],R )))
+                        
+                        o_T_p_r[1][1] = o_T_p_r[1][1] - 0.7 #move along object y frame
+                        # o_T_p = [0.99 ,0, -0.0015, 0.0 ,1 ,0 ,0.0015, 0 ,0.99],[ 0.0, 0, 1]
 
-           
-            camera.setSetting("Tsensor",Tsensor)
-            camera_measure = camera.getMeasurements()
+                        Tsensor = ''
+                        for s in o_T_p_r[0]+o_T_p_r[1]:
+                            Tsensor += str(s) + ' '
+                        
+                        # camera.setSetting("Tsensor",Tsensor)
+                        # vis.add("sensor",camera)
+                        # sim.simulate(0.1)
+                        # sim.updateWorld()
+                        # embed()
+                        # camera_measure = camera.getMeasurements()
+                        # camera.drawGL()
+                        vis.setPlugin(program)
+                        # vis.setPlugin(PoseVisualizer(obj,world,robot,se3.homogeneous(o_T_p_r),o_T_p[k]))
+                        camera.setSetting("Tsensor",Tsensor)
+                        vis.add("sensor",camera)
+                        sim.simulate(0.1)
+                        sim.updateWorld()
+                        camera_measure = camera.getMeasurements()
 
+                        dati = np.ones((128,128))
+                        h = 0
+                        l = 0
+                        d = 0
 
+                        for i in range(0,128*128):
+                            if i == 128:
+                                h +=1
+                                l=0
+                            dati[h,l] = camera_measure[i]
 
+                        # for i in range(128*128,32768):
+                        #     if i == 128:
+                        #         h +=1
+                        #         l=0
+                        #     dati[h,l,1] = camera_measure[i]
 
-            # embed()
-            # sensor.setSetting("Tsensor","")
-            vis.setPlugin(PoseVisualizer(obj,world,robot,se3.homogeneous(o_T_p_r),o_T_p[i]))
-            sim.updateWorld()
-            res_dataset = '2DCNN/NNSet/Image/%s_%s.csv'% (object_name,i)
-            Write_image(camera_measure,res_dataset)
-            # embed()
-            #this code manually updates the visualization
-            vis.add("world",world)
-            vis.show()
-            t0 = time.time()
-            while vis.shown():
-            	t1 = time.time()
-            	time.sleep(max(0.01-(t1-t0),0.001))
-            	t0 = t1	
+                        # embed()
+                        dati = np.array(camera_measure).reshape(128*128,2)
+                        # scipy.misc.imsave('outfile_%s.jpg'%k, dati)
+                        res_dataset = '2DCNN/NNSet/Image/%s_rotate_%s.csv'% (object_name,k)
+                        Write_image(camera_measure,res_dataset)
+                        # embed()
+                        #this code manually updates the visualization
+                        
+                        vis.show()
+                        t0 = time.time()
+                        while vis.shown():
+                            t1 = time.time()
+                            time.sleep(max(0.01-(t1-t0),0.001))
+                            t0 = t1	
 
 
 #Main
@@ -268,19 +293,18 @@ if __name__ == '__main__':
     to_filter=[]
     to_do=[]
 
-    # for obj_name in to_filter + to_do + done + to_check:
-    #     all_objects.pop(all_objects.index(obj_name))
+    for obj_name in to_filter + to_do + done + to_check:
+        all_objects.pop(all_objects.index(obj_name))
 
     # print "-------------"
     # print all_objects
     # print "-------------"
 
-    # try:
-    objname = sys.argv[1]
-    MainDany([objname])
-    # except:
-        # launch_test_mvbb_filtered("soft_hand", all_objects, 100)
-        # MainDany(all_objects)
+    try:
+        objname = sys.argv[1]
+        MainDany([objname])
+    except:
+        MainDany(all_objects)
 
 
 
