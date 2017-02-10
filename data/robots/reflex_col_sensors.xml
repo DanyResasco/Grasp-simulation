@@ -36,6 +36,6 @@
   <ContactSensor name="f3_distal_takktile_3" link="14" Tsensor="1 0 0  0 0 1   0 -1 0   0 0.011 -0.094" patchMin="-0.007 0.005" patchMax="0.007 0.019" patchTolerance="0.004" falloffCoefficient="1.0" fSensitivity="0.1" fSaturation="3 3 3" />
   <ContactSensor name="f3_distal_takktile_4" link="14" Tsensor="1 0 0  0 0 1   0 -1 0   0 0.011 -0.094" patchMin="-0.007 0.011" patchMax="0.007 0.025" patchTolerance="0.004" falloffCoefficient="1.0" fSensitivity="0.1" fSaturation="3 3 3" />
   <ContactSensor name="f3_distal_takktile_5" link="14" Tsensor="1 0 0  0 0 1   0 -1 0   0 0.011 -0.094" patchMin="-0.007 0.017" patchMax="0.007 0.031" patchTolerance="0.004" falloffCoefficient="1.0" fSensitivity="0.1" fSaturation="3 3 3" />
-
+  <CameraSensor name="rgbd_camera" Tsensor="1 0 0  0 1 0   0 0 1   0 0 0"  xres="256" yres="128" xfov="1.05" yfov="0.06" zmin="0.4" zresolution="0.01" zvarianceLinear="0.00001" />
 </sensors>
 
