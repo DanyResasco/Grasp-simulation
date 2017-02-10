@@ -235,7 +235,7 @@ def MainDany(object_list):
                             Tsensor += str(s) + ' '
                         
                         vis.setPlugin(program)
-                        # vis.setPlugin(PoseVisualizer(obj,world,robot,se3.homogeneous(o_T_p_r),o_T_p[k]))
+                        vis.setPlugin(PoseVisualizer(obj,world,robot,se3.homogeneous(o_T_p_r),o_T_p[k]))
                         camera.setSetting("Tsensor",Tsensor)
                         vis.add("sensor",camera)
                         sim.simulate(0.1)
