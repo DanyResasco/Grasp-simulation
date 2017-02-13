@@ -17,7 +17,7 @@ import sys
 from moving_base_control import *
 # from Add_variation_camera_pose import Make_camera_poses
 import scipy.misc
-from Add_variation_camera_pose import Add_variation,Make_camera_poses
+from Add_variation_camera_pose import Add_variation, Make_camera_poses
 from utils_camera import FromCamera2rgb, Find_axis_rotation, Read_Poses, Write_image
 from mvbb.ScalaReduce import DanyReduceScale
 
@@ -27,7 +27,6 @@ Pose['pose'] = [f for f in os.listdir('3DCNN/NNSet/Pose/pose')]
 objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
-# objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
 
 
@@ -52,30 +51,12 @@ def processDepthSensor(sensor):
 
 
 world = WorldModel()
-# world.readFile("data/robots/test_sensor.xml")
-world.loadElement("data/terrains/plane.env")
-# embed()
-# robot = world.robot(0)
-# robot = make_moving_base_robot("reflex_col", world)
-# xform = resource.get("default_initial_reflex_col.xform" , description="Initial hand transform",default=se3.identity(), world=world, doedit=False)
-# pose_se3= ([0.983972802704,-0.0441290216922,0.172771968165,0.177866245396,0.173919267423,-0.968563723855,0.0126933954459,0.983770663246,0.178980892412],[0.234435798004,0.0102866113634,0.0952616290142])
-# set_moving_base_xform(robot,xform[0],[0,0,-1])
-# robot_config = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,-1]
-# embed()
+
+# world.loadElement("data/terrains/plane.env")
 robot = make_moving_base_robot('reflex_col', world)
 xform = resource.get("default_initial_reflex_col.xform" , description="Initial hand transform",
-                         default=se3.identity(), world=world, doedit=False)
+                        default=se3.identity(), world=world, doedit=False)
 set_moving_base_xform(robot,xform[0],[0,0,-1])
-# q = robot.getConfig()
-# q[0] = 0.05
-# q[1] = 0.01
-# q[2] = -1
-# q[3] = 0 #yaw
-# q[4] = 0 #pitch
-# q[5] = math.radians(180) #roll
-# robot.setConfig(q)
-# robot.setConfig((robot_config))
-
 
 all_objects = []
 object_list = []
@@ -96,12 +77,8 @@ for obj_name in to_filter + to_do + done + to_check:
 
 try:
     object_list.append(sys.argv[1])
-    # MainDany([objname])
 except:
     object_list = (all_objects)
-
-
-
 
 
 for object_name in object_list:
@@ -122,20 +99,20 @@ for object_name in object_list:
                 if obj is None:
                     print "Could not find object", object_name
                     continue
-
+                # embed()
                 o_T_p= []
-                 # = []
+
                 Read_Poses(object_name,o_T_p)
+                # embed()
                 o_T_p_r = Make_camera_poses(o_T_p,obj)
 
                 vis.add("world",world)
 
                 sim = Simulator(world)
+                sim.setGravity([0,0,0])
                 sensor = sim.controller(0).sensor("rgbd_camera")
                 print"LINK", sensor.getSetting("link")
                 print "Tsensor", sensor.getSetting("Tsensor")
-
-
 
                 #Note: GLEW sensor simulation only runs if it occurs in the visualization thread (e.g., the idle loop)
                 class SensorTestWorld (GLPluginInterface):
@@ -148,15 +125,10 @@ for object_name in object_list:
                         self.running = True
                         self.obj = obj
                         self.curr_pose = None
-                        # self.sim = None
                         self.step = 0
-                        # self.camera = None
                         self.nome_obj = object_name
                         self.t_0 = None
                         self.simulation_ = None
-                        # robot.randomizeConfig()
-                        #sensor.kinematicSimulate(world,0.01)
-                        # sim.controller(0).setPIDCommand(robot.getConfig(),[0.0]*7)
 
                     def idle(self):
                         print "Idle..."
@@ -166,8 +138,6 @@ for object_name in object_list:
                         if not self.is_simulating:
                             if len(self.poses) > 0:
                                 self.curr_pose = self.poses.pop(0)
-
-                                # print  self.curr_pose
                                 print len(self.poses)
                             else:
                                 self.running = False
@@ -176,11 +146,11 @@ for object_name in object_list:
 
                             if self.simulation_ is None:
                                 vis.add("world",self.world)
-                                
                             self.t_0 = sim.getTime()
                             self.is_simulating = True
 
                         if self.is_simulating:
+                            obj.setVelocity([0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
                             sensor.setSetting("Tsensor",' '.join(str(v) for v in self.curr_pose[0]+self.curr_pose[1]))
                             vis.add("sensor",sensor)
                             
@@ -190,10 +160,10 @@ for object_name in object_list:
                             if not vis.shown() or (sim.getTime() - self.t_0) >= 2.5:
                                 if  vis.shown():
                                     camera_measure = sensor.getMeasurements()
-                                    rgb = FromCamera2rgb(camera_measure)
-                                    scipy.misc.imsave('outfile_%s.jpg'%self.step, rgb)
+                                    image,rgb = FromCamera2rgb(camera_measure)
+                                    scipy.misc.imsave('outfile_%s.jpg'%self.step, image)
                                     res_dataset = '2DCNN/NNSet/Image/%s_rotate_%s.csv'% (self.nome_obj,self.step)
-                                    Write_image(camera_measure,res_dataset)
+                                    Write_image(rgb,res_dataset)
                                     self.step +=1
                                     self.is_simulating = False
                                     self.simulation_  = None

@@ -11,6 +11,7 @@ from moving_base_control import *
 import numpy as np
 import random
 from utils_camera import FromCamera2rgb, Find_axis_rotation
+from IPython import embed
 
 def Add_variation(o_T_p_r_original,o_T_p_r):
 
@@ -88,9 +89,10 @@ def Add_variation(o_T_p_r_original,o_T_p_r):
 
 
 def Make_camera_poses(o_T_p,obj):
-    
+    o_T_p_r = []
+
     for k in range(0,len(o_T_p)):
-        o_T_p_r = []
+
         if k == 0:
             R_o,t = obj.getTransform()
             bmin,bmax = obj.geometry().getBB()
@@ -99,12 +101,15 @@ def Make_camera_poses(o_T_p,obj):
             centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
             P = np.array(se3.homogeneous((R_o,[centerX,centerY,centerZ])))
             R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(-90))),[0,0,0] )))
-            o_T_p_r.append(se3.from_homogeneous(np.dot(P,R )))
-            
+            o_T_p_r.append(se3.from_homogeneous(np.dot(P,R)))
         else:
+            # embed()
             R = np.array(se3.homogeneous((Find_axis_rotation(o_T_p[k]), [0,0,0])))
-            o_T_p_r.append(se3.from_homogeneous((np.dot(o_T_p[k],R ) )))
-        
-        o_T_p_r[k][1][1]  = o_T_p[k][1][1] - 1.
+            o_T_p_r.append(se3.from_homogeneous((np.dot(o_T_p[k],R))))
+
+        o_T_p_r[k][1][1] = o_T_p[k][1][1] - 0.7
+        # o_T_p_r[k][1][2] = o_T_p_r[k][1][2] - 0.05
+
         Add_variation(o_T_p_r[k],o_T_p_r)
+
     return o_T_p_r

@@ -9,13 +9,46 @@ from klampt.io import resource
 from klampt.sim import *
 from moving_base_control import *
 import numpy as np
-import math
+import csv
+from IPython import embed
+from klampt.math import se3,so3
+
+
+
+def Read_Poses(nome,vector_set):
+
+    obj_dataset = '3DCNN/NNSet/Pose/pose/%s.csv'%(nome)
+    with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+        file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
+        for row in file_reader:
+            T = row[9:12]
+            pp = row[:9]
+            vector_set.append( np.array(se3.homogeneous( (pp,T)) ) ) 
+
+def Write_image(camera,dataset):
+    '''Write the dataset'''
+    # embed()
+    import csv
+    f = open(dataset, 'w')
+    # embed()
+    for i in camera:
+        f.write(','.join([str(i)]))
+        f.write('\n')
+    f.close()
 
 
 def Fin_min_angle(pose,axis):
-    x = pose[:3,0]
-    y = pose[:3,1]
-    z = pose[:3,2]
+    # embed()
+    # x = pose[:3,0]
+    # y = pose[:3,1]
+    # z = pose[:3,2]
+    # pose_temp = se3.homogeneous(pose)
+    x = [pose[0][0],pose[1][0],pose[2][0] ]
+    y = [pose[0][1],pose[1][1],pose[2][1] ]
+    z = [pose[0][2],pose[1][2],pose[2][2] ]
+
+
+
     # embed()
     Dx = math.acos(np.dot(axis,x) / np.dot(np.sqrt(np.dot(x,x)),np.sqrt(np.dot(axis,axis))) )
     Dy = math.acos(np.dot(axis,y) / np.dot(np.sqrt(np.dot(y,y)),np.sqrt(np.dot(axis,axis))) )
@@ -80,5 +113,5 @@ def  FromCamera2rgb(camera_measure):
     rgb[:,:,0] =                np.bitwise_and(abgr,0x000f)
     rgb[:,:,1] = np.right_shift(np.bitwise_and(abgr,0x00f0), 8)
     rgb[:,:,2] = np.right_shift(np.bitwise_and(abgr,0x0f00), 16)
-
-    return rgb
+    embed()
+    return abgr,rgb
