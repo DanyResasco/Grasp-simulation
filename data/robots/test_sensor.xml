@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<world>
+    <!-- <terrain file="../terrains/plane.off"  translation="0 0 0"/> -->
+    <robot file="reflex_col.rob">
+        <sensors>
+            <JointPositionSensor name="encoders" indices="3 8 12 2"/>
+            <CameraSensor name="rgbd_camera" link="0" Tsensor="6.123233995736766e-17 0.0 -1.0 0.0 1.0 0.0 1.0 0.0 6.123233995736766e-17 0 0 1"  xres="256" yres="256" xfov="1.05" yfov="0.06" zmin="0.5" zresolution="0.01" zvarianceLinear="0.00001" />
+        </sensors>
+    </robot>
+    <!-- </terrain> -->
+</world>

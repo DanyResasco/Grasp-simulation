@@ -36,26 +36,26 @@ def  Find_axis_rotation(o_T_p):
     print "index max z", maxz
     if ((minx == 2) and (maxz == 1)) and miny !=2 or ((minx ==0) and (maxz ==2)) : #zy
         axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(90)))
+        R = so3.from_axis_angle((axis,math.radians(-90)))
     # elif ((minx == 2) and (maxz == 1)) and miny ==2:
     elif ((minx == 1) and (maxz == 2)and miny !=2):
         axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(180)))
+        R = so3.from_axis_angle((axis,math.radians(-180)))
     # elif ((minx == 1) and (maxz == 2)and miny ==0):
     #     axis = [0,1,0]
     #     R = so3.from_axis_angle((axis,math.radians(90)))
     elif  (minx ==2) and (maxz ==0):
-        R = so3.from_axis_angle(([0,1,0],math.radians(180)))
+        R = so3.from_axis_angle(([0,1,0],math.radians(-180)))
     elif ((minx ==0) and (maxz ==0)) and miny == 2 or (((minx == 2) and (maxz == 1)) and miny ==2):
         R = so3.from_axis_angle(([0,1,0],math.radians(0)))
     elif ((minx ==0) and (maxz ==0)) and miny != 2:
-        R = so3.from_axis_angle(([0,1,0],math.radians(90)))
+        R = so3.from_axis_angle(([0,1,0],math.radians(-90)))
     elif ((minx ==2) and (maxz ==2) and miny ==0):
         axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(90)))
+        R = so3.from_axis_angle((axis,math.radians(-90)))
     elif ((minx ==1) and (maxz ==2) and miny ==2):
         axis = [1,0,0]
-        R = so3.from_axis_angle((axis,math.radians(90)))
+        R = so3.from_axis_angle((axis,math.radians(-90)))
 
     else:
         Normal = np.array([0,0,1]) #z axis
@@ -71,12 +71,12 @@ def  Find_axis_rotation(o_T_p):
                 axis = [1,0,0]
             else:
                 axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(180)))
+        R = so3.from_axis_angle((axis,math.radians(-180)))
     return R
 
 def  FromCamera2rgb(camera_measure):
-    abgr = (np.array(camera_measure)[0:len(camera_measure)/2]).reshape(128,128).astype(np.uint32)
-    rgb = np.zeros((128,128,3),dtype=np.uint8)
+    abgr = (np.array(camera_measure)[0:len(camera_measure)/2]).reshape(256,256).astype(np.uint32)
+    rgb = np.zeros((256,256,3),dtype=np.uint8)
     rgb[:,:,0] =                np.bitwise_and(abgr,0x000f)
     rgb[:,:,1] = np.right_shift(np.bitwise_and(abgr,0x00f0), 8)
     rgb[:,:,2] = np.right_shift(np.bitwise_and(abgr,0x0f00), 16)
