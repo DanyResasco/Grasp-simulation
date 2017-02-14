@@ -87,24 +87,24 @@ def  Find_axis_rotation(o_T_p):
         axis = [0,1,0]
         R = so3.from_axis_angle((axis,math.radians(-90)))
     elif ((minx ==1) and (maxz ==2) and miny ==2):
-        axis = [1,0,0]
-        R = so3.from_axis_angle((axis,math.radians(-90)))
+        axis = [0,1,0]
+        R = so3.from_axis_angle((axis,math.radians(90)))
 
-    else:
-        Normal = np.array([0,0,1]) #z axis
-        mini = Fin_min_angle(o_T_p,Normal)
-        index = mini.index(min(mini))
-        print"**************min z*", index
-        if index == 0: #x axis
-            axis = [1,0,0]
-        elif index == 1: #y axis
-            axis = [0,1,0]
-        else: #no z  
-            if mini[0] < mini[1]:
-                axis = [1,0,0]
-            else:
-                axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(-180)))
+    # else:
+    #     Normal = np.array([0,0,1]) #z axis
+    #     mini = Fin_min_angle(o_T_p,Normal)
+    #     index = mini.index(min(mini))
+    #     print"**************min z*", index
+    #     if index == 0: #x axis
+    #         axis = [1,0,0]
+    #     elif index == 1: #y axis
+    #         axis = [0,1,0]
+    #     else: #no z  
+    #         if mini[0] < mini[1]:
+    #             axis = [1,0,0]
+    #         else:
+    #             axis = [0,1,0]
+    #     R = so3.from_axis_angle((axis,math.radians(-180)))
     return R
 
 def  FromCamera2rgb(camera_measure):
@@ -113,5 +113,5 @@ def  FromCamera2rgb(camera_measure):
     rgb[:,:,0] =                np.bitwise_and(abgr,0x000f)
     rgb[:,:,1] = np.right_shift(np.bitwise_and(abgr,0x00f0), 8)
     rgb[:,:,2] = np.right_shift(np.bitwise_and(abgr,0x0f00), 16)
-    embed()
-    return abgr,rgb
+    # embed()
+    return abgr

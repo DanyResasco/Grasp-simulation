@@ -157,19 +157,19 @@ for object_name in object_list:
                             sim.simulate(0.1)
                             sim.updateWorld()
 
-                            if not vis.shown() or (sim.getTime() - self.t_0) >= 2.5:
+                            if not vis.shown() or (sim.getTime() - self.t_0) >= .5:
                                 if  vis.shown():
                                     camera_measure = sensor.getMeasurements()
-                                    image,rgb = FromCamera2rgb(camera_measure)
-                                    scipy.misc.imsave('outfile_%s.jpg'%self.step, image)
+                                    image = FromCamera2rgb(camera_measure)
+                                    # scipy.misc.imsave('outfile_%s.jpg'%self.step, image)
                                     res_dataset = '2DCNN/NNSet/Image/%s_rotate_%s.csv'% (self.nome_obj,self.step)
-                                    Write_image(rgb,res_dataset)
+                                    Write_image(image,res_dataset)
                                     self.step +=1
                                     self.is_simulating = False
                                     self.simulation_  = None
 
 
-                vis.pushPlugin(SensorTestWorld(o_T_p_r,world,'xwing'))
+                vis.pushPlugin(SensorTestWorld(o_T_p_r,world,object_name))
                 vis.show()
                 while vis.shown():
                     time.sleep(0.5)
