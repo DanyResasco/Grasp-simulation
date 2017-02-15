@@ -10,7 +10,7 @@ from klampt.sim import *
 from moving_base_control import *
 import numpy as np
 import random
-from utils_camera import FromCamera2rgb, Find_axis_rotation
+from utils_camera import FromCamera2rgb, Find_axis_rotation, FInd_Plane
 from IPython import embed
 
 def Add_variation(o_T_p_r_original,o_T_p_r):
@@ -112,45 +112,41 @@ def Make_camera_poses(o_T_p,obj):
 
 
     print "len: ", len(o_T_p)
-    R_o,t = obj.getTransform()
-    bmin,bmax = obj.geometry().getBB()
-    centerX = 0.5 * ( bmax[0] - bmin[0] ) + t[0]
-    centerY = 0.5 * ( bmax[1] - bmin[1] ) + t[1]
-    centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
-    P = np.array(se3.homogeneous((R_o,[centerX,centerY-0.7,centerZ])))
-    R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(-90))),[0,0,0] )))
+
 
 
     for k in range(0,len(o_T_p)):
         # print se3.from_homogeneous( o_T_p[k])[1]
 
         if k == 0:
+            R_o,t = obj.getTransform()
+            bmin,bmax = obj.geometry().getBB()
+            centerX = 0.5 * ( bmax[0] - bmin[0] ) + t[0]
+            centerY = 0.5 * ( bmax[1] - bmin[1] ) + t[1]
+            centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
+            P = np.array(se3.homogeneous((R_o,[centerX,centerY-0.7,centerZ])))
+            R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(-90))),[0,0,0] )))
+            o_T_c = so3.mul(so3.from_axis_angle(([1,0,0],math.radians(-90))),R_o)
+            # embed()
             o_T_p_r.append(se3.from_homogeneous(np.dot(P,R)))
         else:
             # embed()
-            # R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(90))),[0,0,0] )))
-            
-            r,p,y = so3.rpy(se3.from_homogeneous(o_T_p[k])[0] )
-            print "roll, ",r
-            print "pitch", p
-            print "yaw", y
-            Rx = np.array(se3.homogeneous( (so3.from_axis_angle(([0,0,1],r)), [0,0,0])))
-            Ry = np.array(se3.homogeneous( (so3.from_axis_angle(([0,1,0],p)), [0,0,0])))
-            P = np.array(se3.homogeneous((R_o,[0,0,0])))
-            R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(-90))),[se3.from_homogeneous( o_T_p[k])[1][0],se3.from_homogeneous( o_T_p[k])[1][1] 
-                ,se3.from_homogeneous( o_T_p[k])[1][2]] )))
-            temp = (  se3.from_homogeneous(np.dot(Ry, np.dot(Rx, P ))))
+            x = np.array(t) - np.array(se3.from_homogeneous( o_T_p[k]))[1]
+            angle =  math.acos(np.dot([0,0,1],OC) / np.dot(np.sqrt(np.dot(OC,OC)),np.sqrt(np.dot([0,0,1],[0,0,1]))) )
+            # angle2  = math.radians(90)- angle
+            embed()
 
-            temp[1][0] = se3.from_homogeneous( o_T_p[k])[1][0]
-            temp[1][1] = se3.from_homogeneous( o_T_p[k])[1][1] 
-            temp[1][2] = se3.from_homogeneous( o_T_p[k])[1][2] + 0.7
+            n = FInd_Plane([0,0,0],[0,0,1],x)
+            y  = np.dot( np.array(se3.from_homogeneous( o_T_p[k])[1]) ,np.array(so3.from_axis_angle((n,angle))).reshape(3,3))
 
-            print temp[1][0], temp[1][1], temp[1][2]
-            # print temp
-            # temp[1][1] = temp[1][1] - 0.7
-            o_T_p_r.append(temp )
 
-        Add_variation(o_T_p_r[k],o_T_p_r)
+            z  = np.cross(x,y)
+            embed()
+
+
+            o_T_p_r.append( se3.from_homogeneous( o_T_p[k]))
+
+        # Add_variation(o_T_p_r[k],o_T_p_r)
 
 
     return o_T_p_r

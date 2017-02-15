@@ -43,6 +43,7 @@ def Fin_min_angle(pose,axis):
     # y = pose[:3,1]
     # z = pose[:3,2]
     # pose_temp = se3.homogeneous(pose)
+
     x = [pose[0][0],pose[1][0],pose[2][0] ]
     y = [pose[0][1],pose[1][1],pose[2][1] ]
     z = [pose[0][2],pose[1][2],pose[2][2] ]
@@ -79,7 +80,7 @@ def  Find_axis_rotation(o_T_p):
     #     R = so3.from_axis_angle((axis,math.radians(90)))
     elif  (minx ==2) and (maxz ==0):
         R = so3.from_axis_angle(([0,1,0],math.radians(-180)))
-    elif ((minx ==0) and (maxz ==0)) and miny == 2 or (((minx == 2) and (maxz == 1)) and miny ==2):
+    elif ((minx ==0) and (maxz ==0)) and miny == 2 or ((minx == 2) and (maxz == 1) and miny ==2):
         R = so3.from_axis_angle(([0,1,0],math.radians(0)))
     elif ((minx ==0) and (maxz ==0)) and miny != 2:
         R = so3.from_axis_angle(([0,1,0],math.radians(-90)))
@@ -87,24 +88,37 @@ def  Find_axis_rotation(o_T_p):
         axis = [0,1,0]
         R = so3.from_axis_angle((axis,math.radians(-90)))
     elif ((minx ==1) and (maxz ==2) and miny ==2):
+        axis = [1,0,0]
+        R = so3.from_axis_angle((axis,math.radians(-180)))
+    elif ((minx ==0) and (maxz ==1) and miny ==0):
+        axis = [0,1,0]
+        R = so3.from_axis_angle((axis,math.radians(-180)))
+    elif ((minx ==0) and (maxz ==1) and miny ==1):
+        axis = [0,1,0]
+        R = so3.from_axis_angle((axis,math.radians(-90)))
+    elif ((minx ==0) and (maxz ==2) and miny ==0):
         axis = [0,1,0]
         R = so3.from_axis_angle((axis,math.radians(90)))
+    elif ((minx ==1) and (maxz ==2) and miny ==0):
+        axis = [0,0,1]
+        R = so3.from_axis_angle((axis,math.radians(-90)))
 
-    # else:
-    #     Normal = np.array([0,0,1]) #z axis
-    #     mini = Fin_min_angle(o_T_p,Normal)
-    #     index = mini.index(min(mini))
-    #     print"**************min z*", index
-    #     if index == 0: #x axis
-    #         axis = [1,0,0]
-    #     elif index == 1: #y axis
-    #         axis = [0,1,0]
-    #     else: #no z  
-    #         if mini[0] < mini[1]:
-    #             axis = [1,0,0]
-    #         else:
-    #             axis = [0,1,0]
-    #     R = so3.from_axis_angle((axis,math.radians(-180)))
+    else:
+        print "Non considerato"
+        Normal = np.array([0,0,1]) #z axis
+        mini = Fin_min_angle(o_T_p,Normal)
+        index = mini.index(min(mini))
+        print"**************min z*", index
+        if index == 0: #x axis
+            axis = [1,0,0]
+        elif index == 1: #y axis
+            axis = [0,1,0]
+        else: #no z  
+            if mini[0] < mini[1]:
+                axis = [1,0,0]
+            else:
+                axis = [0,1,0]
+        R = so3.from_axis_angle((axis,math.radians(-90)))
     return R
 
 def  FromCamera2rgb(camera_measure):
@@ -115,3 +129,42 @@ def  FromCamera2rgb(camera_measure):
     rgb[:,:,2] = np.right_shift(np.bitwise_and(abgr,0x0f00), 16)
     # embed()
     return abgr
+
+
+def perpendicular_vector(v):
+    """ Finds an arbitrary perpendicular vector to *v*. """
+
+    a, b = random.random(), random.random()
+    if not iszero(v.z):
+        x, y, z = v.x, v.y, v.z
+    elif not iszero(v.y):
+        x, y, z = v.x, v.z, v.y
+    elif not iszero(v.x):
+        x, y, z = v.y, v.z, v.x
+    else:
+        raise ValueError('zero-vector')
+
+    c = (- x * a - y * b) / z
+
+    if not iszero(v.z):
+        return Vector(a, b, c)
+    elif not iszero(v.y):
+        return Vector(a, c, b)
+    elif not iszero(v.x):
+        return Vector(b, c, a)
+
+
+def FInd_Plane(x1, x2, x3):
+    vector1 = [x2[0] - x1[0], x2[1] - x1[1], x2[2] - x1[2]]
+    vector2 = [x3[0] - x1[0], x3[1] - x1[1], x3[2] - x1[2]]
+
+    # cross_product = [vector1[1] * vector2[2] - vector1[2] * vector2[1], -1 * (vector1[0] * vector2[2] - vector1[2] * vector2[0]), vector1[0] * vector2[1] - vector1[1] * vector2[0]]
+    cross_product = np.cross(vector1,vector2)
+
+    a = cross_product[0]
+    b = cross_product[1]
+    c = cross_product[2]
+    # embed()
+    d = - (cross_product[0] * x2[0] + cross_product[1] * x2[1] + cross_product[2] * x2[2])
+
+    return np.array(([a,b,c]))

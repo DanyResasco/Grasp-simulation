@@ -20,7 +20,7 @@ import scipy.misc
 from Add_variation_camera_pose import Add_variation, Make_camera_poses
 from utils_camera import FromCamera2rgb, Find_axis_rotation, Read_Poses, Write_image
 from mvbb.ScalaReduce import DanyReduceScale
-
+from mvbb.draw_bbox import draw_GL_frame
 
 Pose = {}
 Pose['pose'] = [f for f in os.listdir('3DCNN/NNSet/Pose/pose')]
@@ -138,6 +138,7 @@ for object_name in object_list:
                         if not self.is_simulating:
                             if len(self.poses) > 0:
                                 self.curr_pose = self.poses.pop(0)
+                                # draw_GL_frame(self.curr_pose)
                                 print len(self.poses)
                             else:
                                 self.running = False
@@ -153,7 +154,7 @@ for object_name in object_list:
                             obj.setVelocity([0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
                             sensor.setSetting("Tsensor",' '.join(str(v) for v in self.curr_pose[0]+self.curr_pose[1]))
                             vis.add("sensor",sensor)
-                            
+
                             sim.simulate(0.1)
                             sim.updateWorld()
 
@@ -162,7 +163,9 @@ for object_name in object_list:
                                     camera_measure = sensor.getMeasurements()
                                     image = FromCamera2rgb(camera_measure)
                                     # scipy.misc.imsave('outfile_%s.jpg'%self.step, image)
-                                    res_dataset = '2DCNN/NNSet/Image/%s_rotate_%s.csv'% (self.nome_obj,self.step)
+                                    res_dataset = '2DCNN/NNSet/Image/%s/%s_rotate_%s.csv'% (self.nome_obj,self.nome_obj,self.step)
+                                    if not os.path.exists(res_dataset):
+                                        os.makedirs(res_dataset)
                                     Write_image(image,res_dataset)
                                     self.step +=1
                                     self.is_simulating = False
