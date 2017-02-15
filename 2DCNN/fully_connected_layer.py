@@ -3,13 +3,13 @@ from __future__ import division
 
 import numpy as np
 from math import sqrt
-
+from theano.tensor.nnet import sigmoid
 import theano
 import theano.tensor as T
 from theano.tensor.nnet import relu
 
 class FullyConnectedLayer(object):
-	def __init__(self, rng, input, n_in, n_out, activation=T.tanh, W=None, b=None):
+	def __init__(self, rng, input, n_in, n_out, activation=sigmoid, W=None, b=None):
 		"""
 		Typical hidden layer of a MLP: units are fully-connected and have
 		sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -58,6 +58,8 @@ class FullyConnectedLayer(object):
 
 		if W is None:
 			W_bound = np.sqrt(6. / (n_in + n_out))
+			if activation is sigmoid:
+				W_bound = W_bound*4
 			self.W = theano.shared(
 				value=rng.uniform(low=-W_bound, high=W_bound, size=(n_in, n_out)).astype(theano.config.floatX),
 				borrow=True
@@ -67,7 +69,7 @@ class FullyConnectedLayer(object):
 			self.W = theano.shared(value=W.astype(theano.config.floatX), borrow=True)
 
 		if b is None:
-			self.b = theano.shared(value=np.zeros((n_out,), dtype=theano.config.floatX), name='b', borrow=True)
+			self.b = theano.shared(value=np.zeros((n_out), dtype=theano.config.floatX), name='b', borrow=True)
 		else:
 			assert isinstance(b, np.ndarray), 'b must be an numpy array'
 			self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)

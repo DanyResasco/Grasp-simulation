@@ -13,7 +13,7 @@ class ContOutputLayer(object):
 	Continuous Regression Class
 	"""
 
-	def __init__(self, input, n_in, W=None, b=None):
+	def __init__(self, input, n_in,n_out, W=None, b=None):
 		""" Initialize the parameters of the logistic regression
 
 		:type input: theano.tensor.TensorType
@@ -30,18 +30,22 @@ class ContOutputLayer(object):
 		"""
 		# start-snippet-1
 
-		if W is None:
-			self.W = theano.shared(value=np.zeros(n_in, dtype=theano.config.floatX), name='W', borrow=True)
-		else:
-			assert isinstance(W, np.ndarray), 'W must be an numpy array'
-			self.W = theano.shared(value=W.astype(theano.config.floatX), borrow=True)
-
+		self.W = theano.shared(value=np.zeros((n_in, n_out), dtype=theano.config.floatX ), name='W', borrow=True )
 		# initialize the biases b as a vector of n_out 0s
-		if b is None:
-			self.b = theano.shared(value=np.array(0, dtype=theano.config.floatX), name='b', borrow=True)
-		else:
-			assert isinstance(b, np.ndarray), 'b must be an numpy array'
-			self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)
+		self.b = theano.shared( value=np.zeros( n_out, dtype=theano.config.floatX ),name='b', borrow=True)
+
+		# if W is None:
+		# 	self.W = theano.shared(value=np.zeros(n_in, dtype=theano.config.floatX), name='W', borrow=True)
+		# else:
+		# 	assert isinstance(W, np.ndarray), 'W must be an numpy array'
+		# 	self.W = theano.shared(value=W.astype(theano.config.floatX), borrow=True)
+
+		# # initialize the biases b as a vector of n_out 0s
+		# if b is None:
+		# 	self.b = theano.shared(value=np.array(0, dtype=theano.config.floatX), name='b', borrow=True)
+		# else:
+		# 	assert isinstance(b, np.ndarray), 'b must be an numpy array'
+		# 	self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)
 
 		self.y_pred = T.dot(input, self.W) + self.b
 
@@ -50,6 +54,35 @@ class ContOutputLayer(object):
 
 		# keep track of model input
 		self.input = input
+
+
+
+	def dany_error(self,y,nrow):
+		import math
+		pi = math.pi
+		ORI = []
+		TRA = []
+		temp = []
+		NORMA = 0
+		for i in range(0,nrow):
+			dx = T.min([abs(y[i,0]-self.y_pred[i,0]),(2*pi - abs(y[i,0]-self.y_pred[i,0]))])
+			dy = T.min([abs(y[i,1]-self.y_pred[i,1]),(2*pi - abs(y[i,1]-self.y_pred[i,1]))])
+			dz = T.min([abs(y[i,2]-self.y_pred[i,2]),(2*pi - abs(y[i,2]-self.y_pred[i,2]))])
+			d_o = np.sqrt(np.add( np.add(T.pow(dx, 2),T.pow(dy, 2)),T.pow(dz, 2)))
+			tx = np.array(y[i,3]-self.y_pred[i,3])
+			ty = np.array(y[i,4]-self.y_pred[i,4])
+			tz = np.array(y[i,5]-self.y_pred[i,5])
+			t0 = np.array([tx,ty,tz])
+			# embed()
+			# temp.append(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
+			# NORMA +=(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
+			NORMA +=(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
+			ORI.append(d_o*0.031)
+			TRA.append(0.005*np.linalg.norm(t0,2))
+
+		return NORMA,y,self.y_pred,T.cast(ORI,'float32'),T.cast(TRA,'float32')
+
+
 
 	def cost(self, y, y_flag=None): # balanced penalization
 		"""

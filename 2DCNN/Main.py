@@ -5,11 +5,38 @@ import timeit
 import numpy as np
 import theano, random
 import theano.tensor as T
-from conv3d_Dany import Conv2D
+from conv2d_Dany import Conv2D
 from fully_connected_layer import FullyConnectedLayer
 from cont_output_layer import ContOutputLayer
 from IPython import embed
 from dataset_Dany import Input_output 
+
+
+def Draw_Grasph(truth,prediction,eo,et):
+    print "disegno"
+    # import matplotlib.pypl
+    # embed()
+    rot_y = []
+    tra_y = []
+    rot_yp = []
+    tra_yp= []
+    # for j in range(0,len(truth)):
+    #   rot_y.append([truth[j][0],truth[j][1],truth[j][2]])
+    #   tra_y.append([truth[j][3],truth[j][4],truth[j][5]])
+    #   rot_yp.append([prediction[j][0],prediction[j][1],prediction[j][2]])
+    #   tra_yp.append([prediction[j][3],prediction[j][4],prediction[j][5]])
+    # print 'truth',truth
+    # print 'prediction',prediction
+    # print 'len(truth)',len(truth)
+    # print 'len(prediction)',len(prediction)
+    embed()
+
+
+
+
+
+
+
 
 
 def save_model(filename, **layer_dict):
@@ -25,18 +52,18 @@ def save_model(filename, **layer_dict):
 
 '''param rng: a random number generator used to initialize weights'''
 rng = np.random.RandomState(65432)
-batch_size = 10
+batch_size = 5
 # data_chunk_size = 50 #Non so ancora cosa sia minibatch?
-nkerns = (70, 70, 70, 64, 64, 64) # n felter for each layer
+nkerns = (20, 20, 20, 10, 10, 10) # n felter for each layer
 
 print 'defining input'
 
 index = T.lscalar('index')
-X_occ = T.fmatrix('X_occ')
-# X_occ = T.tensor4('X_occ') 
-y = T.fvector('y')
+# X_occ = T.fmatrix('X_occ')
+X_occ = T.tensor3('X_occ') 
+y = T.fmatrix('y')
 # 3 e' il numero di canali, 1 gray scale 3 rgb, 127 dimensione voxel controlla
-input_occ_batch = X_occ.reshape((batch_size, 3, 64, 64)) #64 voxel dimension
+input_occ_batch = X_occ.reshape((batch_size, 1, 256, 256)) #64 voxel dimension
 
 print 'defining architecture'
 
@@ -44,38 +71,41 @@ print 'defining architecture'
 	filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)
 	size(image_shape[num_channels]) == size(filter_shape[num_channels]) '''
 #(64-7+1)/poolsize
-conv1 = Conv2D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 3, 7, 7), 
-	image_shape=(batch_size, 3, 64, 64), poolsize=(1,1))
-conv2 = Conv2D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 3, 3), 
- 	image_shape=(batch_size, nkerns[0], 58,58), poolsize=(2,2))
-conv3 = Conv2D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 2, 2), 
- 	image_shape=(batch_size, nkerns[1], 28, 28), poolsize=(1,1))
-conv4 = Conv2D(rng, input=conv3.output, filter_shape=(nkerns[3], nkerns[2], 3, 3), 
-	image_shape=(batch_size, nkerns[2], 27, 27), poolsize=(2,2))
+conv1 = Conv2D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 1, 7, 7), 
+	image_shape=(batch_size, 1, 256, 256), poolsize=(1,1))
+conv2 = Conv2D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 7, 7), 
+ 	image_shape=(batch_size, nkerns[0], 250,250), poolsize=(1,1))
+conv3 = Conv2D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 5, 5), 
+ 	image_shape=(batch_size, nkerns[1], 244, 244), poolsize=(2,2))
+
+
+conv4 = Conv2D(rng, input=conv3.output, filter_shape=(nkerns[3], nkerns[2], 5, 5), 
+	image_shape=(batch_size, nkerns[2], 120, 120), poolsize=(2,2))
+
+
 conv5 = Conv2D(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 5, 5), 
-	image_shape=(batch_size, nkerns[3], 12, 12), poolsize=(1,1))
-conv6 = Conv2D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 3, 3), 
-	image_shape=(batch_size, nkerns[4], 8, 8), poolsize=(1,1))
+	image_shape=(batch_size, nkerns[3], 58, 58), poolsize=(1,1))
+
+# conv6 = Conv2D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 3, 3), 
+# 	image_shape=(batch_size, nkerns[4], 8, 8), poolsize=(1,1))
 
 
-fc_input = conv6.output.flatten(2)
-fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=6*6*6*nkerns[5], n_out=5500)
+fc_input = conv5.output.flatten(2)
+fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=54*54*nkerns[4], n_out=550)
 #output is a vector of 12 elements
-fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=1000)
-fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=1000, n_out=12)
-
-output = ContOutputLayer(input=fc3.output, n_in=12)
+fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=550, n_out=250)
+fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=150)
+output = ContOutputLayer(input=fc3.output, n_in =150 ,n_out=6)
 
 print 'defining cost'
 
-cost = output.cost(y, y_flag=None)
+cost = output.dany_error(y,batch_size)
 
-all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
-	conv6.params + fc1.params + fc2.params +fc3.params+ output.params)
+all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params + fc1.params + fc2.params +fc3.params+ output.params)
 
   # compute the gradient of cost
 # embed()
-all_grads = T.grad(cost, all_params)
+all_grads = T.grad(cost[0], all_params)
 print "grad"
 
 print 'defining train model'
@@ -176,19 +206,38 @@ epoch = 0
 done_looping = False
 n_epochs =1000
 print 'prima del while'
-
+Truth = []
+pred = []
+E_ori = []
+E_tra = []
+# count_dany = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
+    # for minibatch_index in range(n_train_batches): #loop on train examples
+    #     # print minibatch_index
+    #     train_model(minibatch_index)
+    #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
-        print minibatch_index
         train_model(minibatch_index)
-        # iteration number
+        # print op
         iter = (epoch - 1) * n_train_batches + minibatch_index
         if (iter + 1) % validation_frequency == 0:
             # compute zero-one loss on validation set
-            validation_losses = [validate_model(i) for i
-                                 in range(n_valid_batches)]
-            this_validation_loss = np.mean(validation_losses)
+            validation_losses = [validate_model(i) for i in range(n_valid_batches)]
+            
+            validation_m = [validation_losses[i][0] for i
+                                 in range(0,len(validation_losses))]
+
+
+            this_validation_loss = np.mean(validation_m)
+
+            print("Epoch %i, Minibatch %i/%i, Validation Error %f " 
+                    % (epoch,
+                        minibatch_index + 1,
+                        n_train_batches,
+                        this_validation_loss 
+                      )
+                  )
 
             # if we got the best validation score until now
             if this_validation_loss < best_validation_loss:
@@ -201,18 +250,49 @@ while (epoch < n_epochs) and (not done_looping):
                 best_iter = iter
 
                 # test it on the test set
-                test_losses = [test_model(i) for i in range(n_test_batches)]
-                test_score = np.mean(test_losses)
+                print 'test'
+                test_losses = [test_model(i)
+                                   for i in range(n_test_batches)]
+
+                Truth = [test_losses[i][1] for i
+                                 in range(0,len(test_losses))]
+                pred = [test_losses[i][2] for i
+                                 in range(0,len(test_losses))]
+
+                test_m = [test_losses[i][0] for i
+                                 in range(0,len(test_losses))]
+
+                E_ori = [test_losses[i][3] for i
+                                 in range(0,len(test_losses))]
+
+                E_tra = [test_losses[i][4] for i
+                                 in range(0,len(test_losses))]
+
+                test_score = np.mean(test_m)
+
+                # count_dany +=1
+                print(("Epoch %i, Minibatch %i/%i, Test error of"" best model %f ") 
+                      % (   epoch,
+                            minibatch_index + 1,
+                            n_train_batches,
+                            test_score 
+                        )
+                    )
 
         if patience <= iter:
             print 'save'
             done_looping = True
-            res_name = '2d6Cnn3fcl.npz'
+            res_name = '2d6Cnn3fcl_10_3_20_3_10.npz'
+            # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+            # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-            conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
+            conv5=conv5, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             break
 
 end_time = timeit.default_timer()
-print(('Optimization complete. Best validation score of %f %% '
-	'obtained at iteration %i, with test performance %f %%') %
-	(best_validation_loss * 100., best_iter + 1, test_score * 100.))
+print(('Optimization complete. Best validation score of %f '
+	'obtained at iteration %i, with test performance %f ') %
+	(best_validation_loss , best_iter + 1, test_score ))
+# for i in Truth.value
+embed()
+Draw_Grasph(Truth,pred,E_ori,E_tra)
