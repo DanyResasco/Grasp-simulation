@@ -41,8 +41,8 @@ def Set_input(objectName,vector_set,i):
     # for i in range(0,10)::
         nome = os.path.splitext(objectName)[0] + '_rotate_'+ str(i)+ '.jpg'
         obj_dataset = 'NNSet/Image/%s/%s'%(os.path.splitext(objectName)[0],nome)
-        im = Image.open(obj_dataset).convert('L')
-        vector_set.append(np.asarray(im).reshape(256,256))
+        im = Image.open(obj_dataset)
+        vector_set.append(np.asarray(im))
 
 def Set_vector(object_name, vector_set,input_set):
     '''Read the poses and store it into a vector'''
@@ -59,7 +59,7 @@ def Set_vector(object_name, vector_set,input_set):
                 for row in file_reader:
                     T = row[9:]
                     row_t = list(so3.rpy(row)) + list(T)
-                    n_var = int(10*n_poses)
+                    # n_var = int(10*n_poses)
                     # embed()
                     # for i in range(0,n_var): #10 variation for each label
                     vector_set.append(np.array(row_t))
@@ -94,7 +94,7 @@ def Input_output():
 
     #Sicuro ce' un metodo piu' intelligente
     # all_obj = Find_binvox(all_obj_tmp)
-
+    random.seed(0)
     random.shuffle(all_obj)
     #Temporaly vector. I store the file not the pose!! 
     Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
