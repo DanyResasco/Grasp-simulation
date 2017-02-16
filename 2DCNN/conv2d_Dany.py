@@ -17,7 +17,7 @@ from theano.tensor.nnet import conv2d
 class Conv2D(object):
 	"""Pool Layer of a convolutional network """
 
-	def __init__(self, rng, input, filter_shape, image_shape, poolsize, 
+	def __init__(self, rng, input, image_shape, filter_shape,   poolsize, 
 		activation=sigmoid, W=None, b=None):
 		"""
 		image_shape is (num_imgs, num_channels, img_height, img_width, img_length)

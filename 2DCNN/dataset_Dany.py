@@ -41,22 +41,15 @@ def Set_input(objectName,vector_set,i):
     # for i in range(0,10)::
         nome = os.path.splitext(objectName)[0] + '_rotate_'+ str(i)+ '.jpg'
         obj_dataset = 'NNSet/Image/%s/%s'%(os.path.splitext(objectName)[0],nome)
-        im = Image.open(obj_dataset)
-        im.show()
-        # .convert('L')
-        embed()
-        vector_set.append(np.asarray(im))
+        im = Image.open(obj_dataset).convert('L')
+        vector_set.append(np.asarray(im).reshape(256,256))
 
 def Set_vector(object_name, vector_set,input_set):
     '''Read the poses and store it into a vector'''
     name = os.path.splitext(object_name)[0]
     folder = 'NNSet/Image/%s'%(name)
-    n_poses = len(list(os.listdir(folder)))/11
+    n_poses = len(list(os.listdir(folder)))//11
 
-    if n_poses is not 1:
-        t_tep =1
-    else:
-         t_tep =0
     # embed()
     for object_set, objects_in_set in Output.items():
         if object_name in objects_in_set:
@@ -66,11 +59,11 @@ def Set_vector(object_name, vector_set,input_set):
                 for row in file_reader:
                     T = row[9:]
                     row_t = list(so3.rpy(row)) + list(T)
-                    n_var = int(10*n_poses+t_tep)
+                    n_var = int(10*n_poses)
                     # embed()
-                    for i in range(0,n_var): #10 variation for each label
-                        vector_set.append(np.array(row_t))
-                        Set_input(object_name,input_set,i)
+                    # for i in range(0,n_var): #10 variation for each label
+                    vector_set.append(np.array(row_t))
+                    Set_input(object_name,input_set,0)
                     break
 
 # def Find_binvox(all_obj):
@@ -153,3 +146,87 @@ if __name__ == '__main__':
     # print 't[1].type', T[1].type
 
 
+
+
+# for nome  in Training_label_set:
+#     if nome not in Input_name:
+#         print Training_label_set[Training_label_set.index(nome)]
+
+
+# Output_name = [f for f in os.listdir('NNSet/Pose')]
+# Remove = []
+
+# Training = []
+# Validate = []
+# Test = []
+
+# Input_net = []
+# Output_net = []
+
+
+# def Read_N_row(obj_list):
+#     row_count = 0
+#     for object_name in obj_list:
+#         for object_set, objects_in_set in objects.items():
+#             if object_name in objects_in_set:
+#                 obj_dataset = 'NNSet/%s/%s'%(object_set,object_name)
+#                 with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+#                     file_reader = csv.reader(csvfile, delimiter=',')
+#                     row_count += sum(1 for row in file_reader)
+#     return row_count
+
+
+
+
+
+# class DataFeeder:
+# 	def __init__(self, init_idx=1, test_idx=0):
+# 		self.init_idx = init_idx
+# 		self.cur_idx = init_idx
+# 		self.test_idx = test_idx
+
+# 	def next_training_set_shared(self):
+# 		try:
+# 			data = np.load('data/data_%i.npz'%self.cur_idx) #legge i file dal formato zippato di numpy
+# 		except IOError:
+# 			traceback.print_exc()
+# 			print 'done all chunk files at %i'%self.cur_idx
+# 			self.cur_idx = self.init_idx
+# 		data = np.load('data/data_%i.npz'%self.cur_idx)
+# 		X = data['X']
+# 		y = data['y']
+# 		X_loc = X[:, 0:1]
+# 		X_occ = X[:, 1:]
+# 		X_occ_shared = theano.shared(X_occ, borrow=True)
+# 		X_loc_shared = theano.shared(X_loc, borrow=True)
+# 		y_shared = theano.shared(y, borrow=True)
+# 		self.cur_idx += 1
+# 		return X_occ_shared, X_loc_shared, y_shared
+	
+# 	def next_training_set_raw(self):
+# 		try:
+# 			data = np.load('data/data_%i.npz'%self.cur_idx)
+# 		except IOError:
+# 			traceback.print_exc()
+# 			print 'done all chunk files at %i'%self.cur_idx
+# 			self.cur_idx = self.init_idx
+# 		if self.cur_idx%1000==0:
+# 			print 'using data %i'%self.cur_idx
+# 		data = np.load('data/data_%i.npz'%self.cur_idx)
+# 		X = data['X']
+# 		y = data['y']
+# 		X_loc = X[:, 0:1]
+# 		X_occ = X[:, 1:]
+# 		self.cur_idx += 1
+# 		return X_occ, X_loc, y
+	
+# 	def test_set_shared(self):
+# 		data = np.load('data/data_%i.npz'%self.test_idx)
+# 		X = data['X']
+# 		y = data['y']
+# 		X_loc = X[:, 0:1]
+# 		X_occ = X[:, 1:]
+# 		X_occ_shared = theano.shared(X_occ, borrow=True)
+# 		X_loc_shared = theano.shared(X_loc, borrow=True)
+# 		y_shared = theano.shared(y, borrow=True)
+# 		return X_occ_shared, X_loc_shared, y_shared

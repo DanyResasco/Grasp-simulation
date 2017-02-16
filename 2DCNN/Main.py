@@ -56,6 +56,9 @@ batch_size = 5
 # data_chunk_size = 50 #Non so ancora cosa sia minibatch?
 nkerns = (20, 20, 20, 10, 10, 10) # n felter for each layer
 
+# batch_size = 6
+# nkerns = (5,5,5,5,5,5) # n filter for each layer. feautures detectors
+
 print 'defining input'
 
 index = T.lscalar('index')
@@ -91,11 +94,11 @@ conv5 = Conv2D(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 5, 5
 
 
 fc_input = conv5.output.flatten(2)
-fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=54*54*nkerns[4], n_out=550)
+fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=54*54*nkerns[4], n_out=5500)
 #output is a vector of 12 elements
-fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=550, n_out=250)
-fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=150)
-output = ContOutputLayer(input=fc3.output, n_in =150 ,n_out=6)
+fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=2500)
+fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=2500, n_out=1500)
+output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
 
 print 'defining cost'
 
@@ -186,7 +189,7 @@ n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
 n_test_batches = test_set_X_occ.get_value(borrow=True).shape[0] // batch_size
 
 # early-stopping parameters
-patience = 10000  # look as this many examples regardless
+patience = 5000  # look as this many examples regardless
 patience_increase = 2  # wait this much longer when a new best is
                        # found
 improvement_threshold = 0.995  # a relative improvement of this much is
@@ -194,8 +197,7 @@ improvement_threshold = 0.995  # a relative improvement of this much is
 validation_frequency = min(n_train_batches, patience // 2)
                               # go through this many
                               # minibatche before checking the network
-                              # on the validation set; in this case we
-                              # check every epoch
+                              # on the validation set;
 
 best_validation_loss = np.inf
 best_iter = 0
@@ -206,6 +208,7 @@ epoch = 0
 done_looping = False
 n_epochs =1000
 print 'prima del while'
+
 Truth = []
 pred = []
 E_ori = []
@@ -294,5 +297,5 @@ print(('Optimization complete. Best validation score of %f '
 	'obtained at iteration %i, with test performance %f ') %
 	(best_validation_loss , best_iter + 1, test_score ))
 # for i in Truth.value
-embed()
+# embed()
 Draw_Grasph(Truth,pred,E_ori,E_tra)
