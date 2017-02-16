@@ -15,7 +15,7 @@ from theano.tensor.nnet.conv3d2d import conv3d
 class Conv3D(object):
 	"""Pool Layer of a convolutional network """
 
-	def __init__(self, rng, input, image_shape, filter_shape, poolsize, 
+	def __init__(self, rng, input, image_shape, filter_shape,  poolsize, 
 		activation=sigmoid, W=None, b=None):
 		"""
 		image_shape is (num_imgs, num_channels, img_height, img_width, img_length)
@@ -56,7 +56,7 @@ class Conv3D(object):
 
 		# the bias is a 1D tensor -- one bias per output feature map
 		if b is None:
-			self.b = theano.shared(value=np.zeros((filter_shape[0],), dtype=theano.config.floatX), borrow=True, name='b')
+			self.b = theano.shared(value=np.zeros((filter_shape[0]), dtype=theano.config.floatX), borrow=True, name='b')
 		else:
 			assert isinstance(b, np.ndarray), 'b must be an numpy array'
 			assert b.shape==(filter_shape[0],)
