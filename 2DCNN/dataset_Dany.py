@@ -12,9 +12,7 @@ import random
 import math
 from klampt.math import so3
 from IPython import embed
-objects = {}
-objects['Percentage'] = [f for f in os.listdir('NNSet/Percentage')]
-objects['Nsuccessfull'] = [f for f in os.listdir('NNSet/Nsuccessfull')]
+import Image
 
 # prev_obj = {}
 # prev_obj['ycb'] = [f for f in os.listdir('../data/objects/ycb')]
@@ -22,9 +20,9 @@ objects['Nsuccessfull'] = [f for f in os.listdir('NNSet/Nsuccessfull')]
 # prev_obj['princeton'] = [f for f in os.listdir('../data/objects/princeton')]
 
 
-Input_name = [f for f in os.listdir('NNSet/binvox/Binvox')] #all binvox in binvox format
+Input_name = [f for f in os.listdir('NNSet/Image')] #all binvox in binvox format
 Output = {}
-Output['Pose'] = [f for f in os.listdir('NNSet/Pose')]
+Output['Pose'] = [f for f in os.listdir('NNSet/pose')]
 
 Input_training = []
 Training_y = []
@@ -34,79 +32,69 @@ Test_y = []
 Input_test = []
 binvox = {}
 
-def Save_binvox(nome):
-    objpath = 'NNSet/binvox/Binvox/%s'%nome
-    try:
-        with open(objpath, 'rb') as f:
-            # data = read_as_coord_array(f) # dimension not matched. are different for each objects
-            data = read_as_3d_array(f)
-            binvox[nome] = data
-    except:
-        print "No binvox in file %s "%(objpath)
 
 
 
-def Set_input(objectName,vector_set):
-        vector_set.append(binvox[objectName])
+def Set_input(objectName,vector_set,i):
 
+    
+    # for i in range(0,10)::
+        nome = os.path.splitext(objectName)[0] + '_rotate_'+ str(i)+ '.jpg'
+        obj_dataset = 'NNSet/Image/%s/%s'%(os.path.splitext(objectName)[0],nome)
+        im = Image.open(obj_dataset)
+        vector_set.append(np.asarray(im))
 
 def Set_vector(object_name, vector_set,input_set):
     '''Read the poses and store it into a vector'''
+    name = os.path.splitext(object_name)[0]
+    folder = 'NNSet/Image/%s'%(name)
+    n_poses = len(list(os.listdir(folder)))//11
+
+    # embed()
     for object_set, objects_in_set in Output.items():
         if object_name in objects_in_set:
-            obj_dataset = 'NNSet/Pose/%s'%(object_name)
+            obj_dataset = 'NNSet/pose/%s'%(object_name)
             with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
-                    Matrix_ = so3.matrix(row)
-                    T = row[7:10]
-                    row_t = (list(so3.rpy(row)) + list(T))
+                    T = row[9:]
+                    row_t = list(so3.rpy(row)) + list(T)
+                    # n_var = int(10*n_poses)
+                    # embed()
+                    # for i in range(0,n_var): #10 variation for each label
                     vector_set.append(np.array(row_t))
-                    Set_input(object_name,input_set)
+                    Set_input(object_name,input_set,0)
+                    break
 
-def Find_binvox(all_obj):
-    '''Remove all objects that doesn't has a binvox'''
-    vector = []
-    for object_name in all_obj:
-        if object_name in Input_name: #binvox exist!
-            vector.append(object_name) #save obj
-            Save_binvox(object_name)
-    return vector
+# def Find_binvox(all_obj):
+#     '''Remove all objects that doesn't has a binvox'''
+#     vector = []
+#     for object_name in all_obj:
+#         if object_name in Input_name: #binvox exist!
+#             vector.append(object_name) #save obj
+#             Save_binvox(object_name)
+#     return vector
 
 
 #Mi da errore qui.. mi dice che non riesce a convertire il tipo di dato,
 def shared_dataset(data_xy, borrow=True):
     """ Function that loads the dataset into shared variables """
     data_y, data_x = data_xy
-
+ 
     'data must be an numpy array'
-    #convert 4d to matrix
-    # data_x = np.ndarray.astype(np.array(data_x),dtype='float32')
-    # data_x = data_x.reshape(data_x.shape[0], -1) 
-
-    data_temp = []
-    # data_temp = np.empty((1,3,64,64,64))
-    for i in range(0,64):
-        # data_temp[i].reshape((1,3,64,64,64))
-        data_temp.append(data_x[i].reshape(64,64,64))
-
-    shared_x = theano.shared(np.array(data_temp, theano.config.floatX), borrow=True)
-    # embed()
-    #convert matrix to vector
-    data_y = np.ndarray.astype(np.array(data_y),dtype='float32')
-    data_y = data_y.reshape(-1) 
+    shared_x = theano.shared(np.array(data_x, theano.config.floatX), borrow=True)
     shared_y = theano.shared(np.array(data_y, theano.config.floatX), borrow=True)
 
     return shared_x, shared_y
 
 def Input_output():
-    all_obj_tmp = []
+    all_obj = []
     for objects_name in Output.values():
-        all_obj_tmp += objects_name
+        all_obj += objects_name
 
     #Sicuro ce' un metodo piu' intelligente
-    all_obj = Find_binvox(all_obj_tmp)
-
+    # all_obj = Find_binvox(all_obj_tmp)
+    random.seed(0)
     random.shuffle(all_obj)
     #Temporaly vector. I store the file not the pose!! 
     Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
@@ -130,6 +118,8 @@ def Input_output():
     Validate_ = [Validate_y,Input_validate ]
     Test_ = [Test_y,Input_test ]
 
+    # embed()
+
     # print "Input_training", len(Input_training)
     # print "Training_y",len(Training_y)
 
@@ -141,7 +131,7 @@ def Input_output():
     # print "Test_label_set",len(Input_test)
 
     # print shared_dataset(Training_)[0]
-
+    # embed()
     return shared_dataset(Training_), shared_dataset(Validate_),shared_dataset(Test_)
 
 

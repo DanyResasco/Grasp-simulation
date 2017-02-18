@@ -23,7 +23,10 @@ objects['Nsuccessfull'] = [f for f in os.listdir('NNSet/Nsuccessfull')]
  
 Input_name = [f for f in os.listdir('NNSet/binvox/Binvox')] #all binvox in binvox format
 Output = {}
-Output['Pose'] = [f for f in os.listdir('NNSet/Pose')]
+Output['Pose'] = [f for f in os.listdir('NNSet/Pose/pose')]
+
+More_obj = {}
+More_obj['obj'] = [f for f in os.listdir('NNSet/binvox/voxelrotate')]
  
 Input_training = []
 Training_y = []
@@ -41,6 +44,7 @@ def Save_binvox(nome,objpath):
             # embed()
             data = read_as_3d_array(f)
             binvox[nome] = data
+            # embed()
     except:
         print "No binvox in file %s "%(objpath)
  
@@ -49,38 +53,67 @@ def Save_binvox(nome,objpath):
 def Set_input(objectName,vector_set):
         vector_set.append(binvox[objectName])
  
+# NO DEVI RIFARLO, NON VA BENE COME LO STAVI FACENDO.. GLI OGGETTI POSSONO ANDARE IN TUTTI I DATASET NON SOLO IN QUELLO DI TRAINING
+# def Take_voxel_rotate(object_name,vector_set,input_set,all_obj):
+#     # embed()
+#     # object_name = object_name.split(".")[0]
+#     objpath = 'NNSet/binvox/voxelrotate/%s'%object_name
+#     print objpath
+#     # embed()
+#     print 'dentro'
+#     for i in range(1,len(list(os.listdir(objpath)))):
+#         Nome_rotate = object_name + '_rotate_' + str(i)
+#         objpath_voxel = 'NNSet/binvox/voxelrotate/%s/%s.csv'%(object_name,Nome_rotate)
+#         '''ATTENTA STAI SOVRASCIVENDO LE VOXEL'''
+#         embed()
+#         Save_binvox(Nome_rotate,objpath_voxel)
+#         obj_dataset = 'NNSet/Pose/PoseVariation/%s/%s.csv'%(object_name,Nome_rotate)
+#         with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
+#             file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
+#             for row in file_reader:
+#                 T = row[9:]
+#                 row_t = list(so3.rpy(row)) + list(T)
+#                 vector_set.append(np.array(row_t))
+#                 input_set.append(binvox[Nome_rotate])
+#     Set_vector(object_name, vector_set,input_set)
+#     del all_obj[all_obj.index(object_name)]
 
-def Take_voxel_rotate(objects_name,vector_set,input_set):
-    objpath = 'NNSet/binvox/voxelrotate/%s'%object_name
-    for i in len(list(os.listdir(objpath))):
-        objpath_voxel = 'NNSet/binvox/voxelrotate/%s/%s_rotate_%s'%(object_name,object_name,str(i))
-        Save_binvox(object_name,objpath_voxel)
-        obj_dataset = 'NNSet/Pose/PoseVariation%s'%(object_name)
-        with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
-            file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
-            for row in file_reader:
-                T = row[9:]
-                row_t = list(so3.rpy(row)) + list(T)
-                vector_set.append(np.array(row_t))
-                input_set.append(binvox[object_name])
+def Check_INterval(angle,intervallo):
+    if angle < math.radians(-intervallo):
+        angle = angle + math.radians(360)
+    if angle < math.radians(intervallo):
+        angle = angle - math.radians(360)
+    return angle
+
+def Check_Metric(rpy):
+    roll, pitch,yaw = rpy
+    roll = Check_INterval(roll,180)
+    yaw = Check_INterval(yaw,180)
+    pitch = Check_INterval(pitch,90)
+    return [roll,pitch,yaw]
 
 
-def Set_vector(object_name, vector_set,input_set,Tra_value = False):
+
+def Set_vector(object_name, vector_set,input_set):
     '''Read the poses and store it as rpy into a vector'''
     # time_first = 0
     for object_set, objects_in_set in Output.items():
         if object_name in objects_in_set:
-            obj_dataset = 'NNSet/Pose/%s'%(object_name)
+            obj_dataset = 'NNSet/Pose/pose/%s'%(object_name)
             with open(obj_dataset, 'rb') as csvfile: #open the file in read mode
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
                     T = row[9:]
+                    # rpy = Check_Metric(so3.rpy(row))
                     row_t = list(so3.rpy(row)) + list(T)
+                    # row_t = list(so3.rpy(row)) + list(T)
                     vector_set.append(np.array(row_t))
                     input_set.append(binvox[object_name])
+                    # if Tra_value is True:
+                    #     print 'TRUE'
+                    #     print object_name
+                        # Take_voxel_rotate(object_name,vector_set,input_set)
                     break #train with only one pose
-        if Tra_value is True:
-            Take_voxel_rotate(objects_name,vector_set,input_set)
  
 def Find_binvox(all_obj):
     '''Remove all objects that doesn't have a binvox'''
@@ -88,7 +121,7 @@ def Find_binvox(all_obj):
     for object_name in all_obj:
         if object_name in Input_name: #binvox exist!
             vector.append(object_name) #save obj
-            objpath = 'NNSet/binvox/Binvox/%s'%nome
+            objpath = 'NNSet/binvox/Binvox/%s'%object_name
             Save_binvox(object_name,objpath)
     return vector
  
@@ -98,16 +131,8 @@ def shared_dataset(data_xy, borrow=True):
     data_y, data_x = data_xy
  
     'data must be an numpy array'
-    
-    # embed()
-    # print len(data_temp)
     shared_x = theano.shared(np.array(data_x, theano.config.floatX), borrow=True)
-    # embed()
-
     shared_y = theano.shared(np.array(data_y, theano.config.floatX), borrow=True)
-    # shared_y = theano.shared(data_y, borrow=True)
-    # print shared_x.type()
-    # embed()
 
     return shared_x, shared_y
  
@@ -121,18 +146,26 @@ def Input_output():
  
     random.seed(0)
     random.shuffle(all_obj)
-    #Temporaly vector. I store the file not the pose!! 
+    #Temporaly vector. I store the file not the pose!!
+    # temp_var = [] 
+    # for objects_name in More_obj.values():
+    #     temp_var += objects_name
+
+    # for index_name in range(0,len(temp_var)): 
+    #     Take_voxel_rotate(temp_var[index_name],Training_y,Input_training,all_obj)
+
     Training_label_set = [x for i,x in enumerate(all_obj) if i <= len(all_obj)*.85 ]
     Validate_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.85 and i <len(all_obj)*.90]
     Test_label_set = [x for i,x in enumerate(all_obj) if i >= len(all_obj)*.90 and i<len(all_obj)*1]
- 
- 
+    # embed()
+    # Training_label_set = Training_label_set +[x for x in More_obj.values()]
+    # embed()
     #Open the respectively file and take all poses
     for object_name in Training_label_set:
         Set_vector(object_name, Training_y,Input_training)
     # embed()
 
- 
+    print Test_label_set
     for object_name in Validate_label_set:
         Set_vector(object_name, Validate_y,Input_validate)
  

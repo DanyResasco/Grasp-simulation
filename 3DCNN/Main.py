@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D# from test_dataset_split_dany import DanyDataset
 
-def Draw_Grasph(truth,prediction):
+def Draw_Grasph(truth,prediction,eo,et):
     print "disegno"
     import matplotlib.pyplot as plt
     # plt.figure(1)
@@ -63,17 +63,14 @@ def save_model(filename, **layer_dict):
 np.random.seed(0)
 rng = np.random.RandomState(65432)
 batch_size = 6
-# data_chunk_size = 50 #Non so ancora cosa sia minibatch?
-nkerns = (5,5,5,5,5,5) # n filter for each layer
+nkerns = (5,5,5,5,5,5) # n filter for each layer. feautures detectors
 
 print 'defining input'
 
 index = T.lscalar('index')
 X_occ = T.fmatrix('X_occ')
-# X_occ = T.tensor4('X_occ') 
-# y = T.fvector('y')
 y = T.fmatrix('y')
-# embed()
+
 # 3 e' il numero di canali, 1 gray scale 3 rgb, 64 dimensione voxel 
 input_occ_batch = X_occ.reshape((batch_size, 1, 64, 64, 64)) #64 voxel dimension
 
@@ -82,28 +79,7 @@ print 'defining architecture'
 ''' image_shape is (num_imgs, num_channels, img_height, img_width, img_length)
 	filter_shape is (num_kernels, num_channels, kernel_height, kernel_width, kernel_length)
 	size(image_shape[num_channels]) == size(filter_shape[num_channels]) '''
-#(64-7+1)/poolsize
-# conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 1, 7, 7, 7), 
-# 	image_shape=(batch_size, 1, 64, 64,64), poolsize=(1,1,1))
-# conv2 = Conv3D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 3, 3, 3), 
-#  	image_shape=(batch_size, nkerns[0], 58,58,58), poolsize=(2,2,2))
-# conv3 = Conv3D(rng, input=conv2.output, filter_shape=(nkerns[2], nkerns[1], 2, 2, 2), 
-#  	image_shape=(batch_size, nkerns[1], 28, 28, 28), poolsize=(1,1,1))
-# conv4 = Conv3D(rng, input=conv3.output, filter_shape=(nkerns[3], nkerns[2], 3, 3, 3), 
-# 	image_shape=(batch_size, nkerns[2], 27, 27, 27), poolsize=(2,2,2))
-# conv5 = Conv3D(rng, input=conv4.output, filter_shape=(nkerns[4], nkerns[3], 5, 5, 5), 
-# 	image_shape=(batch_size, nkerns[3], 12, 12, 12), poolsize=(1,1,1))
-# conv6 = Conv3D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 3, 3, 3), 
-# 	image_shape=(batch_size, nkerns[4], 8, 8, 8), poolsize=(1,1,1))
-
-
-# fc_input = conv6.output.flatten(2)
-# fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=6*6*6*nkerns[5], n_out=5500)
-# # #output is a vector of 6 elements
-# fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=3000)
-# fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=3000, n_out=6)
-# output = ContOutputLayer(input=fc3.output, n_in=6)
-
+#(64-3+1)/poolsize
 conv1 = Conv3D(rng, input=input_occ_batch, filter_shape=(nkerns[0], 1, 3, 3, 3), 
   image_shape=(batch_size, 1, 64, 64,64), poolsize=(1,1,1))
 conv2 = Conv3D(rng, input=conv1.output, filter_shape=(nkerns[1], nkerns[0], 3, 3, 3), 
@@ -124,24 +100,19 @@ fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=5*5*5*nkerns[5], n_out=550)
 # output is a vector of 6 elements
 fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=550, n_out=250)
 fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=250, n_out=150)
-# fc4 = FullyConnectedLayer(rng, input=fc3.output, n_in=50, n_out=6)
-
-
 output = ContOutputLayer(input=fc3.output, n_in =150 ,n_out=6)
 
 print 'defining cost'
 
-# cost = output.cost(y, y_flag=None)
-# cost = output.mse(y,batch_size)
-# embed()
+# test = output.Mahalanobis(y,batch_size)
 cost = output.dany_error(y,batch_size)
-
-
-# all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
-# 	conv6.params +  fc1.params + fc2.params +fc3.params+ output.params)
+# cost = output.cost(y)
 
 all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
-  conv6.params + conv7.params +  fc1.params + fc2.params +fc3.params+ output.params)
+	conv6.params +  fc1.params + fc2.params +fc3.params+ output.params)
+
+# all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params +
+#   conv6.params + conv7.params +  fc1.params + fc2.params +fc3.params+ output.params)
 
 # compute the gradient of cost
 # embed()
@@ -152,18 +123,15 @@ Dataset_dany =  Input_output()
 train_set_X_occ, train_set_y = Dataset_dany[0]
 valid_set_x, valid_set_y = Dataset_dany[1]
 test_set_X_occ, test_set_y  = Dataset_dany[2]
-# embed()
 
-# train_set_y.get_value()
-# embed()
-print'train_set_y.type' ,train_set_y.type
-print' y.type', y.type
-print'valid_set_y',valid_set_y.type
-print 'test_set_y',test_set_y.type
-print'train_set_X_occ.type' ,train_set_X_occ.type
-print 'X_occ.type',X_occ.type
-print 'test_set_X_occ',test_set_X_occ.type
-print'valid_set_x',valid_set_x.type
+# print'train_set_y.type' ,train_set_y.type
+# print' y.type', y.type
+# print'valid_set_y',valid_set_y.type
+# print 'test_set_y',test_set_y.type
+# print'train_set_X_occ.type' ,train_set_X_occ.type
+# print 'X_occ.type',X_occ.type
+# print 'test_set_X_occ',test_set_X_occ.type
+# print'valid_set_x',valid_set_x.type
 
 print 'Adam Optimizer Update'
 # Adam Optimizer Update
@@ -187,6 +155,12 @@ for p, g in zip(all_params, all_grads):
 	updates.append((adam_m, adam_m_new))
 	updates.append((adam_v, adam_v_new))
 	updates.append((p, adam_p_new))
+
+# learning_rate = 0.01
+# updates = [
+#         (param_i, param_i - learning_rate * grad_i)
+#         for param_i, grad_i in zip(all_params, all_grads)
+#     ]
 
 ''' compiling a Theano function `train_model` that returns the cost, but
     in the same time updates the parameter of the model based on the rules
@@ -252,15 +226,17 @@ print 'prima del while'
 
 Truth = []
 pred = []
+E_ori = []
+E_tra = []
 # count_dany = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
-    for minibatch_index in range(n_train_batches): #loop on train examples
-        # print minibatch_index
-        train_model(minibatch_index)
+    # for minibatch_index in range(n_train_batches): #loop on train examples
+    #     # print minibatch_index
+    #     train_model(minibatch_index)
     #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
-        c,o,op = train_model(minibatch_index)
+        train_model(minibatch_index)
         # print op
         iter = (epoch - 1) * n_train_batches + minibatch_index
         if (iter + 1) % validation_frequency == 0:
@@ -296,21 +272,21 @@ while (epoch < n_epochs) and (not done_looping):
                 test_losses = [test_model(i)
                                    for i in range(n_test_batches)]
 
-                # test_losses, Truth, pred = [test_model(i) for i in range(n_test_batches)]
-
                 Truth = [test_losses[i][1] for i
                                  in range(0,len(test_losses))]
                 pred = [test_losses[i][2] for i
                                  in range(0,len(test_losses))]
-                # for i in range(n_test_batches):
-                #       test_losses = test_model(i)
+
                 test_m = [test_losses[i][0] for i
                                  in range(0,len(test_losses))]
 
-                test_score = np.mean(test_m)
+                E_ori = [test_losses[i][3] for i
+                                 in range(0,len(test_losses))]
 
-                #       Truth.append(list(test_losses[1]))
-                #       pred.append(list(test_losses[2]))
+                E_tra = [test_losses[i][4] for i
+                                 in range(0,len(test_losses))]
+
+                test_score = np.mean(test_m)
 
                 # count_dany +=1
                 print(("Epoch %i, Minibatch %i/%i, Test error of"" best model %f ") 
@@ -336,43 +312,4 @@ print(('Optimization complete. Best validation score of %f '
 	'obtained at iteration %i, with test performance %f ') %
 	(best_validation_loss , best_iter + 1, test_score ))
 # for i in Truth.value
-Draw_Grasph(Truth,pred)
-  # (best_validation_loss , best_iter + 1, test_score ))
-
-
-
-
-# test_error = []
-
-# chunk_file_idx = 0
-# while True: # loop through chunk training files
-#   for i in xrange(int(n_train_batches)): # loop through mini-batch
-#      train_model(i)
-#   for i in xrange(int(n_train_batches)):
-#      train_model(i)
-#   if chunk_file_idx%10==0:
-#     # test_error.append(test_model(random.randint(0, n_test_batches)))
-#     test_losses = [test_model(i)
-#                    for i in range(n_test_batches)]
-#     # for i in range(n_test_batches):
-#     #       test_losses = test_model(i)
-#     test_score = np.mean(test_losses)
-#     # print 'test error %f',test_error
-#   # X_occ_data, _, y_data = feeder.next_training_set_raw()
-#   if X_occ is None:
-#     print 'done with all chunk files'
-#     break
-#   # train_set_X_occ.set_value(X_occ_data, borrow=True)
-#   # train_set_y.set_value(y_data, borrow=True)
-  
-#   chunk_file_idx += 1
-
-#   if chunk_file_idx%100==0:
-#     ckpt_name = 'weights_%i_iter.npz'%chunk_file_idx
-#     save_model(ckpt_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-#             conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
-#     print 'saved successfully to %s'%ckpt_name
-#     print test_score
-#     break
-
-# print 'done'
+Draw_Grasph(Truth,pred,E_ori,E_tra)
