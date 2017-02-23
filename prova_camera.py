@@ -20,7 +20,9 @@ import scipy.misc
 from Add_variation_camera_pose import Add_variation, Make_camera_poses
 from utils_camera import FromCamera2rgb, Find_axis_rotation, Read_Poses, Write_image
 from mvbb.ScalaReduce import DanyReduceScale
-from mvbb.draw_bbox import draw_GL_frame
+# from mvbb.draw_bbox import draw_GL_frame
+from camera_to_image_Kris import camera_to_images
+import Image
 
 Pose = {}
 Pose['pose'] = [f for f in os.listdir('3DCNN/NNSet/Pose/pose')]
@@ -56,7 +58,7 @@ world = WorldModel()
 robot = make_moving_base_robot('reflex_col', world)
 xform = resource.get("default_initial_reflex_col.xform" , description="Initial hand transform",
                         default=se3.identity(), world=world, doedit=False)
-set_moving_base_xform(robot,xform[0],[0,0,-1])
+set_moving_base_xform(robot,xform[0],[-1,-1,-1])
 
 all_objects = []
 object_list = []
@@ -96,84 +98,94 @@ for object_name in object_list:
                         obj = DanyReduceScale(object_name, world,objfilename,object_set)
                     else:
                         obj = make_object(object_set, object_name, world)
-                if obj is None:
-                    print "Could not find object", object_name
-                    continue
-                # embed()
-                o_T_p= []
+                    if obj is None:
+                        print "Could not find object", object_name
+                        continue
+                    # embed()
+                    o_T_p= []
+                    print object_name
+                    Read_Poses(object_name,o_T_p)
+                    # embed()
+                    o_T_p_r = Make_camera_poses(o_T_p,obj)
 
-                Read_Poses(object_name,o_T_p)
-                # embed()
-                o_T_p_r = Make_camera_poses(o_T_p,obj)
+                    vis.add("world",world)
 
-                vis.add("world",world)
+                    sim = Simulator(world)
+                    sim.setGravity([0,0,0])
+                    sensor = sim.controller(0).sensor("rgbd_camera")
+                    # print"LINK", sensor.getSetting("link")
+                    # print "Tsensor", sensor.getSetting("Tsensor")
 
-                sim = Simulator(world)
-                sim.setGravity([0,0,0])
-                sensor = sim.controller(0).sensor("rgbd_camera")
-                print"LINK", sensor.getSetting("link")
-                print "Tsensor", sensor.getSetting("Tsensor")
+                    #Note: GLEW sensor simulation only runs if it occurs in the visualization thread (e.g., the idle loop)
+                    class SensorTestWorld (GLPluginInterface):
+                        def __init__(self,poses,world,object_name):
+                            self.p = 0
+                            self.poses = poses
+                            self.world = world
+                            self.is_simulating = False
+                            self.curr_pose = None
+                            self.running = True
+                            self.obj = obj
+                            self.curr_pose = None
+                            self.step = 0
+                            self.nome_obj = object_name
+                            self.t_0 = None
+                            self.simulation_ = None
 
-                #Note: GLEW sensor simulation only runs if it occurs in the visualization thread (e.g., the idle loop)
-                class SensorTestWorld (GLPluginInterface):
-                    def __init__(self,poses,world,object_name):
-                        self.p = 0
-                        self.poses = poses
-                        self.world = world
-                        self.is_simulating = False
-                        self.curr_pose = None
-                        self.running = True
-                        self.obj = obj
-                        self.curr_pose = None
-                        self.step = 0
-                        self.nome_obj = object_name
-                        self.t_0 = None
-                        self.simulation_ = None
-
-                    def idle(self):
-                        print "Idle..."
-                        if not self.running:
-                            return
-
-                        if not self.is_simulating:
-                            if len(self.poses) > 0:
-                                self.curr_pose = self.poses.pop(0)
-                                # draw_GL_frame(self.curr_pose)
-                                print len(self.poses)
-                            else:
-                                self.running = False
-                                vis.show(hidden=True)
+                        def idle(self):
+                            # print "Idle..."
+                            if not self.running:
                                 return
 
-                            if self.simulation_ is None:
-                                vis.add("world",self.world)
-                            self.t_0 = sim.getTime()
-                            self.is_simulating = True
+                            if not self.is_simulating:
+                                if len(self.poses) > 0:
+                                    self.curr_pose = self.poses.pop(0)
+                                    # draw_GL_frame(self.curr_pose)
+                                    print len(self.poses)
+                                else:
+                                    self.running = False
+                                    vis.show(display=False)
+                                    return
 
-                        if self.is_simulating:
-                            obj.setVelocity([0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
-                            sensor.setSetting("Tsensor",' '.join(str(v) for v in self.curr_pose[0]+self.curr_pose[1]))
-                            vis.add("sensor",sensor)
+                                if self.simulation_ is None:
+                                    vis.add("world",self.world)
+                                self.t_0 = sim.getTime()
+                                self.is_simulating = True
 
-                            sim.simulate(0.1)
-                            sim.updateWorld()
+                            if self.is_simulating:
+                                # obj.setVelocity([0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+                                sensor.setSetting("Tsensor",' '.join(str(v) for v in self.curr_pose[0]+self.curr_pose[1]))
+                                vis.add("sensor",sensor)
 
-                            if not vis.shown() or (sim.getTime() - self.t_0) >= .5:
-                                if  vis.shown():
-                                    camera_measure = sensor.getMeasurements()
-                                    image = FromCamera2rgb(camera_measure)
-                                    # scipy.misc.imsave('outfile_%s.jpg'%self.step, image)
-                                    res_dataset = '2DCNN/NNSet/Image/%s/%s_rotate_%s.csv'% (self.nome_obj,self.nome_obj,self.step)
-                                    if not os.path.exists(res_dataset):
-                                        os.makedirs(res_dataset)
-                                    Write_image(image,res_dataset)
-                                    self.step +=1
-                                    self.is_simulating = False
-                                    self.simulation_  = None
+                                sim.simulate(0.1)
+                                sim.updateWorld()
+
+                                if not vis.shown() or (sim.getTime() - self.t_0) >= .5:
+                                    if  vis.shown():
+                                        # camera_measure = sensor.getMeasurements()
+                                        # image,rgb = FromCamera2rgb(camera_measure)
+                                        image = camera_to_images(sensor,image_format='numpy',color_format='rgb')
+                                        print image
+                                        # print np.asarray(image).size
+                                        directory = '2DCNN/NNSet/Image/%s'% (self.nome_obj)
+                                        if not os.path.exists(directory):
+                                            os.makedirs(directory)
+                                        # im_save = Image.fromarray(np.asarray(image))
+                                        # im_save.save('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step))
+                                        print 'save'
+                                        scipy.misc.imsave('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step), np.asarray(image).reshape(256,256))
+                                        # directory = '2DCNN/NNSet/Image/%s'% (self.nome_obj)
+                                        # res_dataset = '2DCNN/NNSet/Image/%s/%s_rotate_%s.csv'% (self.nome_obj,self.nome_obj,self.step)
+                                        # if not os.path.exists(directory):
+                                        #     os.makedirs(directory)
+                                        # Write_image(image,res_dataset)
+                                        self.step +=1
+                                        self.is_simulating = False
+                                        self.simulation_  = None
 
 
-                vis.pushPlugin(SensorTestWorld(o_T_p_r,world,object_name))
-                vis.show()
-                while vis.shown():
-                    time.sleep(0.5)
-                vis.kill()
+                    vis.pushPlugin(SensorTestWorld(o_T_p_r,world,object_name))
+                    vis.show()
+                    while vis.shown():
+                        time.sleep(0.5)
+                # vis.kill()

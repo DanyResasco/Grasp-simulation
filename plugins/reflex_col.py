@@ -1,10 +1,11 @@
 from klampt import *
 #Klampt v0.7
-from klampt.math import se3,vectorops
+from klampt.math import se3,vectorops,so3
 from klampt.vis.glrobotprogram import *
+from klampt.vis.glrobotprogram import GLSimulationPlugin
 from klampt.sim.simulation import ActuatorEmulator
 #Klampt v0.6.x
-#from klampt import se3,vectorops
+# from klampt import se3,vectorops
 #from klampt.glrobotprogram import *
 #from klampt.simulation import ActuatorEmulator
 
@@ -339,9 +340,9 @@ class HandEmulator(ActuatorEmulator):
         glEnable(GL_LIGHTING)
 
 
-class HandSimGLViewer(GLSimulationProgram):
+class HandSimGLViewer(GLSimulationPlugin):
     def __init__(self,world,base_link=0,base_driver=0):
-        GLSimulationProgram.__init__(self,world,"Reflex simulation program")
+        GLSimulationPlugin.__init__(self,world,"Reflex simulation program")
         self.handsim = HandEmulator(self.sim,0,base_link,base_driver)
         self.sim.addEmulator(0,self.handsim)
         self.control_dt = 0.01
@@ -358,7 +359,7 @@ class HandSimGLViewer(GLSimulationProgram):
             glutPostRedisplay()
 
     def print_help(self):
-        GLSimulationProgram.print_help()
+        GLSimulationPlugin.print_help()
         print "y/h: raise/lower finger 1 command"
         print "u/j: raise/lower finger 2 command"
         print "i/k: raise/lower finger 3 command"
@@ -400,7 +401,7 @@ class HandSimGLViewer(GLSimulationProgram):
             u[3] -= 0.1
             self.handsim.setCommand(u)
         else:
-            GLSimulationProgram.keyboardfunc(self,c,x,y)
+            GLSimulationPlugin.keyboardfunc(self,c,x,y)
         glutPostRedisplay()
 
 

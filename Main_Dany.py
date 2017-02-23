@@ -4,7 +4,8 @@ import pkg_resources
 pkg_resources.require("klampt>=0.7.0")
 from klampt import *
 from klampt import vis 
-from klampt.vis.glrobotprogram import *
+# from klampt.vis.glrobotprogram import *
+# from klampt.vis.glrobotprogram import GLSimulationProgram
 from klampt.math import *
 from klampt.model import collide
 from klampt.io import resource
@@ -17,6 +18,7 @@ import string
 import sys
 import time
 import pickle
+from klampt.vis.glprogram import GLRealtimeProgram
 
 from create_mvbb import MVBBVisualizer, compute_poses, skip_decimate_or_return
 from create_mvbb_filtered import FilteredMVBBVisualizer
@@ -77,7 +79,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         self.module = module
         self.running = True
         self.HandClose = False
-        self.db = MVBBLoader(suffix='Princeton')
+        self.db = MVBBLoader(suffix='blabla')
         # self.logFile = DanyLog(suffix='logFile')
         self.kindness = None
         self.f1_contact = []
@@ -120,6 +122,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         if not self.is_simulating:
             if len(self.all_poses) > 0:
                 self.curr_pose = self.all_poses.pop(0)
+               
                 # print "Simulating Next Pose Grasp"
                 # print self.curr_pose
             else:
@@ -140,6 +143,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             if self.sim is None:
                 self.sim = SimpleSimulator(self.world)
                 self.sim.enableContactFeedbackAll()
+                print "******INizio: ", self.sim.getTime()
                 ##uncomment to see the log file
                 # n = len(self.poses)+len(self.poses_variations) - len(self.all_poses)
                 # self.sim.log_state_fn="simulation_state_" + self.obj.getName() + "_%03d"%n + ".csv"
@@ -242,9 +246,11 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                     state = open('state.dump','w')
                     pickle.dump(self.crashing_states, state)
                     state.close()
+                print "******fine: ", self.sim.getTime()
                 self.is_simulating = False
                 self.sim = None
                 self.HandClose = False
+                
 
 def getObjectGlobalCom(obj):
     return se3.apply(obj.getTransform(), obj.getMass().getCom())
@@ -305,7 +311,8 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
 
         # print "------Computing poses for object:", object_name
         poses, poses_variations, boxes = compute_poses(object_or_vertices)
-
+        # print time.time()
+        # embed()
         # aa = so3.axis_angle(so3.identity())
         Ry = np.array(se3.homogeneous((so3.from_axis_angle(((0,1,0), 45.*np.pi/180.)),[0,0,0])))
         Rx = np.array(se3.homogeneous((so3.from_axis_angle(((1,0,0), 45.*np.pi/180.)),[0,0,0])))
@@ -317,7 +324,7 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         poses_new = []
 
         for pose in poses:
-            poses_new.append(pose.dot(T));
+            poses_new.append(pose.dot(T))
         poses = poses_new
 
 
@@ -395,7 +402,6 @@ if __name__ == '__main__':
     for dataset in objects.values():
         all_objects += dataset
 
-
     to_check = [
     #ycb and acp
     'sterilite_bin_12qt_bottom', #Dont find
@@ -467,7 +473,6 @@ if __name__ == '__main__':
     'postbox', #zeros
     'kettle',
     'standingdoublestaircase', #zeros
-    'xwing',
     'longship', #zeros
     'colouramerica', #zeros
     'yellowsignace', #zeros
@@ -834,6 +839,7 @@ if __name__ == '__main__':
     'yellowcar',
     'redbike',
     'militarytruck',
+    'xwing',
     'blackcatamaran',
     'redandyellowbike',
     'azureship',
@@ -878,8 +884,9 @@ if __name__ == '__main__':
     print all_objects
     print "-------------"
 
-    try:
-        objname = sys.argv[1]
-        launch_test_mvbb_filtered("reflex_col", [objname], 100)
-    except:
-        launch_test_mvbb_filtered("reflex_col", all_objects, 100)
+    # try:
+    objname = sys.argv[1]
+    # print time.time()
+    launch_test_mvbb_filtered("reflex_col", [objname], 100)
+    # except:
+    #     launch_test_mvbb_filtered("reflex_col", all_objects, 100)
