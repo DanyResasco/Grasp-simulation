@@ -12,6 +12,7 @@ import numpy as np
 import csv
 from IPython import embed
 from klampt.math import se3,so3
+import math
 
 
 
@@ -24,6 +25,7 @@ def Read_Poses(nome,vector_set):
             T = row[9:12]
             pp = row[:9]
             vector_set.append( np.array(se3.homogeneous( (pp,T)) ) ) 
+            # break
 
 def Write_image(camera,dataset):
     '''Write the dataset'''
@@ -37,16 +39,20 @@ def Write_image(camera,dataset):
     f.close()
 
 
-def Fin_min_angle(pose,axis):
+def Find_min_angle(pose,axis):
     # embed()
     # x = pose[:3,0]
     # y = pose[:3,1]
     # z = pose[:3,2]
     # pose_temp = se3.homogeneous(pose)
-
-    x = [pose[0][0],pose[1][0],pose[2][0] ]
-    y = [pose[0][1],pose[1][1],pose[2][1] ]
-    z = [pose[0][2],pose[1][2],pose[2][2] ]
+    if isinstance(pose, np.ndarray):
+        x = [pose[0][0],pose[1][0],pose[2][0] ]
+        y = [pose[0][1],pose[1][1],pose[2][1] ]
+        z = [pose[0][2],pose[1][2],pose[2][2] ]
+    else:
+        x = pose[0]
+        y = pose[1]
+        z = pose[2]
 
 
 
@@ -57,78 +63,63 @@ def Fin_min_angle(pose,axis):
     return [Dx,Dy,Dz]
 
 
-def  Find_axis_rotation(o_T_p):
 
-    mini2 = Fin_min_angle(o_T_p,[1,0,0])
-    minx = mini2.index(min(mini2))
-    print "minx min x:", minx
-    mini = Fin_min_angle(o_T_p,[0,0,1])
-    maxz = mini.index(max(mini))
-    miniy = Fin_min_angle(o_T_p,[0,1,0])
-    miny = miniy.index(max(miniy))
-    print "distance with y",miny
-    print "index max z", maxz
-    if ((minx == 2) and (maxz == 1)) and miny !=2 or ((minx ==0) and (maxz ==2)) : #zy
-        axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(-90)))
-    # elif ((minx == 2) and (maxz == 1)) and miny ==2:
-    elif ((minx == 1) and (maxz == 2)and miny !=2):
-        axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(-180)))
-    # elif ((minx == 1) and (maxz == 2)and miny ==0):
+def Find_long_side_and_axis(bmin,bmax):
+    side_x = math.sqrt( pow( bmin[0] - bmax[0] , 2) )
+    side_y = math.sqrt( pow( bmin[1] -  bmax[1] , 2) )
+    side_z = math.sqrt( pow( bmin[2] - bmax[2], 2) )
+
+    figure = []
+    ori = None
+
+    figure.append(side_x) 
+    figure.append(side_y)
+    figure.append(side_z)
+
+
+    maxi = -1000 #assign max a value to avoid garbage
+
+    for k in range(0,len(figure)):
+        if (maxi <= figure[k]):
+            maxi = figure[k]
+            ori = k
+
+    if ori == None:
+        assert "Problem with long side"
+    #ori=0 axis x
+    #ori=1 axis y
+    #ori=2 axis z
+    # axis = []
+    # index = None
+    # if ori == 0:
+    #     axis = [1,0,0]
+    #     index = 0
+    # elif ori ==1:
     #     axis = [0,1,0]
-    #     R = so3.from_axis_angle((axis,math.radians(90)))
-    elif  (minx ==2) and (maxz ==0):
-        R = so3.from_axis_angle(([0,1,0],math.radians(-180)))
-    elif ((minx ==0) and (maxz ==0)) and miny == 2 or ((minx == 2) and (maxz == 1) and miny ==2):
-        R = so3.from_axis_angle(([0,1,0],math.radians(0)))
-    elif ((minx ==0) and (maxz ==0)) and miny != 2:
-        R = so3.from_axis_angle(([0,1,0],math.radians(-90)))
-    elif ((minx ==2) and (maxz ==2) and miny ==0):
-        axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(-90)))
-    elif ((minx ==1) and (maxz ==2) and miny ==2):
-        axis = [1,0,0]
-        R = so3.from_axis_angle((axis,math.radians(-180)))
-    elif ((minx ==0) and (maxz ==1) and miny ==0):
-        axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(-180)))
-    elif ((minx ==0) and (maxz ==1) and miny ==1):
-        axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(-90)))
-    elif ((minx ==0) and (maxz ==2) and miny ==0):
-        axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(90)))
-    elif ((minx ==1) and (maxz ==2) and miny ==0):
-        axis = [0,0,1]
-        R = so3.from_axis_angle((axis,math.radians(-90)))
+    #     index = 1
+    # elif ori ==2:
+    #     # axis = [0,0,1]
+    #     index = 2
 
-    else:
-        print "Non considerato"
-        Normal = np.array([0,0,1]) #z axis
-        mini = Fin_min_angle(o_T_p,Normal)
-        index = mini.index(min(mini))
-        print"**************min z*", index
-        if index == 0: #x axis
-            axis = [1,0,0]
-        elif index == 1: #y axis
-            axis = [0,1,0]
-        else: #no z  
-            if mini[0] < mini[1]:
-                axis = [1,0,0]
-            else:
-                axis = [0,1,0]
-        R = so3.from_axis_angle((axis,math.radians(-90)))
-    return R
+    print 'index',ori
+    return ori
+
+
+
+
+
+
+
 
 def  FromCamera2rgb(camera_measure):
     abgr = (np.array(camera_measure)[0:len(camera_measure)/2]).reshape(256,256).astype(np.uint32)
+    
     rgb = np.zeros((256,256,3),dtype=np.uint8)
     rgb[:,:,0] =                np.bitwise_and(abgr,0x000f)
     rgb[:,:,1] = np.right_shift(np.bitwise_and(abgr,0x00f0), 8)
     rgb[:,:,2] = np.right_shift(np.bitwise_and(abgr,0x0f00), 16)
     # embed()
-    return abgr
+    return abgr,rgb
 
 
 def perpendicular_vector(v):
@@ -154,17 +145,80 @@ def perpendicular_vector(v):
         return Vector(b, c, a)
 
 
-def FInd_Plane(x1, x2, x3):
-    vector1 = [x2[0] - x1[0], x2[1] - x1[1], x2[2] - x1[2]]
-    vector2 = [x3[0] - x1[0], x3[1] - x1[1], x3[2] - x1[2]]
 
-    # cross_product = [vector1[1] * vector2[2] - vector1[2] * vector2[1], -1 * (vector1[0] * vector2[2] - vector1[2] * vector2[0]), vector1[0] * vector2[1] - vector1[1] * vector2[0]]
-    cross_product = np.cross(vector1,vector2)
 
-    a = cross_product[0]
-    b = cross_product[1]
-    c = cross_product[2]
+def Find_long_side(bbox):
+    '''Find longest boxes axis'''
+    #distance between vertex 0 and 7
+
+    side_x = math.sqrt( pow( bbox.Isobox[0,0] - bbox.Isobox[1, 0] , 2) )
+    side_y = math.sqrt( pow( bbox.Isobox[0,1] -  bbox.Isobox[1,1] , 2) )
+    side_z = math.sqrt( pow( bbox.Isobox[0,2] - bbox.Isobox[1,2], 2) )
+
+    figure = []
+    ori = None
+
+    figure.append(side_x) 
+    figure.append(side_y)
+    figure.append(side_z)
+
+
+    maxi = -1000 #assign max a value to avoid garbage
+
+    for k in range(0,len(figure)):
+        if (maxi <= figure[k]):
+            maxi = figure[k]
+            ori = k
+
+    if ori == None:
+        assert "Problem with long side"
+    #ori=0 axis x
+    #ori=1 axis y
+    #ori=2 axis z
+    # axis = []
+    index = None
+    if ori == 0:
+        axis = [bbox.T[0,0],bbox.T[1,0],bbox.T[2,0]]
+        index = 0
+    elif ori ==1:
+        axis = [bbox.T[0,1],bbox.T[1,1],bbox.T[2,1]]
+        index = 1
+    elif ori ==2:
+        axis = [bbox.T[0,2],bbox.T[1,2],bbox.T[2,2]]
+        index = 2
+
+
+    return axis,index
+
+def Compute_box(obj):
+    if isinstance(obj, np.ndarray):
+        vertices = obj
+        n_vertices = vertices.shape[0]
+        box = pydany_bb.Box(n_vertices)
+
+        box.SetPoints(vertices)
+    else:
+        tm = obj.geometry().getTriangleMesh()
+        n_vertices = tm.vertices.size() / 3
+        box = pydany_bb.Box(n_vertices)
+
+        for i in range(n_vertices):
+            box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
+
+    I = np.eye(4)
+    print "doing PCA"
+    box.doPCA(I)
+    print box.T
+    print "computing Bounding Box"
+    bbox = pydany_bb.ComputeBoundingBox(box)
+
+    long_side,index  = Find_long_side(bbox)
+
+    angle = math.acos(np.dot([0,0,1],long_side)) / np.dot(np.sqrt(np.dot(long_side,long_side)),np.sqrt(np.dot([0,0,1],[0,0,1]))) 
+
+    if angle <= math.radians(10):
+        standing = True
+    else:
+        standing = False
     # embed()
-    d = - (cross_product[0] * x2[0] + cross_product[1] * x2[1] + cross_product[2] * x2[2])
-
-    return np.array(([a,b,c]))
+    return long_side,index,standing,box.T

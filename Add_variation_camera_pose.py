@@ -10,11 +10,12 @@ from klampt.sim import *
 from moving_base_control import *
 import numpy as np
 import random
-from utils_camera import FromCamera2rgb, Find_axis_rotation,Find_min_angle
+from utils_camera import FromCamera2rgb,Find_min_angle
 from IPython import embed
 import PyKDL as kdl
 import pydany_bb
-
+import math
+from utils_camera import Find_long_side_and_axis
 from create_mvbb import MVBBVisualizer, compute_poses, skip_decimate_or_return
 
 def Add_variation(o_T_p_r_original,o_T_p_r):
@@ -141,80 +142,31 @@ def create_camera_frame(z):
 
 
 
-def Find_long_side(bbox):
-    #distance between vertex 0 and 7
-
-    side_x = math.sqrt( pow( bbox.Isobox[0,0] - bbox.Isobox[1, 0] , 2) )
-    side_y = math.sqrt( pow( bbox.Isobox[0,1] -  bbox.Isobox[1,1] , 2) )
-    side_z = math.sqrt( pow( bbox.Isobox[0,2] - bbox.Isobox[1,2], 2) )
-
-    figure = []
-    ori = None
-
-    figure.append(side_x) 
-    figure.append(side_y)
-    figure.append(side_z)
 
 
-    maxi = -1000 #assign max a value to avoid garbage
-
-    for k in range(0,len(figure)):
-        if (maxi <= figure[k]):
-            maxi = figure[k]
-            ori = k
-
-    if ori == None:
-        assert "Problem with long side"
-    #ori=0 axis x
-    #ori=1 axis y
-    #ori=2 axis z
-    # axis = []
-    index = None
-    if ori == 0:
-        axis = [bbox.T[0,0],bbox.T[1,0],bbox.T[2,0]]
-        index = 0
-    elif ori ==1:
-        axis = [bbox.T[0,1],bbox.T[1,1],bbox.T[2,1]]
-        index = 1
-    elif ori ==2:
-        axis = [bbox.T[0,2],bbox.T[1,2],bbox.T[2,2]]
-        index = 2
 
 
-    return axis,index
+def Camera_first_pose(axis,R_o,center,vect_pose):
+    if axis == 0 :
+        print "axis 0"
+        P = np.array(se3.homogeneous((R_o,[center[0],center[1]-0.7,center[2]])))
+        R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(90))),[0,0,0] )))
+        vect_pose.append(se3.from_homogeneous(np.dot(P,R)))
+    elif axis == 1:
+        print "axis 1"
+        xc = R_o[1]
+        yc = R_o[2]
+        zc = R_o[0]
+        P = np.array(se3.homogeneous((so3.from_matrix((xc,yc,zc)),[center[0]+0.7,center[1],center[2]])))
+        vect_pose.append(se3.from_homogeneous(P))
+    elif axis ==2:
+        print "axis 2"
+        xc = R_o[2]
+        yc = R_o[0]
+        zc = R_o[1]
+        P = np.array(se3.homogeneous((so3.from_matrix((xc,yc,zc)),[center[0],center[1]-0.7,center[2]])))
+        vect_pose.append(se3.from_homogeneous(P))
 
-def Compute_box(obj):
-    if isinstance(obj, np.ndarray):
-        vertices = obj
-        n_vertices = vertices.shape[0]
-        box = pydany_bb.Box(n_vertices)
-
-        box.SetPoints(vertices)
-    else:
-        tm = obj.geometry().getTriangleMesh()
-        n_vertices = tm.vertices.size() / 3
-        box = pydany_bb.Box(n_vertices)
-
-        for i in range(n_vertices):
-            box.SetPoint(i, tm.vertices[3 * i], tm.vertices[3 * i + 1], tm.vertices[3 * i + 2])
-
-    I = np.eye(4)
-    print "doing PCA"
-    box.doPCA(I)
-    print box.T
-    print "computing Bounding Box"
-    bbox = pydany_bb.ComputeBoundingBox(box)
-
-    long_side,index  = Find_long_side(bbox)
-
-    angle = math.acos(np.dot([0,0,1],long_side)) / np.dot(np.sqrt(np.dot(long_side,long_side)),np.sqrt(np.dot([0,0,1],[0,0,1]))) 
-
-    if angle <= math.radians(10):
-        standing = True
-    else:
-        standing = False
-    embed()
-    return long_side,index,standing,box.T
 
 
 
@@ -224,31 +176,38 @@ def Make_camera_poses(o_T_p,obj):
 
     print "len: ", len(o_T_p)
 
-    long_side,index, standing, T_box = Compute_box(obj)
+    # long_side,index, standing, T_box = Compute_box(obj)
 
     R_o,t = obj.getTransform()
+    # embed()
     bmin,bmax = obj.geometry().getBB()
     centerX = 0.5 * ( bmax[0] - bmin[0] ) + t[0]
     centerY = 0.5 * ( bmax[1] - bmin[1] ) + t[1]
     centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
     
-    # if index == 0:
-    #     if standing == True: # x up
-    #         T_o = [centerX -0.7, centerY , centerZ ]
-    #     else:
-    #         T_o = [centerX -0.7, centerY, centerZ ]
-    # elif index ==1:
-    #     if standing == True: # x up
-    #         T_o = [centerX, centerY + 0.7, centerZ]
-    #     else:
-    T_o = [centerX  , centerY  , centerZ]
+    axis = Find_long_side_and_axis(bmin,bmax)
 
-    # embed()
+
+
     for k in range(0,len(o_T_p)):
         if k == 0:
+            # R_o,t = obj.getTransform()
+            # bmin,bmax = obj.geometry().getBB()
+            # centerX = 0.5 * ( bmax[0] - bmin[0] ) + t[0]
+            # centerY = 0.5 * ( bmax[1] - bmin[1] ) + t[1]
+            # centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
+            # P = np.array(se3.homogeneous((R_o,[centerX,centerY-0.7,centerZ])))
+            # R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(90))),[0,0,0] )))
+            # o_T_c = so3.mul(so3.from_axis_angle(([1,0,0],math.radians(-90))),R_o)
+            # o_T_p_r.append(se3.from_homogeneous(np.dot(P,R)))
+            # embed()
+
+            Camera_first_pose(axis,so3.matrix(R_o),[centerX,centerY,centerZ],o_T_p_r)
+
+
             # R_np = create_camera_frame(long_side)
             # R_temp = list(R_np.reshape(-1))
-            o_T_p_r.append((se3.from_homogeneous(T_box)[0],T_o))
+            # o_T_p_r.append((se3.from_homogeneous(T_box)[0],T_o))
             
         else:
             pass

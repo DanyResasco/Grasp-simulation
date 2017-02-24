@@ -18,7 +18,7 @@ from moving_base_control import *
 # from Add_variation_camera_pose import Make_camera_poses
 import scipy.misc
 from Add_variation_camera_pose import Add_variation, Make_camera_poses
-from utils_camera import FromCamera2rgb, Find_axis_rotation, Read_Poses, Write_image
+from utils_camera import FromCamera2rgb, Read_Poses, Write_image
 from mvbb.ScalaReduce import DanyReduceScale
 # from mvbb.draw_bbox import draw_GL_frame
 from camera_to_image_Kris import camera_to_images
