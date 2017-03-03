@@ -60,6 +60,72 @@ class ContOutputLayer(object):
 		# print "**********************************"
 
 
+	def standardization(self,y,nrow):
+		# for i in range()
+
+		roll_std  = np.std(y[:,0])
+		roll_mean = np.mean(y[:,0])
+		pitch_std  = np.std(y[:,1])
+		pitch_mean = np.mean(y[:,1])
+		yaw_std  = np.std(y[:,2])
+		yaw_mean = np.mean(y[:,2])
+
+		x_std = np.std(y[:,3])
+		x_mean = np.mean(y[:,3])
+		y_std = np.std(y[:,4])
+		y_mean = np.mean(y[:,4])
+		z_std = np.std(y[:,5])
+		z_mean = np.mean(y[:,5])
+
+		std_ = [roll_std,pitch_std,yaw_std,x_std,y,z_std]
+		mean_ = [roll_mean,pitch_mean,yaw_mean,x_mean,y_mean,z_mean]
+
+		y_std = np.empty([nrow,6])
+		for i in range(0,nrow):
+			y_std[i,0] = (y[i,0] - std_[0])/mean_[0]
+			y_std[i,1] = (y[i,1] - std_[1])/mean_[1]
+			y_std[i,2] = (y[i,2] - std_[2])/mean_[2]
+			y_std[i,3] = (y[i,3] - std_[3])/mean_[3]
+			y_std[i,4] = (y[i,4] - std_[4])/mean_[4]
+			y_std[i,5] = (y[i,5] - std_[5])/mean_[5] 
+
+
+
+		return y_std
+
+
+	def dany_error_std(self,y,nrow):
+		import math
+		pi = math.pi
+		ORI = []
+		TRA = []
+		temp = []
+		NORMA = 0
+
+		y_std = standardization(y,nrow)
+		yp_std = standardization(self.y_pred,nrow)
+
+		for i in range(0,nrow):
+			dx = T.min([abs(y_std[i,0]-yp_std[i,0]),(2*pi - abs(y_std[i,0]-yp_std[i,0]))])
+			dy = T.min([abs(y_std[i,1]-yp_std[i,1]),(2*pi - abs(y_std[i,1]-yp_std[i,1]))])
+			dz = T.min([abs(y_std[i,2]-yp_std[i,2]),(2*pi - abs(y_std[i,2]-yp_std[i,2]))])
+			d_o = np.sqrt(np.add( np.add(T.pow(dx, 2),T.pow(dy, 2)),T.pow(dz, 2)))
+			tx = np.array(y_std[i,3]-yp_std[i,3])
+			ty = np.array(y_std[i,4]-yp_std[i,4])
+			tz = np.array(y_std[i,5]-yp_std[i,5])
+			t0 = np.array([tx,ty,tz])
+			# embed()
+			# temp.append(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
+			# NORMA +=(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
+			NORMA +=(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
+			# ORI.append(d_o*0.031)
+			# TRA.append(0.005*np.linalg.norm(t0,2))
+
+		return NORMA
+
+
+
+
 	def dany_error(self,y,nrow):
 		import math
 		pi = math.pi
@@ -67,6 +133,7 @@ class ContOutputLayer(object):
 		TRA = []
 		temp = []
 		NORMA = 0
+
 		for i in range(0,nrow):
 			dx = T.min([abs(y[i,0]-self.y_pred[i,0]),(2*pi - abs(y[i,0]-self.y_pred[i,0]))])
 			dy = T.min([abs(y[i,1]-self.y_pred[i,1]),(2*pi - abs(y[i,1]-self.y_pred[i,1]))])
