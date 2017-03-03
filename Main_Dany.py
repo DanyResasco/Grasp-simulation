@@ -42,6 +42,7 @@ objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 objects['newObjdany'] = [f for f in os.listdir('data/objects/newObjdany')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
+# objects['thingiverse'] = [f for f in os.listdir('data/objects/thingiverse')]
 robots = ['reflex_col', 'soft_hand', 'reflex']
 
 def Draw_Grasph(kindness):
@@ -117,25 +118,30 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
         if self.world.numRigidObjects() > 0:
             self.obj = self.world.rigidObject(0)
         elif self.obj is None:
+            print "none"
             return
 
         if not self.is_simulating:
+            print len(self.all_poses)
             if len(self.all_poses) > 0:
+                # self.curr_pose = np.array(se3.homogeneous(self.poses.pop(0)))
                 self.curr_pose = self.all_poses.pop(0)
-               
+
+                # vis.show(hidden=False)
                 # print "Simulating Next Pose Grasp"
                 # print self.curr_pose
             else:
                 # print "Done testing all", len(self.poses+self.poses_variations), "poses for object", self.obj.getName()
                 # print "Quitting"
                 self.running = False
-                vis.show(hidden=True)
+                vis.show(display=True)
                 return
 
-            self.obj.setTransform(self.R, [0,0,0])
+            self.obj.setTransform(self.R, self.T)
             self.obj.setVelocity([0., 0., 0.],[0., 0., 0.])
-            # self.obj.setVelocity([0,0,0,0])
+            # self.obj.setVelocity([0,0,0,e0])
             self.w_T_o = np.array(se3.homogeneous(self.obj.getTransform()))
+            # embed()
             pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
             self.robot.setConfig(self.q_0)
             set_moving_base_xform(self.robot, pose_se3[0], pose_se3[1])
@@ -143,7 +149,8 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             if self.sim is None:
                 self.sim = SimpleSimulator(self.world)
                 self.sim.enableContactFeedbackAll()
-                print "******INizio: ", self.sim.getTime()
+                self.sim.setGravity([0,0,0])
+                print '********* INIZIO *********', self.sim.getTime()
                 ##uncomment to see the log file
                 # n = len(self.poses)+len(self.poses_variations) - len(self.all_poses)
                 # self.sim.log_state_fn="simulation_state_" + self.obj.getName() + "_%03d"%n + ".csv"
@@ -178,10 +185,12 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
 
             if self.sim.getTime() - self.t_0 == 0:
                 print "Closing hand"
+                # print self.HandClose
                 # self.hand.setCommand([0.2,0.2,0.2,0]) #TODO chiudila incrementalmente e controlla le forze di contatto
                 hand_close = np.array([0.1,0.1,0.1,0])
                 hand_open = np.array([1.0,1.0,1.0,0])
                 step_size = 0.01
+                self.sim.setGravity([0,0,-1])
                 while(self.HandClose == False):
                     d = vectorops.distance(hand_open, hand_close)
                     # print"d",d
@@ -196,7 +205,9 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                         self.sim.simulate(0.01)
                         self.sim.updateWorld()
                         FC = get_contact_forces_and_jacobians(self.robot,self.world,self.sim)
-                        n = len(self.poses)+len(self.poses_variations) - len(self.all_poses)
+                        n = len(self.poses)
+                        # print FC
+                        # +len(self.poses_variations) - len(self.all_poses)
                         # print"pose", n, "contact forces@t:", self.sim.getTime(), "-", FC
                         if hand_temp[0] <= hand_close[0] and hand_temp[1] <= hand_close[1] and hand_temp[2] <= hand_close[2]:
                             # print"qui"
@@ -204,7 +215,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                             break
 
             elif (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) <= t_lift+d_lift:
-                # print "Lifting"
+                print "Lifting"
                 pose_se3 = se3.from_homogeneous(self.w_T_o.dot(self.curr_pose).dot(self.p_T_h))
                 t_i = pose_se3[1]
                 t_f = vectorops.add(t_i, (0,0,0.2))
@@ -219,7 +230,7 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
             if (self.sim.getTime() - self.t_0) >= t_lift and (self.sim.getTime() - self.t_0) >= t_lift+d_lift:# wait for a lift before checking if object fell
                 d_hand = hand_curr_pose[1][2] - pose_se3[1][2]
                 d_com = object_com_z - self.object_com_z_0
-                if (d_hand - d_com > 0.1) and (self.kindness > 1E-4):
+                if (d_hand - d_com > 0.1) and (self.kindness >= 1E-4):
                     self.object_fell = True # TODO use grasp quality evaluator from Daniela
                     print "!!!!!!!!!!!!!!!!!!"
                     print "Object fell"
@@ -238,15 +249,17 @@ class FilteredMVBBTesterVisualizer(GLRealtimeProgram):
                     # print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
                     # print "Saving grasp, object fall status:", "fallen" if self.object_fell else "grasped"
                     # print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-
+                    # print 'qui'
                     self.db.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.kindness)
+                    # print 'qui2'
                     # self.logFile.save_score(self.world.rigidObject(0).getName(), self.curr_pose, not self.object_fell,self.obj.getVelocity(), self.robot.getVelocity(), self.f1_contact,self.f2_contact,self.f3_contact)
                     if len(self.crashing_states) > 0:
                         self.crashing_states.pop()
                     state = open('state.dump','w')
                     pickle.dump(self.crashing_states, state)
                     state.close()
-                print "******fine: ", self.sim.getTime()
+                    # print '********* FINE *********', self.sim.getTime()
+                # vis.show(display=True)
                 self.is_simulating = False
                 self.sim = None
                 self.HandClose = False
@@ -275,14 +288,20 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
                 if world.numRigidObjects() > 0:
                     world.remove(world.rigidObject(0))
                 if object_name in objects['princeton']:
-                    # print "*************Dentro princeton********************" #need to scale the obj size
+                    print "*************Dentro princeton********************" #need to scale the obj size
                     objfilename = 'data/objects/template_obj_scale_princeton.obj'
                     # print"objfilename", objfilename
                     obj = DanyReduceScale(object_name, world,objfilename,object_set)
+                    # print obj
+                # elif object_name in objects['thingiverse']:
+                #     print "****************"
+                #     objfilename = 'data/objects/template_obj_scale_thinginverse.obj'
+                #     print"objfilename", objfilename
+                #     obj = DanyReduceScale(object_name, world,objfilename,object_set)
                 else:    
                     obj = make_object(object_set, object_name, world)
         if obj is None:
-            # print "Could not find object", object_name
+            print "Could not find object", object_name
             continue
 
 
@@ -291,13 +310,13 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
         obj.setTransform(R, [0,0,0]) #[0,0,0] or t?
         object_vertices_or_none, tm_decimated = skip_decimate_or_return(obj, min_vertices, 2000)
         if object_vertices_or_none is None:
-            # print "??????????????????????????????????????????????????"
-            # print "??????????????????????????????????????????????????"
-            # print "??????????????????????????????????????????????????"
-            # print "skipping object, too few vertices", obj.getName()
-            # print "??????????????????????????????????????????????????"
-            # print "??????????????????????????????????????????????????"
-            # print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
+            print "skipping object, too few vertices", obj.getName()
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
+            print "??????????????????????????????????????????????????"
             continue
         object_or_vertices = object_vertices_or_none
 
@@ -360,14 +379,16 @@ def launch_test_mvbb_filtered(robotname, object_list, min_vertices = 0):
                     filtered_poses_variations.append(poses_variations[i])
         # print "Filtered from", len(poses+poses_variations), "to", len(filtered_poses+filtered_poses_variations)
         if len(filtered_poses+filtered_poses_variations) == 0:
-            # print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            # print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            # print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            # print "Filtering returned 0 feasible poses"
-            # print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            # print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            # print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-            continue
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "Filtering returned 0 feasible poses"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            continue 
+
+        print '*******', len(filtered_poses+filtered_poses_variations)
 
         # create a hand emulator from the given robot name
         module = importlib.import_module('plugins.' + robotname)

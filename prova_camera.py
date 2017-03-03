@@ -30,7 +30,7 @@ objects = {}
 objects['ycb'] = [f for f in os.listdir('data/objects/ycb')]
 objects['apc2015'] = [f for f in os.listdir('data/objects/apc2015')]
 objects['princeton'] = [f for f in os.listdir('data/objects/princeton')]
-
+objects['thingiverse'] = [f for f in os.listdir('data/objects/thingiverse')]
 
 
 
@@ -59,6 +59,7 @@ robot = make_moving_base_robot('reflex_col', world)
 xform = resource.get("default_initial_reflex_col.xform" , description="Initial hand transform",
                         default=se3.identity(), world=world, doedit=False)
 set_moving_base_xform(robot,xform[0],[-1,-1,-1])
+
 
 all_objects = []
 object_list = []
@@ -96,6 +97,11 @@ for object_name in object_list:
                         objfilename = 'data/objects/template_obj_scale_princeton.obj'
                         print"objfilename", objfilename
                         obj = DanyReduceScale(object_name, world,objfilename,object_set)
+                    elif object_name in objects['thingiverse']:
+                        print "****************"
+                        objfilename = 'data/objects/template_obj_scale_thinginverse.obj'
+                        print"objfilename", objfilename
+                        obj = DanyReduceScale(object_name, world,objfilename,object_set)
                     else:
                         obj = make_object(object_set, object_name, world)
                     if obj is None:
@@ -112,7 +118,7 @@ for object_name in object_list:
 
                     sim = Simulator(world)
                     sim.setGravity([0,0,0])
-                    sensor = sim.controller(0).sensor("rgbd_camera")
+                    # sensor = sim.controller(0).sensor("rgbd_camera")
                     # print"LINK", sensor.getSetting("link")
                     # print "Tsensor", sensor.getSetting("Tsensor")
 
@@ -157,10 +163,10 @@ for object_name in object_list:
                                 sensor.setSetting("Tsensor",' '.join(str(v) for v in self.curr_pose[0]+self.curr_pose[1]))
                                 vis.add("sensor",sensor)
 
-                                sim.simulate(0.1)
+                                sim.simulate(0.8)
                                 sim.updateWorld()
 
-                                if not vis.shown() or (sim.getTime() - self.t_0) >= .5:
+                                if not vis.shown() or (sim.getTime() - self.t_0) >= 2.:
                                     if  vis.shown():
                                         # camera_measure = sensor.getMeasurements()
                                         # image,rgb = FromCamera2rgb(camera_measure)
@@ -187,5 +193,5 @@ for object_name in object_list:
                     vis.pushPlugin(SensorTestWorld(o_T_p_r,world,object_name))
                     vis.show()
                     while vis.shown():
-                        time.sleep(0.5)
+                        time.sleep(1)
                 # vis.kill()
