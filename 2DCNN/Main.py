@@ -10,13 +10,14 @@ from fully_connected_layer import FullyConnectedLayer
 from cont_output_layer import ContOutputLayer
 from IPython import embed
 from dataset_Dany import Input_output 
-
+from klampt.math import so3
 # import theano
 from collections import OrderedDict
 # import theano.tensor as T
 
 
 def Draw_Grasph(truth,prediction,eo,et):
+    # ,std_,mean_):
     print "disegno"
     # import matplotlib.pypl
     # embed()
@@ -24,15 +25,27 @@ def Draw_Grasph(truth,prediction,eo,et):
     tra_y = []
     rot_yp = []
     tra_yp= []
-    # for j in range(0,len(truth)):
-    #   rot_y.append([truth[j][0],truth[j][1],truth[j][2]])
-    #   tra_y.append([truth[j][3],truth[j][4],truth[j][5]])
-    #   rot_yp.append([prediction[j][0],prediction[j][1],prediction[j][2]])
-    #   tra_yp.append([prediction[j][3],prediction[j][4],prediction[j][5]])
-    # print 'truth',truth
-    # print 'prediction',prediction
-    # print 'len(truth)',len(truth)
-    # print 'len(prediction)',len(prediction)
+
+    # vector_std = []
+    # for i in range(0,len(prediction)):
+    #     for j in range(0,len(prediction[i])):
+
+    #         r_std = (prediction[i][j][0] * std_[0]) +  mean_[0]
+    #         p_std = (prediction[i][j][1] * std_[0] ) + mean_[1]
+    #         w_std = (prediction[i][j][2] * std_[0] ) + mean_[2]
+    #         x_std = (prediction[i][j][3] * std_[0] ) + mean_[3]
+    #         y_std = (prediction[i][j][4] * std_[0] ) + mean_[4]
+    #         z_std = (prediction[i][j][5] * std_[0] ) + mean_[5]
+
+    #         # embed()
+    #         vector_std.append(np.array([r_std,p_std,w_std,x_std,y_std,z_std]))
+    embed()
+    # vector_quat = []
+    for i in range(0,len(prediction)):
+    #     for j in range(0,len(prediction[i])):
+            temp = list(so3.rpy(so3.from_quaternion(prediction[i][0:4])))+list(prediction[i][4:])
+            vector_quat.append(temp)
+
     embed()
 
 
@@ -58,7 +71,7 @@ def save_model(filename, **layer_dict):
 random.seed(0)
 rng = np.random.RandomState(65432)
 batch_size = 10
-nkerns = (10, 10, 10, 10, 10, 10) # n felter for each layer
+nkerns = (32, 32, 32, 32, 32, 32) # n felter for each layer
 
 # batch_size = 6
 # nkerns = (5,5,5,5,5,5) # n filter for each layer. feautures detectors
@@ -131,7 +144,7 @@ fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=13*13*nkerns[5], n_out=5500)
 #output is a vector of 12 elements
 fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=2500)
 fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=2500, n_out=1500)
-output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
+output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=7)
 
 
 
@@ -148,7 +161,8 @@ output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
 print 'defining cost'
 
 # cost = output.dany_error(y,batch_size)
-cost = output.dany_error_std(y,batch_size)
+cost = output.cost_quaternion(y,batch_size)
+
 # cost = output.cost(y)
 
 
@@ -167,6 +181,8 @@ Dataset_dany =  Input_output()
 train_set_X_occ, train_set_y = Dataset_dany[0]
 valid_set_x, valid_set_y = Dataset_dany[1]
 test_set_X_occ, test_set_y = Dataset_dany[2]
+# std_ = Dataset_dany[3]
+# mean_ = Dataset_dany[4]
 
 
 
@@ -177,7 +193,8 @@ print train_set_y.type
 print y.type
 print train_set_X_occ.type
 print X_occ.type
-print 'Adam Optimizer Update'
+print valid_set_x.type
+# print 'Adam Optimizer Update'
 
 
 # embed()
@@ -204,12 +221,12 @@ print 'Adam Optimizer Update'
 
 # all_grads = theano.grad(loss_or_grads, params)
 from updates import adamax,adam,adadelta,nesterov_momentum
-# updates = adam(all_grads, all_params, learning_rate=0.001, beta1=0.1,
+# updates = adam(all_grads, all_params, learning_rate=0.0001, beta1=0.1,
 #          beta2=0.001, epsilon=1e-9)
-updates = adamax(all_grads, all_params, learning_rate=0.002, beta1=0.01,
-           beta2=0.0001, epsilon=1e-8)
-updates =adadelta(all_grads, all_params, learning_rate=1.0, rho=0.95, epsilon=1e-6)
-updates = nesterov_momentum(all_grads, all_params, 0.0002, momentum=0.9)
+# updates = adamax(all_grads, all_params, learning_rate=0.0002, beta1=0.01,
+#            beta2=0.001, epsilon=1e-8)
+# updates =adadelta(all_grads, all_params, learning_rate=1.0, rho=0.95, epsilon=1e-6)
+updates = nesterov_momentum(all_grads, all_params, 0.00002, momentum=0.1)
 
 
 
@@ -253,6 +270,14 @@ n_train_batches = train_set_X_occ.get_value(borrow=True).shape[0] // batch_size
 n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] // batch_size
 n_test_batches = test_set_X_occ.get_value(borrow=True).shape[0] // batch_size
 
+
+print'n_train_batches:', n_train_batches
+print'n_valid_batches:', n_valid_batches
+print 'n_test_batches:', n_test_batches
+
+
+
+
 # early-stopping parameters
 patience = 5000  # look as this many examples regardless
 patience_increase = 2  # wait this much longer when a new best is
@@ -279,6 +304,7 @@ pred = []
 E_ori = []
 E_tra = []
 # count_dany = 0
+# embed
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
     # for minibatch_index in range(n_train_batches): #loop on train examples
@@ -287,7 +313,7 @@ while (epoch < n_epochs) and (not done_looping):
     #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
         a= train_model(minibatch_index)
-        # print a[0]
+        print a[0]
         # print a[2]
         # print a[2]
         # print op
@@ -295,6 +321,11 @@ while (epoch < n_epochs) and (not done_looping):
         if (iter + 1) % validation_frequency == 0:
             # compute zero-one loss on validation set
             validation_losses = [validate_model(i) for i in range(n_valid_batches)]
+
+            # print validation_losses
+            # for i in range(n_valid_batches):
+            #     print i
+            #     validation_losses = validate_model(i) 
             
             validation_m = [validation_losses[i][0] for i
                                  in range(0,len(validation_losses))]
@@ -358,6 +389,10 @@ while (epoch < n_epochs) and (not done_looping):
             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
             save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
             conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3 ,output=output)
+            print(('Optimization complete. Best validation score of %f '
+            'obtained at iteration %i, with test performance %f ') %
+            (best_validation_loss , best_iter + 1, test_score ))
+            print 'with test performance %f',test_score
             break
 
 end_time = timeit.default_timer()
@@ -365,9 +400,11 @@ print(('Optimization complete. Best validation score of %f '
 	'obtained at iteration %i, with test performance %f ') %
 	(best_validation_loss , best_iter + 1, test_score ))
 print 'save'
+# embed()
 res_name = '2d6Cnn3fcl_8_5_10_again.npz'
 # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
 # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
 save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
 conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
 Draw_Grasph(Truth,pred,E_ori,E_tra)
+# ,std_,mean_)

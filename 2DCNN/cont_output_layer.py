@@ -7,6 +7,8 @@ import numpy as np
 import theano
 import theano.tensor as T
 from IPython import embed
+from theano_utils import _tensor_py_operators
+
 
 
 class ContOutputLayer(object):
@@ -58,92 +60,7 @@ class ContOutputLayer(object):
 
 
 
-	def standardization(self,y,nrow):
 
-		roll_std  = T.std(y[:,0])
-		roll_mean = T.mean(y[:,0])
-		pitch_std  = T.std(y[:,1])
-		pitch_mean = T.mean(y[:,1])
-		yaw_std  = T.std(y[:,2])
-		yaw_mean = T.mean(y[:,2])
-
-		x_std = T.std(y[:,3])
-		x_mean = T.mean(y[:,3])
-		y_std = T.std(y[:,4])
-		y_mean = T.mean(y[:,4])
-		z_std = T.std(y[:,5])
-		z_mean = T.mean(y[:,5])
-
-
-
-
-		std_ = [roll_std,pitch_std,yaw_std,x_std,y_std,z_std]
-		mean_ = [roll_mean,pitch_mean,yaw_mean,x_mean,y_mean,z_mean]
-
-		# y_std = np.empty([nrow,6])
-
-		vect_temp = []
-		for i in range(0,nrow):
-			r= T.scalar() 
-			p= T.scalar()
-			w= T.scalar()
-			x= T.scalar()
-			v = T.scalar()
-			z = T.scalar()
-
-			r = (y[i,0] - std_[0])//mean_[0]
-			p = (y[i,1] - std_[1])//mean_[1]
-			w = (y[i,2] - std_[2])//mean_[2]
-			x = (y[i,3] - std_[3])//mean_[3]
-			v = (y[i,4] - std_[4])//mean_[4]
-			z = (y[i,5] - std_[5])//mean_[5] 
-			# embed()
-			vect_temp.append(np.array([r,p,w,x,v,z]))
-
-
-
-
-		return np.array(vect_temp)
-
-
-	def dany_error_std(self,y,nrow):
-		import math
-		pi = math.pi
-		ORI = []
-		TRA = []
-		temp = []
-		NORMA = 0
-
-		y_std = self.standardization(y,nrow)
-		
-		yp_std = self.standardization(self.y_pred,nrow)
-		
-
-
-		for i in range(0,nrow):
-
-			dx = T.min([abs(y_std[i,0]-yp_std[i,0]),(2*pi - abs(y_std[i,0]-yp_std[i,0]))])
-			dy = T.min([abs(y_std[i,1]-yp_std[i,1]),(2*pi - abs(y_std[i,1]-yp_std[i,1]))])
-			dz = T.min([abs(y_std[i,2]-yp_std[i,2]),(2*pi - abs(y_std[i,2]-yp_std[i,2]))])
-			d_o = np.sqrt(np.add( np.add(T.pow(dx, 2),T.pow(dy, 2)),T.pow(dz, 2)))
-			tx = np.array(y_std[i,3]-yp_std[i,3])
-			ty = np.array(y_std[i,4]-yp_std[i,4])
-			tz = np.array(y_std[i,5]-yp_std[i,5])
-			t0 = np.array([tx,ty,tz])
-			# embed()
-
-			# temp = np.sqrt(np.add( np.add(T.pow(y_std[i,3]-yp_std[i,3], 2),T.pow(y_std[i,4]-yp_std[i,4], 2)),T.pow(y_std[i,5]-yp_std[i,5], 2)))
-
-			# temp.append(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
-			# NORMA +=(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
-			NORMA +=(np.add(d_o,np.linalg.norm(t0,2)))
-			# print NORMA
-			# print (np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
-			ORI.append(d_o*0.031)
-			TRA.append(0.005*np.linalg.norm(t0,2))
-
-		# embed()
-		return NORMA,y,self.y_pred,T.cast(ORI,'float32'),T.cast(TRA,'float32')
 
 
 
@@ -171,6 +88,73 @@ class ContOutputLayer(object):
 			TRA.append(0.005*np.linalg.norm(t0,2))
 
 		return NORMA,y,self.y_pred,T.cast(ORI,'float32'),T.cast(TRA,'float32')
+
+	def Normalization_dany(self,nrow):
+		delta = [1*10^-12,0,0,0]
+		y_p=[]
+		for i in range(0,nrow):
+
+			q0 = (np.array(self.y_pred[i,0]) + delta[0] )  / np.linalg.norm(np.array(self.y_pred[i,0]) + delta[0] )
+			q1 = (np.array(self.y_pred[i,1]) + delta[1] )  /  np.linalg.norm(np.array(self.y_pred[i,1]) + delta[1] ) 
+			q2 = (np.array(self.y_pred[i,2]) + delta[2] )  /  np.linalg.norm(np.array(self.y_pred[i,2]) + delta[2] )
+			q3 = (np.array(self.y_pred[i,3]) + delta[3] )  /  np.linalg.norm(np.array(self.y_pred[i,3]) + delta[3] )
+
+			x = self.y_pred[i,4]
+			y = self.y_pred[i,5]
+			z = self.y_pred[i,6]			
+
+			temp = [q0,q1,q2,q3,x,y,z]
+			y_p.append(temp)
+
+		return y_p
+
+
+	def cost_quaternion(self,y,nrow):
+
+		ORI = []
+		TRA = []
+		temp = []
+		NORMA = 0
+		# p = self.y_pred
+		# self.y_pred = self.Normalization_dany(nrow)
+		# y_pred = self.y_pred
+		# embed()
+		delta = [1*10^-12,0,0,0]
+		y_p = []
+		for i in range(0,nrow):
+
+			# q0 = np.dot(np.array(y[i,0]),np.array((np.array(self.y_pred[i,0]) + delta[0] )  / np.linalg.norm(np.array(self.y_pred[i,0]) + delta[0] )))
+			# q1 = np.dot(np.array(y[i,1]),np.array((np.array(self.y_pred[i,1]) + delta[1] )  /  np.linalg.norm(np.array(self.y_pred[i,1]) + delta[1] )))
+			# q2 = np.dot(np.array(y[i,2]),np.array((np.array(self.y_pred[i,2]) + delta[2] )  /  np.linalg.norm(np.array(self.y_pred[i,2]) + delta[2] )))
+			# q3 = np.dot(np.array(y[i,3]),np.array((np.array(self.y_pred[i,3]) + delta[3] )  /  np.linalg.norm(np.array(self.y_pred[i,3]) + delta[3] )))
+
+			# q = 1 - abs(np.add(q0 , np.add(q1, np.add(q1,q3))))
+			# embed()
+			# self.y_pred[i,0:4] = (self.y_pred[i,0:4] - delta )/(np.linalg.norm(np.array(self.y_pred[i,0:3]) + delta ))
+			# embed()
+			q = 1 - abs(T.dot(y[i,0:4],(self.y_pred[i,0:4] - delta )/((self.y_pred[i,0:4]+delta).norm(2))))
+
+			# embed()
+			tx = (y[i,4:]-self.y_pred[i,4:]).norm(2)
+			# tx = np.array(y[i,4]-self.y_pred[i,4])
+			# ty = np.array(y[i,5]-self.y_pred[i,5])
+			# tz = np.array(y[i,6]-self.y_pred[i,6])
+			# t0 = np.array([tx,ty,tz])
+
+			NORMA +=(np.add(q*0.031,0.005*tx  ))
+			ORI.append(q*0.031)
+			TRA.append(0.005*tx )
+			# embed()
+			y_temp = (self.y_pred[i,0:4] - delta )/((self.y_pred).norm(2))
+			y_t2 = (self.y_pred[i,4:])
+		# 	# # embed()
+			y_p.append(np.array([y_temp,y_t2]))
+			# self.y_pred[i,0:4]=(self.y_pred[i,0:4] - delta )/(np.linalg.norm(np.array(([self.y_pred[i,0] + delta[0],self.y_pred[i,0] + delta[0],self.y_pred[i,0] + delta[0]]))))
+		# h=T.matrix('h')
+		# h = y_p
+		# embed()
+		return NORMA,y,self.y_pred,T.cast(ORI,'float32'),T.cast(TRA,'float32')
+
 
 
 
