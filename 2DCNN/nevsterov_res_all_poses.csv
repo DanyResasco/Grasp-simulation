@@ -41,7 +41,7 @@ dark_red_foam_block_with_three_holes.csv
 
 
 
-
+nesterov_momentum(all_grads, all_params, 0.0002, momentum=0.9)
 
 
 

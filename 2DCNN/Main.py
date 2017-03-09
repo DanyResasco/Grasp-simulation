@@ -16,15 +16,37 @@ from collections import OrderedDict
 # import theano.tensor as T
 
 
-def Draw_Grasph(truth,prediction,eo,et):
+def Draw_Grasph(truth,prediction,eo,et,trai_e):
     # ,std_,mean_):
     print "disegno"
-    # import matplotlib.pypl
-    # embed()
-    rot_y = []
-    tra_y = []
-    rot_yp = []
-    tra_yp= []
+    import matplotlib.pyplot as plt
+    embed()
+    plt.plot(trai_e)
+    plt.ylabel('training error')
+    plt.xlabel('time [s]')
+    plt.title('Training error with Euler Angle} ')
+    plt.show()
+    
+    plt.plot(et)
+    plt.ylabel('traslation test error [m]')
+    plt.xlabel('time [s]')
+    plt.title('Traslation test error with Euler Angle}')
+    plt.show()
+
+    plt.plot(eo)
+    plt.ylabel('orientation test error [rad]')
+    plt.xlabel('time [s]')
+    plt.title('Orientation test error with Euler Angle}')
+    plt.show()
+
+    # te=[]
+    # for i in e0+et:
+    #     te
+    # plt.plot(eo+et)
+    # plt.ylabel('orientation test error [rad]')
+    # plt.xlabel('time [s]')
+    # plt.title('Orientation test error with Euler Angle}')
+    # plt.show()
 
     # vector_std = []
     # for i in range(0,len(prediction)):
@@ -39,11 +61,13 @@ def Draw_Grasph(truth,prediction,eo,et):
 
     #         # embed()
     #         vector_std.append(np.array([r_std,p_std,w_std,x_std,y_std,z_std]))
-    embed()
-    # vector_quat = []
+    # embed()
+    vector_quat = []
+    delta = [1*10^-12,0,0,0]
+
     for i in range(0,len(prediction)):
-    #     for j in range(0,len(prediction[i])):
-            temp = list(so3.rpy(so3.from_quaternion(prediction[i][0:4])))+list(prediction[i][4:])
+        for j in range(0,len(prediction[i])):
+            temp = list(so3.rpy(so3.from_quaternion((prediction[i][j][0:4] + delta )/(np.linalg.norm(prediction[i][j][0:4]+delta,2)) )))+list(prediction[i][j][4:])
             vector_quat.append(temp)
 
     embed()
@@ -144,7 +168,7 @@ fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=13*13*nkerns[5], n_out=5500)
 #output is a vector of 12 elements
 fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=2500)
 fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=2500, n_out=1500)
-output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=7)
+output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
 
 
 
@@ -160,9 +184,10 @@ output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=7)
 
 print 'defining cost'
 
-# cost = output.dany_error(y,batch_size)
-cost = output.cost_quaternion(y,batch_size)
-
+cost = output.dany_error(y,batch_size)
+# cost = output.cost_quaternion(y,batch_size)
+# cost = output.cost_quaternion_acos(y,batch_size)
+# cost = output.cost_quaternion_min(y,batch_size)
 # cost = output.cost(y)
 
 
@@ -194,30 +219,7 @@ print y.type
 print train_set_X_occ.type
 print X_occ.type
 print valid_set_x.type
-# print 'Adam Optimizer Update'
 
-
-# embed()
-# Adam Optimizer Update
-# updates = []
-# one = np.float32(1)
-# zero = np.float32(0)
-# adam_a=np.float32(0.0001); adam_b1=np.float32(0.1); adam_b2=np.float32(0.001); adam_e=np.float32(1e-10)
-# adam_a=np.float32(0.00001); adam_b1=np.float32(0.1); adam_b2=np.float32(0.00001); adam_e=np.float32(1e-10)
-# adam_i = theano.shared(zero.astype(theano.config.floatX)) # iteration
-# adam_i_new = adam_i + one # iteration update
-# updates.append((adam_i, adam_i_new))
-# adam_const1 = one - (one - adam_b1)**adam_i_new
-# adam_const2 = one - (one - adam_b2)**adam_i_new
-# for p, g in zip(all_params, all_grads):
-# 	adam_m = theano.shared(p.get_value() * zero)
-# 	adam_v = theano.shared(p.get_value() * zero)
-# 	adam_m_new = adam_b1 * g + ((one - adam_b1) * adam_m)
-# 	adam_v_new = (adam_b2 * T.sqr(g)) + ((one - adam_b2) * adam_v)
-# 	adam_p_new = p - adam_a * T.sqrt(adam_const2) / adam_const1* adam_m_new / (T.sqrt(adam_v_new) + adam_e)
-# 	updates.append((adam_m, adam_m_new))
-# 	updates.append((adam_v, adam_v_new))
-# 	updates.append((p, adam_p_new))
 
 # all_grads = theano.grad(loss_or_grads, params)
 from updates import adamax,adam,adadelta,nesterov_momentum
@@ -300,19 +302,22 @@ n_epochs =2560
 print 'prima del while'
 
 Truth = []
-pred = []
+pred  = []
 E_ori = []
 E_tra = []
+tra_e = []
 # count_dany = 0
 # embed
+force_test = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
-    # for minibatch_index in range(n_train_batches): #loop on train examples
+    for minibatch_index in range(n_train_batches): #loop on train examples
     #     # print minibatch_index
-    #     train_model(minibatch_index)
+        train_model(minibatch_index)
     #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
         a= train_model(minibatch_index)
+        tra_e.append(a[0])
         print a[0]
         # print a[2]
         # print a[2]
@@ -321,15 +326,9 @@ while (epoch < n_epochs) and (not done_looping):
         if (iter + 1) % validation_frequency == 0:
             # compute zero-one loss on validation set
             validation_losses = [validate_model(i) for i in range(n_valid_batches)]
-
-            # print validation_losses
-            # for i in range(n_valid_batches):
-            #     print i
-            #     validation_losses = validate_model(i) 
-            
+           
             validation_m = [validation_losses[i][0] for i
                                  in range(0,len(validation_losses))]
-
 
             this_validation_loss = np.mean(validation_m)
 
@@ -340,10 +339,11 @@ while (epoch < n_epochs) and (not done_looping):
                         this_validation_loss 
                       )
                   )
-
+            force_test +=1
             # if we got the best validation score until now
-            if this_validation_loss < best_validation_loss:
+            if (this_validation_loss < best_validation_loss) or force_test >+5:
                 print 'validation'
+                force_test = 0
                 #improve patience if loss improvement is good enough
                 if (this_validation_loss < best_validation_loss * improvement_threshold):
                     patience = max(patience, iter * patience_increase)
@@ -382,7 +382,7 @@ while (epoch < n_epochs) and (not done_looping):
                     )
 
         if patience <= iter:
-            print 'save'
+            print 'save inside patience'
             done_looping = True
             res_name = '2d6Cnn3fcl_8_5_10_again.npz'
             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
@@ -406,5 +406,5 @@ res_name = '2d6Cnn3fcl_8_5_10_again.npz'
 # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
 save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
 conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
-Draw_Grasph(Truth,pred,E_ori,E_tra)
+Draw_Grasph(Truth,pred,E_ori,E_tra,tra_e)
 # ,std_,mean_)

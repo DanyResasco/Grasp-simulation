@@ -43,38 +43,38 @@ def im2double(im):
  
  
 
-# def standardization(y):
+def standardization(y):
 
-#         roll_std  = np.std(y[:,0])
-#         roll_mean = np.mean(y[:,0])
-#         pitch_std  = np.std(y[:,1])
-#         pitch_mean = np.mean(y[:,1])
-#         yaw_std  = np.std(y[:,2])
-#         yaw_mean = np.mean(y[:,2])
+        roll_std  = np.std(y[:,0])
+        roll_mean = np.mean(y[:,0])
+        pitch_std  = np.std(y[:,1])
+        pitch_mean = np.mean(y[:,1])
+        yaw_std  = np.std(y[:,2])
+        yaw_mean = np.mean(y[:,2])
 
-#         x_std = np.std(y[:,3])
-#         x_mean = np.mean(y[:,3])
-#         y_std = np.std(y[:,4])
-#         y_mean = np.mean(y[:,4])
-#         z_std = np.std(y[:,5])
-#         z_mean = np.mean(y[:,5])
+        x_std = np.std(y[:,3])
+        x_mean = np.mean(y[:,3])
+        y_std = np.std(y[:,4])
+        y_mean = np.mean(y[:,4])
+        z_std = np.std(y[:,5])
+        z_mean = np.mean(y[:,5])
 
-#         std_ = [roll_std,pitch_std,yaw_std,x_std,y_std,z_std]
-#         mean_ = [roll_mean,pitch_mean,yaw_mean,x_mean,y_mean,z_mean]
+        std_ = [roll_std,pitch_std,yaw_std,x_std,y_std,z_std]
+        mean_ = [roll_mean,pitch_mean,yaw_mean,x_mean,y_mean,z_mean]
 
-#         vect_temp = []
-#         for i in range(0,len(y)):
+        vect_temp = []
+        for i in range(0,len(y)):
 
-#             r = (y[i,0] - mean_[0])/ std_[0]
-#             p = (y[i,1] - mean_[1] )/ std_[1]
-#             w = (y[i,2] - mean_[2] )/std_[2]
-#             x = (y[i,3] - mean_[3] )/std_[3]
-#             v = (y[i,4] - mean_[4] )/std_[4]
-#             z = (y[i,5] - mean_[5] )/std_[5]
-#             # embed()
-#             vect_temp.append(np.array([r,p,w,x,v,z]))
+            r = (y[i,0] - mean_[0])/ std_[0]
+            p = (y[i,1] - mean_[1] )/ std_[1]
+            w = (y[i,2] - mean_[2] )/std_[2]
+            x = (y[i,3] - mean_[3] )/std_[3]
+            v = (y[i,4] - mean_[4] )/std_[4]
+            z = (y[i,5] - mean_[5] )/std_[5]
+            # embed()
+            vect_temp.append(np.array([r,p,w,x,v,z]))
 
-#         return vect_temp,std_,mean_
+        return vect_temp,std_,mean_
 
 
 
@@ -128,10 +128,11 @@ def Set_vector(object_name, vector_set,input_set):
                 file_reader = csv.reader(csvfile,quoting=csv.QUOTE_NONNUMERIC)
                 for row in file_reader:
                     T = row[9:]
+                    # embed()
                     # r_klampt = so3.matrix(row[0:9])
-                    quaternion= so3.quaternion(row[0:9])
-                    row_t = list(quaternion) + list(T)
-                    # row_t = list(so3.rpy(row)) + list(T)
+                    # quaternion= so3.quaternion(row[0:9])
+                    # row_t = list(quaternion) + list(T)
+                    row_t = list(so3.rpy(row[0:9])) + list(T)
                     # vector_set.append(np.array(row_t))
                     # Set_input(object_name,input_set,0)
                     temp.append(np.array(row_t))
@@ -187,16 +188,16 @@ def Input_output():
        Set_vector(object_name, Test_y,Input_test)
 
 
-    # vect_std,std_,mean_ =standardization(np.vstack((np.array(Training_y),np.array(Validate_y),np.array(Test_y))))
+    vect_std,std_,mean_ =standardization(np.vstack((np.array(Training_y),np.array(Validate_y),np.array(Test_y))))
 
-    # # embed()
-    # Training_label_set_STD = [vect_std[i] for i in range(0,len(Training_y))]
-    # Validate_label_set_STD = [vect_std[i] for i in range(0,len(Validate_y))]
-    # Test_label_set_STD = [vect_std[i] for i in range(0,len(Test_y))]
-
-
+    # embed()
+    Training_label_set_STD = [vect_std[i] for i in range(0,len(Training_y))]
+    Validate_label_set_STD = [vect_std[i] for i in range(0,len(Validate_y))]
+    Test_label_set_STD = [vect_std[i] for i in range(0,len(Test_y))]
 
 
+
+    embed()
 
 
 
@@ -204,9 +205,9 @@ def Input_output():
     print len(Training_y) + len(Validate_y) + len(Test_y)
     print len(Input_training) + len(Input_validate)+ len(Input_test)
 
-    Training_ = [Training_y, Input_training]
-    Validate_ = [Validate_y,Input_validate ]
-    Test_ = [Test_y,Input_test ]
+    Training_ = [Training_label_set_STD, Input_training]
+    Validate_ = [Validate_label_set_STD,Input_validate ]
+    Test_ = [Test_label_set_STD,Input_test ]
 
     # embed()
 
