@@ -9,7 +9,7 @@ import theano.tensor as T
 from theano.tensor.nnet import relu
 
 class FullyConnectedLayer(object):
-	def __init__(self, rng, input, n_in, n_out, activation=sigmoid, W=None, b=None):
+	def __init__(self, rng, input, n_in, n_out, activation=relu, W=None, b=None):
 		"""
 		Typical hidden layer of a MLP: units are fully-connected and have
 		sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -65,17 +65,20 @@ class FullyConnectedLayer(object):
 				borrow=True
 			)
 		else:
-			assert isinstance(W, np.ndarray), 'W must be an numpy array'
+			# assert isinstance(W, np.ndarray), 'W must be an numpy array'
 			self.W = theano.shared(value=W.astype(theano.config.floatX), borrow=True)
+			# self.W = W
 
 		if b is None:
 			self.b = theano.shared(value=np.zeros((n_out), dtype=theano.config.floatX), name='b', borrow=True)
 		else:
-			assert isinstance(b, np.ndarray), 'b must be an numpy array'
+			# assert isinstance(b, np.ndarray), 'b must be an numpy array'
 			self.b = theano.shared(value=b.astype(theano.config.floatX), borrow=True)
+			# self.b = b
 
 
 		lin_output = T.dot(input, self.W) + self.b
 		self.output = activation(lin_output)
+		# self.output = activation(lin_output + self.b.dimshuffle('x', 0, 'x', 'x'))
 		# parameters of the model
 		self.params = [self.W, self.b]

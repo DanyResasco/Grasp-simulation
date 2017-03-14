@@ -32,10 +32,15 @@ class ContOutputLayer(object):
 
 		"""
 		# start-snippet-1
-
-		self.W = theano.shared(value=np.zeros((n_in, n_out), dtype=theano.config.floatX ), name='W', borrow=True )
+		if W is None:
+			self.W = theano.shared(value=np.zeros((n_in, n_out), dtype=theano.config.floatX ), name='W', borrow=True )
+		else:
+			self.W = W
 		# initialize the biases b as a vector of n_out 0s
-		self.b = theano.shared( value=np.zeros( n_out, dtype=theano.config.floatX ),name='b', borrow=True)
+		if b is None:
+			self.b = theano.shared( value=np.zeros( n_out, dtype=theano.config.floatX ),name='b', borrow=True)
+		else:
+			self.b =b
 
 		# if W is None:
 		# 	self.W = theano.shared(value=np.zeros(n_in, dtype=theano.config.floatX), name='W', borrow=True)
@@ -78,16 +83,7 @@ class ContOutputLayer(object):
 
 			d_o = np.sqrt(np.add( np.add(T.pow(dx, 2),T.pow(dy, 2)),T.pow(dz, 2)))
 
-			# do = T.min(([abs(y[i,0:3]-self.y_pred[i,0:3]),(2*pi - abs(y[i,0:3]-self.y_pred[i,0:3]))]))
-			# embed()
 			tx = (y[i,3:]-self.y_pred[i,3:]).norm(2)
-			# tx = np.array(y[i,3]-self.y_pred[i,3])
-			# ty = np.array(y[i,4]-self.y_pred[i,4])
-			# tz = np.array(y[i,5]-self.y_pred[i,5])
-			# t0 = np.array([tx,ty,tz])
-			# embed()
-			# temp.append(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
-			# NORMA +=(np.add(d_o*0.031,0.005*np.linalg.norm(t0,2)))
 			NORMA +=(np.add(d_o*0.031,0.005*tx))
 			ORI.append(d_o*0.031)
 			TRA.append(0.005*tx)
@@ -110,6 +106,7 @@ class ContOutputLayer(object):
 			NORMA +=(np.add(q*0.031,0.005*tx  ))
 			ORI.append(q*0.031)
 			TRA.append(0.005*tx )
+			# embed()
 
 		return NORMA,y,self.y_pred,T.cast(ORI,'float32'),T.cast(TRA,'float32')
 

@@ -13,32 +13,64 @@ from dataset_Dany import Input_output
 from klampt.math import so3
 # import theano
 from collections import OrderedDict
+from dropout import DropoutMLP
 # import theano.tensor as T
 
 
 def Draw_Grasph(truth,prediction,eo,et,trai_e):
-    # ,std_,mean_):
+# std_,mean_):
     print "disegno"
     import matplotlib.pyplot as plt
     embed()
     plt.plot(trai_e)
     plt.ylabel('training error')
-    plt.xlabel('time [s]')
-    plt.title('Training error with Euler Angle} ')
+    plt.xlabel('step')
+    plt.title('Training error with quaternion eq 1-|q1 q2| ')
     plt.show()
     
     plt.plot(et)
-    plt.ylabel('traslation test error [m]')
-    plt.xlabel('time [s]')
-    plt.title('Traslation test error with Euler Angle}')
+    plt.ylabel('translation test error [m]')
+    plt.xlabel('step')
+    plt.title('Traslation test error with eq 1-|q1 q2|')
     plt.show()
 
     plt.plot(eo)
     plt.ylabel('orientation test error [rad]')
-    plt.xlabel('time [s]')
-    plt.title('Orientation test error with Euler Angle}')
+    plt.xlabel('step')
+    plt.title('Orientation test error with eq 1-|q1 q2|')
     plt.show()
 
+    embed()
+    //NON VA BENE COSI, SALVI SOLO IL PRIMO E GLI ALTRI NO
+    import csv
+    dataset = 'res_quat_1_abs.csv'
+    f = open(dataset, 'w')
+    f.write('training')
+    for i in range(0,len(trai_e)):
+        # f.write(',')
+        f.write(','.join([str(trai_e[i])]))
+        f.write('\n')
+    
+    f.write('et ,')    
+    for i in range(0,len(et)):
+        # f.write(',')
+        f.write(','.join([str(v) for v in et[i]]))
+        f.write('\n')
+
+    f.write('e0')
+    f.write(',')
+    for i in range(0,len(eo)):
+        f.write(','.join([str(v) for v in eo[i]]))
+        f.write('\n')
+
+    f.write('prediction')
+    f.write(',')
+    for i in range(0,len(prediction)):
+        for j in range(0,len(prediction[i])):
+            f.write(','.join([str(v) for v in prediction[i][j]]))
+            f.write('\n')
+
+    f.close()
     # te=[]
     # for i in e0+et:
     #     te
@@ -80,16 +112,16 @@ def Draw_Grasph(truth,prediction,eo,et,trai_e):
 
 
 
-def save_model(filename, **layer_dict):
-	'''
-	layer_dict is pairs of layer name to layer object. 
-	each layer object is assumed to have W and b property of type SharedVariable, whose value will be saved
-	'''
-	np_dict = dict()
-	for name, layer in layer_dict.iteritems():
-		np_dict[name+'_W'] = layer.W.get_value()
-		np_dict[name+'_b'] = layer.b.get_value()
-	np.savez_compressed(filename, **np_dict)
+# def save_model(filename, **layer_dict):
+# 	'''
+# 	layer_dict is pairs of layer name to layer object. 
+# 	each layer object is assumed to have W and b property of type SharedVariable, whose value will be saved
+# 	'''
+# 	np_dict = dict()
+# 	for name, layer in layer_dict.iteritems():
+# 		np_dict[name+'_W'] = layer.W.get_value()
+# 		np_dict[name+'_b'] = layer.b.get_value()
+# 	np.savez_compressed(filename, **np_dict)
 
 '''param rng: a random number generator used to initialize weights'''
 random.seed(0)
@@ -164,11 +196,15 @@ conv6 = Conv2D(rng, input=conv5.output, filter_shape=(nkerns[5], nkerns[4], 4, 4
 
 
 fc_input = conv6.output.flatten(2)
-fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=13*13*nkerns[5], n_out=5500)
-#output is a vector of 12 elements
-fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=2500)
-fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=2500, n_out=1500)
-output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
+# fc1 = FullyConnectedLayer(rng, input=fc_input, n_in=13*13*nkerns[5], n_out=5500)
+# #output is a vector of 12 elements
+# fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=2500)
+# fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=2500, n_out=1500)
+#[n_in,n_out]
+output = DropoutMLP(rng, input=fc_input, n_in_out=[13*13*nkerns[5], 5500,5500, 2500,2500, 1500,1500 ,7],dropout_rates=[0.2,0.5])
+
+
+# output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
 
 
 
@@ -184,18 +220,19 @@ output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
 
 print 'defining cost'
 
+cost_drop = output.dany_error_drop(y,batch_size)
 cost = output.dany_error(y,batch_size)
 # cost = output.cost_quaternion(y,batch_size)
 # cost = output.cost_quaternion_acos(y,batch_size)
 # cost = output.cost_quaternion_min(y,batch_size)
 # cost = output.cost(y)
-
-
-all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params + conv6.params+  fc1.params + fc2.params +fc3.params + output.params)
+# embed()
+all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params + conv6.params+  output.params)
+# all_params = (conv1.params + conv2.params + conv3.params + conv4.params + conv5.params + conv6.params+  fc1.params + fc2.params +fc3.params + output.params)
 
   # compute the gradient of cost
 # embed()
-all_grads = T.grad(cost[0], all_params)
+all_grads = T.grad(cost_drop[0], all_params)
 # print all_grads
 print "grad"
 
@@ -233,11 +270,12 @@ updates = nesterov_momentum(all_grads, all_params, 0.00002, momentum=0.1)
 
 
 
+
 ''' compiling a Theano function `train_model` that returns the cost, but
     in the same time updates the parameter of the model based on the rules
     defined in `updates '''
 print 'defining train model'
-train_model = theano.function( [index], cost, updates=updates,
+train_model = theano.function( [index], cost_drop, updates=updates,
 	givens={
 		X_occ: train_set_X_occ[(index * batch_size): ((index + 1) * batch_size)],
 		y: train_set_y[index * batch_size: (index + 1) * batch_size]
@@ -387,8 +425,8 @@ while (epoch < n_epochs) and (not done_looping):
             res_name = '2d6Cnn3fcl_8_5_10_again.npz'
             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
-            save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-            conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3 ,output=output)
+            # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+            # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3 ,output=output)
             print(('Optimization complete. Best validation score of %f '
             'obtained at iteration %i, with test performance %f ') %
             (best_validation_loss , best_iter + 1, test_score ))
@@ -404,7 +442,7 @@ print 'save'
 res_name = '2d6Cnn3fcl_8_5_10_again.npz'
 # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
 # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
-save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
-conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
+# save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+# conv5=conv5,conv6=conv6, output=output)
 Draw_Grasph(Truth,pred,E_ori,E_tra,tra_e)
 # ,std_,mean_)
