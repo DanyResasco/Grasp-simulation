@@ -54,20 +54,20 @@ class DropoutMLP(object):
                     input=inp_dropout_layer,
                     n_in=n_in_out[0], n_out=n_in_out[1])
 
-        self.drop_layer.output = _dropsout(rng, self.drop_layer.output, p=dropout_rates[1])
+        self.drop_layer.output = _dropsout(rng, self.drop_layer.output, p=dropout_rates[0])
 
         self.drop_layer2 = FullyConnectedLayer(rng,
             input=self.drop_layer.output,
-            n_in=n_in_out[2], n_out=n_in_out[3])
+            n_in=n_in_out[1], n_out=n_in_out[2])
 
-        self.drop_layer2.output = _dropsout(rng, self.drop_layer2.output, p=dropout_rates[1])
+        self.drop_layer2.output = _dropsout(rng, self.drop_layer2.output, p=dropout_rates[0])
 
 
         self.drop_layer3 = FullyConnectedLayer(rng,
             input=self.drop_layer2.output,
-            n_in=n_in_out[4], n_out=n_in_out[5])
+            n_in=n_in_out[2], n_out=n_in_out[3])
 
-        self.drop_layer3.output = _dropsout(rng, self.drop_layer3.output, p=dropout_rates[1])
+        self.drop_layer3.output = _dropsout(rng, self.drop_layer3.output, p=dropout_rates[0])
         
         # embed()
 
@@ -88,16 +88,16 @@ class DropoutMLP(object):
         
         self.drop_output_layer = ContOutputLayer(
         input=self.drop_layer3.output,
-        n_in=n_in_out[6], 
-        n_out=n_in_out[7])
+        n_in=n_in_out[3], 
+        n_out=n_in_out[4] )
         
 
         #for test and validation
-        fc1 = FullyConnectedLayer(rng, input=input, n_in=n_in_out[0], n_out=n_in_out[1])
+        fc1 = FullyConnectedLayer(rng, input=input, n_in=n_in_out[0], n_out=n_in_out[1],W=self.drop_layer.W,b=self.drop_layer.b)
 		#output is a vector of 12 elements
-        fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=n_in_out[2], n_out=n_in_out[3])
-        fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=n_in_out[4], n_out=n_in_out[5])
-        self.cont_OutputLayer = ContOutputLayer(input=fc3.output, n_in =n_in_out[6] ,n_out=n_in_out[7])
+        fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=n_in_out[1], n_out=n_in_out[2],W=self.drop_layer2.W,b=self.drop_layer2.b)
+        fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=n_in_out[2], n_out=n_in_out[3],W=self.drop_layer3.W,b=self.drop_layer3.b)
+        self.cont_OutputLayer = ContOutputLayer(input=fc3.output, n_in =n_in_out[3] ,n_out=n_in_out[4],W=self.drop_output_layer.W,b=self.drop_output_layer.b)
         # # The logistic regression layer gets as input the hidden units
         # # of the hidden layer
         # self.logRegressionLayer = ContOutputLayer(
@@ -126,7 +126,7 @@ class DropoutMLP(object):
 
         # the parameters of the model are the parameters of the two layer it is
         # made out of
-        self.params = self.drop_layer.params + self.drop_output_layer.params
+        self.params = self.drop_layer.params +self.drop_layer2.params +self.drop_layer3.params + self.drop_output_layer.params
 
         # self.params = self.drop_layer.params + self.cont_OutputLayer.params
 

@@ -24,26 +24,26 @@ def Draw_Grasph(truth,prediction,eo,et,trai_e):
     embed()
     plt.plot(trai_e)
     plt.ylabel('training error')
-    plt.xlabel('step')
-    plt.title('Training error with quaternion eq 1-|q1 q2| ')
+    plt.xlabel('epoch')
+    plt.title('Training error with quaternion eq 1-abs(q1 q2) ')
     plt.show()
     
     plt.plot(et)
     plt.ylabel('translation test error [m]')
-    plt.xlabel('step')
-    plt.title('Traslation test error with eq 1-|q1 q2|')
+    plt.xlabel('epoch')
+    plt.title('Translation test error with eq 1-abs(q1 q2)')
     plt.show()
 
     plt.plot(eo)
     plt.ylabel('orientation test error [rad]')
-    plt.xlabel('step')
-    plt.title('Orientation test error with eq 1-|q1 q2|')
+    plt.xlabel('epoch')
+    plt.title('Orientation test error with eq 1-abs(q1 q2)')
     plt.show()
 
     embed()
-    //NON VA BENE COSI, SALVI SOLO IL PRIMO E GLI ALTRI NO
+    #NON VA BENE COSI, SALVI SOLO IL PRIMO E GLI ALTRI NO
     import csv
-    dataset = 'res_quat_1_abs.csv'
+    dataset = 'res_quat_abs_drop.csv'
     f = open(dataset, 'w')
     f.write('training')
     for i in range(0,len(trai_e)):
@@ -63,11 +63,27 @@ def Draw_Grasph(truth,prediction,eo,et,trai_e):
         f.write(','.join([str(v) for v in eo[i]]))
         f.write('\n')
 
-    f.write('prediction')
+
+    f.write('pred')
     f.write(',')
     for i in range(0,len(prediction)):
         for j in range(0,len(prediction[i])):
             f.write(','.join([str(v) for v in prediction[i][j]]))
+            f.write('\n')
+    
+    vector_quat = []
+    delta = [1*10^-12,0,0,0]
+
+    for i in range(0,len(prediction)):
+        for j in range(0,len(prediction[i])):
+            temp = list(so3.rpy(so3.from_quaternion((prediction[i][j][0:4] + delta )/(np.linalg.norm(prediction[i][j][0:4]+delta,2)) )))+list(prediction[i][j][4:])
+            vector_quat.append(temp)
+
+    f.write('vect')
+    f.write(',')
+    for i in range(0,len(vector_quat)):
+        # for j in range(0,len(vector_quat[i])):
+            f.write(','.join([str(v) for v in vector_quat[i]]))
             f.write('\n')
 
     f.close()
@@ -94,13 +110,7 @@ def Draw_Grasph(truth,prediction,eo,et,trai_e):
     #         # embed()
     #         vector_std.append(np.array([r_std,p_std,w_std,x_std,y_std,z_std]))
     # embed()
-    vector_quat = []
-    delta = [1*10^-12,0,0,0]
 
-    for i in range(0,len(prediction)):
-        for j in range(0,len(prediction[i])):
-            temp = list(so3.rpy(so3.from_quaternion((prediction[i][j][0:4] + delta )/(np.linalg.norm(prediction[i][j][0:4]+delta,2)) )))+list(prediction[i][j][4:])
-            vector_quat.append(temp)
 
     embed()
 
@@ -200,11 +210,12 @@ fc_input = conv6.output.flatten(2)
 # #output is a vector of 12 elements
 # fc2 = FullyConnectedLayer(rng, input=fc1.output, n_in=5500, n_out=2500)
 # fc3 = FullyConnectedLayer(rng, input=fc2.output, n_in=2500, n_out=1500)
+# output_nodrop = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=7)
 #[n_in,n_out]
-output = DropoutMLP(rng, input=fc_input, n_in_out=[13*13*nkerns[5], 5500,5500, 2500,2500, 1500,1500 ,7],dropout_rates=[0.2,0.5])
+output = DropoutMLP(rng, input=fc_input, n_in_out=[13*13*nkerns[5], 5500, 2500, 1500,7],dropout_rates=[0.02,0.03])
 
 
-# output = ContOutputLayer(input=fc3.output, n_in =1500 ,n_out=6)
+
 
 
 
@@ -219,9 +230,9 @@ output = DropoutMLP(rng, input=fc_input, n_in_out=[13*13*nkerns[5], 5500,5500, 2
 
 
 print 'defining cost'
-
 cost_drop = output.dany_error_drop(y,batch_size)
 cost = output.dany_error(y,batch_size)
+# cost = output.dany_error(y,batch_size)
 # cost = output.cost_quaternion(y,batch_size)
 # cost = output.cost_quaternion_acos(y,batch_size)
 # cost = output.cost_quaternion_min(y,batch_size)
@@ -265,9 +276,11 @@ from updates import adamax,adam,adadelta,nesterov_momentum
 # updates = adamax(all_grads, all_params, learning_rate=0.0002, beta1=0.01,
 #            beta2=0.001, epsilon=1e-8)
 # updates =adadelta(all_grads, all_params, learning_rate=1.0, rho=0.95, epsilon=1e-6)
-updates = nesterov_momentum(all_grads, all_params, 0.00002, momentum=0.1)
+updates = nesterov_momentum(all_grads, all_params, 1e-9, momentum=0.1)
 
-
+# updates=OrderedDict()
+# for p,gp in zip(all_params, all_grads):
+#     updates[p] = p-1e-9 *gp
 
 
 
@@ -319,7 +332,7 @@ print 'n_test_batches:', n_test_batches
 
 
 # early-stopping parameters
-patience = 5000  # look as this many examples regardless
+patience = 10000  # look as this many examples regardless
 patience_increase = 2  # wait this much longer when a new best is
                        # found
 improvement_threshold = 0.995  # a relative improvement of this much is
@@ -349,15 +362,16 @@ tra_e = []
 force_test = 0
 while (epoch < n_epochs) and (not done_looping):
     epoch = epoch + 1
-    for minibatch_index in range(n_train_batches): #loop on train examples
-    #     # print minibatch_index
-        train_model(minibatch_index)
+    # for minibatch_index in range(n_train_batches): #loop on train examples
+    # #     # print minibatch_index
+    #     train_model(minibatch_index)
+        # print updates.elements()
     #     # iteration number
     for minibatch_index in range(n_train_batches): #loop on train examples
         a= train_model(minibatch_index)
         tra_e.append(a[0])
         print a[0]
-        # print a[2]
+        print a[2]
         # print a[2]
         # print op
         iter = (epoch - 1) * n_train_batches + minibatch_index
@@ -377,14 +391,16 @@ while (epoch < n_epochs) and (not done_looping):
                         this_validation_loss 
                       )
                   )
-            force_test +=1
+            # force_test +=1
             # if we got the best validation score until now
-            if (this_validation_loss < best_validation_loss) or force_test >+5:
+            if (this_validation_loss < best_validation_loss* improvement_threshold):
+             # or force_test >+5:
                 print 'validation'
-                force_test = 0
+                # force_test = 0
                 #improve patience if loss improvement is good enough
-                if (this_validation_loss < best_validation_loss * improvement_threshold):
-                    patience = max(patience, iter * patience_increase)
+                # if (this_validation_loss < best_validation_loss)
+                # : * improvement_threshold):
+                patience = max(patience, iter * patience_increase)
 
                 best_validation_loss = this_validation_loss
                 best_iter = iter
@@ -398,6 +414,7 @@ while (epoch < n_epochs) and (not done_looping):
                                  in range(0,len(test_losses))]
                 pred = [test_losses[i][2] for i
                                  in range(0,len(test_losses))]
+                print'+++++++++++++', pred
 
                 test_m = [test_losses[i][0] for i
                                  in range(0,len(test_losses))]
@@ -432,6 +449,101 @@ while (epoch < n_epochs) and (not done_looping):
             (best_validation_loss , best_iter + 1, test_score ))
             print 'with test performance %f',test_score
             break
+
+
+
+# while (epoch < n_epochs):
+#  # and (not done_looping):
+#     # epoch = epoch + 1
+
+#     for minibatch_index in range(n_train_batches): #loop on train examples
+#     #     # print minibatch_index
+#         train_model(minibatch_index)
+#         # print updates.elements()
+#     #     # iteration number
+#     for minibatch_index in range(n_train_batches): #loop on train examples
+#         a= train_model(minibatch_index)
+#         tra_e.append(a[0])
+#         print a[0]
+#         # print a[2]
+#         # print a[2]
+#         # print op
+#         iter = (epoch - 1) * n_train_batches + minibatch_index
+#         # if (iter + 1) % validation_frequency == 10:
+#             # compute zero-one loss on validation set
+#         validation_losses = [validate_model(i) for i in range(n_valid_batches)]
+           
+#         validation_m = [validation_losses[i][0] for i
+#                              in range(0,len(validation_losses))]
+
+#         this_validation_loss = np.mean(validation_m)
+
+#         print("Epoch %i, Minibatch %i/%i, Validation Error %f " 
+#                 % (epoch,
+#                     minibatch_index + 1,
+#                     n_train_batches,
+#                     this_validation_loss 
+#                   )
+#               )
+#             # force_test +=1
+#             # if we got the best validation score until now
+#         if (this_validation_loss < best_validation_loss):
+#          # or force_test >+5:
+#             print 'validation'
+#             # force_test = 0
+#             #improve patience if loss improvement is good enough
+#             if (this_validation_loss < best_validation_loss* improvement_threshold):
+#                 patience = max(patience, iter * patience_increase)
+
+#             best_validation_loss = this_validation_loss
+#             best_iter = iter
+
+#             # test it on the test set
+#             print 'test'
+#             test_losses = [test_model(i)
+#                                for i in range(n_test_batches)]
+
+#             Truth = [test_losses[i][1] for i
+#                              in range(0,len(test_losses))]
+#             pred = [test_losses[i][2] for i
+#                              in range(0,len(test_losses))]
+#             print pred
+
+#             test_m = [test_losses[i][0] for i
+#                              in range(0,len(test_losses))]
+
+#             E_ori = [test_losses[i][3] for i
+#                              in range(0,len(test_losses))]
+
+#             E_tra = [test_losses[i][4] for i
+#                              in range(0,len(test_losses))]
+
+#             test_score = np.mean(test_m)
+
+#             # count_dany +=1
+#             print(("Epoch %i, Minibatch %i/%i, Test error of"" best model %f ") 
+#                   % (   epoch,
+#                         minibatch_index + 1,
+#                         n_train_batches,
+#                         test_score 
+#                     )
+#                 )
+#         else:
+#             epoch = epoch + 1
+
+#         if patience <= iter:
+#             print 'save inside patience'
+#             done_looping = True
+#             res_name = '2d6Cnn3fcl_8_5_10_again.npz'
+#             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+#             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3, output=output)
+#             # save_model(res_name, conv1=conv1, conv2=conv2, conv3=conv3,conv4=conv4,
+#             # conv5=conv5,conv6=conv6, fc1=fc1, fc2=fc2,fc3=fc3 ,output=output)
+#             print(('Optimization complete. Best validation score of %f '
+#             'obtained at iteration %i, with test performance %f ') %
+#             (best_validation_loss , best_iter + 1, test_score ))
+#             print 'with test performance %f',test_score
+#             break
 
 end_time = timeit.default_timer()
 print(('Optimization complete. Best validation score of %f '
