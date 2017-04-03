@@ -18,101 +18,108 @@ import math
 from utils_camera import Find_long_side_and_axis
 from create_mvbb import MVBBVisualizer, compute_poses, skip_decimate_or_return
 
-def Add_variation(o_T_p_r_original,o_T_p_r):
+def Add_variation(o_T_p_r_vect,o_T_p_r):
 
 
-    theta_deg = random.randint(-30,30)
+    theta_deg = random.randint(-15,15)
     if theta_deg == 0.0:
-        theta_deg = random.randint(-30,30)
+        theta_deg = random.randint(-15,15)
     theta = math.radians(theta_deg)
 
     # embed()
-    axis_x = o_T_p_r_original[0][0:3]
-    axis_y = o_T_p_r_original[0][3:6]
-    axis_z = o_T_p_r_original[0][6:9]
+    # axis_x = o_T_p_r_original[0][0:3]
+    # axis_y = o_T_p_r_original[0][3:6]
+    # axis_z = o_T_p_r_original[0][6:9]
+
+    axis_x = o_T_p_r[0][0:3]
+    axis_y = o_T_p_r[0][3:6]
+    axis_z = o_T_p_r[0][6:9]
+
+    # embed()
     ##Variation on x
     R = np.array(se3.homogeneous((so3.from_axis_angle((axis_x,theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    # embed()
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
 
     #  #variazione su y
     R = np.array(se3.homogeneous((so3.from_axis_angle((axis_y,theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
     
     #  #variazione su z
-    R = np.array(se3.homogeneous((so3.from_axis_angle(([0,0,1],theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    R = np.array(se3.homogeneous((so3.from_axis_angle((axis_z,theta)),[0,0,0] )))
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
 
     # #variazione su x e muovo su z
     move_z = random.randrange(-5,5)
     R = np.array(se3.homogeneous((so3.from_axis_angle((axis_x,theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
     o_T_p_r_temp[1][1] = o_T_p_r_temp[1][1] - move_z*0.01
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
 
     # #variazione su y e muovo su z
     move_z = random.randrange(-5,5)
     R = np.array(se3.homogeneous((so3.from_axis_angle((axis_y,theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
     o_T_p_r_temp[1][1] = o_T_p_r_temp[1][1] - move_z*0.01
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
 
     # #variazione su y e muovo su z
     move_z = random.randrange(-5,5)
     R = np.array(se3.homogeneous((so3.from_axis_angle((axis_z,theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
     o_T_p_r_temp[1][1] = o_T_p_r_temp[1][1] - move_z*0.01
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
     # # muovo su - z
-    o_T_p_r_temp = o_T_p_r_original
+    o_T_p_r_temp = o_T_p_r
     move_z = random.randrange(-5,5)
-    o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - move_z*0.01
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    o_T_p_r_temp[1][1] = o_T_p_r[1][1] - move_z*0.01
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
     # #muovo su + z
-    o_T_p_r_temp = o_T_p_r_original
+    o_T_p_r_temp = o_T_p_r
     move_z = random.randrange(-5,5)
-    o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - move_z*0.01
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    o_T_p_r_temp[1][1] = o_T_p_r[1][1] - move_z*0.01
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
     #  #variazione su y e muovo su z
     move_z = random.randrange(-5,5)
     R = np.array(se3.homogeneous((so3.from_axis_angle((axis_y,theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
     o_T_p_r_temp[1][1] = o_T_p_r_temp[1][1] - move_z*0.01
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
     #  #variazione su x e muovo su y
     move_z = random.randrange(-5,5)
     R = np.array(se3.homogeneous((so3.from_axis_angle((axis_x,theta)),[0,0,0] )))
-    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r_original)),R)))
-    # o_T_p_r_temp[1][0:3] = o_T_p_r_original[1][0:3]
+    o_T_p_r_temp = se3.from_homogeneous(( np.dot(np.array(se3.homogeneous(o_T_p_r)),R)))
+    # o_T_p_r_temp[1][0:3] = o_T_p_r[1][0:3]
     o_T_p_r_temp[1][1] = o_T_p_r_temp[1][1] - move_z*0.01
-    # o_T_p_r_temp[1][1] = o_T_p_r_original[1][1] - 0.7
-    o_T_p_r.append(o_T_p_r_temp)
+    # o_T_p_r_temp[1][1] = o_T_p_r[1][1] - 0.7
+    o_T_p_r_vect.append(o_T_p_r_temp)
 
 
 
@@ -147,10 +154,13 @@ def create_camera_frame(z):
 
 
 def Camera_first_pose(axis,R_o,center,vect_pose):
+    # print R_o
+
     if axis == 0 :
         print "axis 0"
         P = np.array(se3.homogeneous((so3.from_matrix(R_o),[center[0],center[1]-0.7,center[2]])))
         R = np.array(se3.homogeneous((so3.from_axis_angle(([1,0,0],math.radians(90))),[0,0,0] )))
+        # embed()
         vect_pose.append(se3.from_homogeneous(np.dot(P,R)))
     elif axis == 1:
         print "axis 1"
@@ -158,6 +168,7 @@ def Camera_first_pose(axis,R_o,center,vect_pose):
         yc = R_o[2]
         zc = R_o[0]
         P = np.array(se3.homogeneous((so3.from_matrix((xc,yc,zc)),[center[0]+0.7,center[1],center[2]])))
+        # embed()
         vect_pose.append(se3.from_homogeneous(P))
     elif axis ==2:
         print "axis 2"
@@ -165,6 +176,7 @@ def Camera_first_pose(axis,R_o,center,vect_pose):
         yc = R_o[0]
         zc = R_o[1]
         P = np.array(se3.homogeneous((so3.from_matrix((xc,yc,zc)),[center[0],center[1]-0.7,center[2]])))
+        # embed()
         vect_pose.append(se3.from_homogeneous(P))
 
 
@@ -174,7 +186,7 @@ def Make_camera_poses(o_T_p,obj):
     o_T_p_r = []
 
 
-    print "len: ", len(o_T_p)
+    # print "len: ", len(o_T_p)
 
     # long_side,index, standing, T_box = Compute_box(obj)
 
@@ -184,8 +196,7 @@ def Make_camera_poses(o_T_p,obj):
     centerX = 0.5 * ( bmax[0] - bmin[0] ) + t[0]
     centerY = 0.5 * ( bmax[1] - bmin[1] ) + t[1]
     centerZ = 0.5 * ( bmax[2] - bmin[2] ) + t[2]
-    
-    
+
     T_o = [centerX,centerY,centerZ]
 
     print "len(o_T_p)", len(o_T_p)
@@ -194,25 +205,35 @@ def Make_camera_poses(o_T_p,obj):
         if k == 0:
             axis = Find_long_side_and_axis(bmin,bmax)
             Camera_first_pose(axis,so3.matrix(R_o),[centerX,centerY,centerZ],o_T_p_r)
+            # print o_T_p_r[0]
+            # embed()
 
         else:
             # pass
             
             # o_T_p_r.append((R_temp,T_o))
-            tx = se3.from_homogeneous( o_T_p[k])[1][0] 
-            ty = se3.from_homogeneous( o_T_p[k])[1][1] 
-            tz = se3.from_homogeneous( o_T_p[k])[1][2] 
+            tx = se3.from_homogeneous( o_T_p[k])[1][0]
+            ty = se3.from_homogeneous( o_T_p[k])[1][1]
+            tz = se3.from_homogeneous( o_T_p[k])[1][2]
             
-            z = (np.array(T_o) - np.array([tx,ty,tz])) / np.linalg.norm(np.array(T_o) - np.array([tx,ty,tz]))
-            x = np.cross(z,np.array([0,0,-1])) / np.linalg.norm(np.cross(z,np.array([0,0,-1])) )
-            y = np.cross(z,x)
-
-            o_T_c = so3.from_matrix(np.vstack((x,y,z)).transpose())
+            z = (np.array([tx,ty,tz]) - np.array(T_o) ) / np.linalg.norm((np.array([tx,ty,tz]) - np.array(T_o)))
+            
+            if np.linalg.norm(np.cross(z,np.array([0,0,-1])) ) is not 0:
+                y = np.cross(z,np.array([0,0,-1])) / np.linalg.norm(np.cross(z,np.array([0,0,-1])) )
+            else:
+                y = [0,1,0]
+            x = np.cross(z,y)
 
             # t_new =  np.dot(np.vstack((x,y,z)).transpose(), [tx,ty,tz])
+            # embed()
+            o_T_c = so3.from_matrix(np.vstack((x,y,z)).transpose()),[tx,ty,tz]
+            o_T_p_r.append(o_T_c)
+            # embed()
+            # embed()
+            # t_new =  np.dot(np.vstack((x,y,z)).transpose(), [tx,ty,tz])
 
-            c_T_p = np.dot(np.linalg.inv(np.vstack((x,y,z)).transpose()),  np.array(se3.from_homogeneous(o_T_p[k])[0]).reshape(3,3))
-            t_new =  np.dot(c_T_p, [tx,ty,tz])
+            # c_T_p = np.dot(np.linalg.inv(np.vstack((x,y,z)).transpose()),  np.array(se3.from_homogeneous(o_T_p[k])[0]).reshape(3,3))
+            # t_new =  np.dot(c_T_p, [tx,ty,tz])
             # embed()
             # t_new[2] = t_new[2] + 0.7
             # t_new[1] = t_new[1] + t[1]
@@ -233,16 +254,17 @@ def Make_camera_poses(o_T_p,obj):
 
             # embed()
 
-            temp = o_T_c, list(t_new)
+            # temp = o_T_c, list(t_new)
 
             # embed()
 
 
-            o_T_p_r.append( temp)
+            # o_T_p_r.append( o_T_c)
 
-        # Add_variation(o_T_p_r[k],o_T_p_r)
+        # Add_variation(o_T_p_r,o_T_p_r[k])
         # break
 
+    # print o_T_p_r
 
     return o_T_p_r
 
