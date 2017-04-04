@@ -24,6 +24,7 @@ from mvbb.ScalaReduce import DanyReduceScale
 from camera_to_image_Kris import camera_to_images
 import Image
 
+
 Pose = {}
 Pose['pose'] = [f for f in os.listdir('3DCNN/NNSet/Pose/pose')]
 objects = {}
@@ -117,14 +118,15 @@ for object_name in object_list:
                     vis.add("world",world)
 
                     sim = Simulator(world)
+                    # sim = SimpleSimulator(world)
                     sim.setGravity([0,0,0])
-                    # sensor = sim.controller(0).sensor("rgbd_camera")
+                    sensor = sim.controller(0).sensor("rgbd_camera")
                     # print"LINK", sensor.getSetting("link")
                     # print "Tsensor", sensor.getSetting("Tsensor")
 
                     #Note: GLEW sensor simulation only runs if it occurs in the visualization thread (e.g., the idle loop)
                     class SensorTestWorld (GLPluginInterface):
-                        def __init__(self,poses,world,object_name):
+                        def __init__(self,poses,world,object_name,robot):
                             self.p = 0
                             self.poses = poses
                             self.world = world
@@ -133,6 +135,7 @@ for object_name in object_list:
                             self.running = True
                             self.obj = obj
                             self.curr_pose = None
+                            self.robot = robot
                             self.step = 0
                             self.nome_obj = object_name
                             self.t_0 = None
@@ -160,17 +163,20 @@ for object_name in object_list:
 
                             if self.is_simulating:
                                 # obj.setVelocity([0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+                                r_move  =np.array(self.curr_pose[1])- np.array([0.7,0.7,0.7])
+                                set_moving_base_xform(self.robot,xform[0],list(r_move))
+                                sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
                                 sensor.setSetting("Tsensor",' '.join(str(v) for v in self.curr_pose[0]+self.curr_pose[1]))
                                 vis.add("sensor",sensor)
 
                                 sim.simulate(0.8)
                                 sim.updateWorld()
 
-                                if not vis.shown() or (sim.getTime() - self.t_0) >= 2.:
+                                if not vis.shown() or (sim.getTime() - self.t_0) >= 8.:
                                     if  vis.shown():
-                                        # camera_measure = sensor.getMeasurements()
-                                        # image,rgb = FromCamera2rgb(camera_measure)
-                                        image = camera_to_images(sensor,image_format='numpy',color_format='rgb')
+                                        camera_measure = sensor.getMeasurements()
+                                        image,rgb = FromCamera2rgb(camera_measure)
+                                        # image = camera_to_images(sensor,image_format='numpy',color_format='rgb')
                                         print image
                                         # print np.asarray(image).size
                                         directory = '2DCNN/NNSet/Image/%s'% (self.nome_obj)
@@ -179,7 +185,7 @@ for object_name in object_list:
                                         # im_save = Image.fromarray(np.asarray(image))
                                         # im_save.save('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step))
                                         print 'save'
-                                        scipy.misc.imsave('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step), np.asarray(image).reshape(256,256))
+                                        # scipy.misc.imsave('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step), np.asarray(image).reshape(256,256))
                                         # directory = '2DCNN/NNSet/Image/%s'% (self.nome_obj)
                                         # res_dataset = '2DCNN/NNSet/Image/%s/%s_rotate_%s.csv'% (self.nome_obj,self.nome_obj,self.step)
                                         # if not os.path.exists(directory):
@@ -190,7 +196,7 @@ for object_name in object_list:
                                         self.simulation_  = None
 
 
-                    vis.pushPlugin(SensorTestWorld(o_T_p_r,world,object_name))
+                    vis.pushPlugin(SensorTestWorld(o_T_p_r,world,object_name,robot))
                     vis.show()
                     while vis.shown():
                         time.sleep(1)

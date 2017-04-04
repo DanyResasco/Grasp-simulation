@@ -219,13 +219,14 @@ def Make_camera_poses(o_T_p,obj):
             z = (np.array([tx,ty,tz]) - np.array(T_o) ) / np.linalg.norm((np.array([tx,ty,tz]) - np.array(T_o)))
             
             if np.linalg.norm(np.cross(z,np.array([0,0,-1])) ) is not 0:
-                y = np.cross(z,np.array([0,0,-1])) / np.linalg.norm(np.cross(z,np.array([0,0,-1])) )
+                x = np.cross(z,np.array([0,0,-1])) / np.linalg.norm(np.cross(z,np.array([0,0,-1])) )
             else:
-                y = [0,1,0]
-            x = np.cross(z,y)
+                x = [0,1,0]
+            y = np.cross(z,x)
 
             # t_new =  np.dot(np.vstack((x,y,z)).transpose(), [tx,ty,tz])
             # embed()
+
             o_T_c = so3.from_matrix(np.vstack((x,y,z)).transpose()),[tx,ty,tz]
             o_T_p_r.append(o_T_c)
             # embed()
