@@ -17,7 +17,7 @@ import sys
 from moving_base_control import *
 # from Add_variation_camera_pose import Make_camera_poses
 import scipy.misc
-from Add_variation_camera_pose import Add_variation, Make_camera_poses
+from Add_variation_camera_pose import Add_variation, Make_camera_poses,Make_camera_poses_no_work
 from utils_camera import FromCamera2rgb, Read_Poses, Write_image
 from mvbb.ScalaReduce import DanyReduceScale
 # from mvbb.draw_bbox import draw_GL_frame
@@ -113,7 +113,8 @@ for object_name in object_list:
                     print object_name
                     Read_Poses(object_name,o_T_p)
                     # embed()
-                    o_T_p_r = Make_camera_poses(o_T_p,obj)
+                    # o_T_p_r = Make_camera_poses(o_T_p,obj)
+                    o_T_p_r = Make_camera_poses_no_work(o_T_p,obj)
 
                     vis.add("world",world)
 
@@ -162,8 +163,10 @@ for object_name in object_list:
                                 self.is_simulating = True
 
                             if self.is_simulating:
+                                sim.setGravity([0,0,0])
                                 # obj.setVelocity([0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
                                 r_move  =np.array(self.curr_pose[1])- np.array([0.7,0.7,0.7])
+                                # r_move = np.array([0.081085046273899994, -0.037104263222599999, 0.21688841514400001])
                                 set_moving_base_xform(self.robot,xform[0],list(r_move))
                                 sim.controller(0).setPIDCommand(self.robot.getConfig(), self.robot.getVelocity())
                                 sensor.setSetting("Tsensor",' '.join(str(v) for v in self.curr_pose[0]+self.curr_pose[1]))
@@ -172,11 +175,11 @@ for object_name in object_list:
                                 sim.simulate(0.8)
                                 sim.updateWorld()
 
-                                if not vis.shown() or (sim.getTime() - self.t_0) >= 8.:
+                                if not vis.shown() or (sim.getTime() - self.t_0) >= 2.5:
                                     if  vis.shown():
                                         camera_measure = sensor.getMeasurements()
-                                        image,rgb = FromCamera2rgb(camera_measure)
-                                        # image = camera_to_images(sensor,image_format='numpy',color_format='rgb')
+                                        
+                                        image = camera_to_images(sensor,image_format='numpy',color_format='rgb')
                                         print image
                                         # print np.asarray(image).size
                                         directory = '2DCNN/NNSet/Image/%s'% (self.nome_obj)
@@ -185,7 +188,7 @@ for object_name in object_list:
                                         # im_save = Image.fromarray(np.asarray(image))
                                         # im_save.save('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step))
                                         print 'save'
-                                        # scipy.misc.imsave('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step), np.asarray(image).reshape(256,256))
+                                        #scipy.misc.imsave('2DCNN/NNSet/Image/%s/%s_rotate_%s.png'% (self.nome_obj,self.nome_obj,self.step), np.asarray(image).reshape(256,256))
                                         # directory = '2DCNN/NNSet/Image/%s'% (self.nome_obj)
                                         # res_dataset = '2DCNN/NNSet/Image/%s/%s_rotate_%s.csv'% (self.nome_obj,self.nome_obj,self.step)
                                         # if not os.path.exists(directory):
